@@ -1,0 +1,5 @@
+# gcs
+
+Shared storage path helpers for document HTML objects stored in Supabase Storage.
+
+Run `nx test gcs` to execute the unit tests via [Vitest](https://vitest.dev/).

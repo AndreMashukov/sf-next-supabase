@@ -1,0 +1,2 @@
+-- Seed data is intentionally empty for local development.
+-- Create a test user via Supabase Auth and use the app to create documents.

@@ -1,0 +1,51 @@
+{
+  "name": "backend",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/backend/src",
+  "projectType": "application",
+  "tags": ["scope:backend"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --config apps/backend/vitest.config.mts",
+        "cwd": "."
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase start",
+        "cwd": "apps/backend"
+      }
+    },
+    "stop": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase stop",
+        "cwd": "apps/backend"
+      }
+    },
+    "reset": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase db reset",
+        "cwd": "apps/backend"
+      }
+    },
+    "serve-functions": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase functions serve --env-file ../../.env.local",
+        "cwd": "apps/backend"
+      }
+    },
+    "gen-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase gen types typescript --local > ../../libs/shared-types/src/database.types.ts",
+        "cwd": "apps/backend"
+      }
+    }
+  }
+}
