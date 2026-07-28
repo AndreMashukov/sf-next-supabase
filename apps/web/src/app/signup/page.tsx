@@ -42,8 +42,8 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="container">
-      <div className="card stack" style={{ maxWidth: 480, margin: '4rem auto' }}>
+    <main className="auth-container">
+      <div className="auth-card card stack">
         <div>
           <h1>Create account</h1>
           <p className="muted">Start creating documents and quizzes.</p>

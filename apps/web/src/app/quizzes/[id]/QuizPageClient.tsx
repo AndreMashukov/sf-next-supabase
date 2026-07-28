@@ -1,8 +1,6 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { AppHeader } from '@/components/AppHeader';
 import type { Quiz, QuizQuestion } from '@sf/shared-types';
 
 export function QuizPageClient({ quiz }: { quiz: Quiz }) {
@@ -42,17 +40,14 @@ export function QuizPageClient({ quiz }: { quiz: Quiz }) {
   }
 
   return (
-    <main className="container stack">
-      <AppHeader title={quiz.title} />
+    <div className="stack">
+      <h1 className="page-title">{quiz.title}</h1>
 
       <section className="card stack">
         <div className="row">
           <p className="muted" style={{ margin: 0 }}>
             Question {currentIndex + 1} of {quiz.questions.length}
           </p>
-          <Link href={`/documents/${quiz.documentId}`} className="button secondary">
-            Back to document
-          </Link>
         </div>
 
         <QuestionCard
@@ -85,7 +80,7 @@ export function QuizPageClient({ quiz }: { quiz: Quiz }) {
         </div>
 
         {submitted ? (
-          <div className="card" style={{ background: '#eef2ff' }}>
+          <div className="card subtle">
             <strong>
               Score: {score}/{quiz.questions.length}
             </strong>
@@ -95,7 +90,7 @@ export function QuizPageClient({ quiz }: { quiz: Quiz }) {
           </div>
         ) : null}
       </section>
-    </main>
+    </div>
   );
 }
 

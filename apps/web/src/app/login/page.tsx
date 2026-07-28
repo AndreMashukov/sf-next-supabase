@@ -35,8 +35,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container">
-      <div className="card stack" style={{ maxWidth: 480, margin: '4rem auto' }}>
+    <main className="auth-container">
+      <div className="auth-card card stack">
         <div>
           <h1>Sign in</h1>
           <p className="muted">Create documents and generate quizzes from them.</p>

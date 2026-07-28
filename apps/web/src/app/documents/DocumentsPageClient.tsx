@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { createDocument } from '@/lib/api';
-import { AppHeader } from '@/components/AppHeader';
 import type { Document } from '@sf/shared-types';
 
 export function CreateDocumentForm({
@@ -108,12 +107,12 @@ export function DocumentsPageClient({
   const [documents, setDocuments] = useState(initialDocuments);
 
   return (
-    <main className="container stack">
-      <AppHeader title="Documents" />
+    <div className="stack">
+      <h1 className="page-title">Documents</h1>
       <CreateDocumentForm
         onCreated={(document) => setDocuments((current) => [document, ...current])}
       />
       <DocumentList documents={documents} />
-    </main>
+    </div>
   );
 }

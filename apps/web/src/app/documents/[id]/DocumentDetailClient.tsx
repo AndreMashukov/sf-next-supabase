@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { generateQuiz } from '@/lib/api';
-import { AppHeader } from '@/components/AppHeader';
 import { formatDate } from '@/lib/utils';
 import type { Document, Quiz } from '@sf/shared-types';
 
@@ -38,8 +37,8 @@ export function DocumentDetailClient({
   }
 
   return (
-    <main className="container stack">
-      <AppHeader title={document.title} />
+    <div className="stack">
+      <h1 className="page-title">{document.title}</h1>
 
       <section className="card stack">
         <div className="row">
@@ -51,9 +50,6 @@ export function DocumentDetailClient({
               {document.wordCount} words
             </p>
           </div>
-          <Link href="/documents" className="button secondary">
-            Back to documents
-          </Link>
         </div>
 
         <div>
@@ -108,6 +104,6 @@ export function DocumentDetailClient({
           </div>
         )}
       </section>
-    </main>
+    </div>
   );
 }
