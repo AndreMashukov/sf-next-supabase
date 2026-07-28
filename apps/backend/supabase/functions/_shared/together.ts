@@ -1,3 +1,5 @@
+import { buildDocumentPrompt } from './document-prompt-builder.ts';
+
 export interface GeneratedQuizQuestion {
   question: string;
   options: [string, string, string, string];
@@ -25,7 +27,7 @@ function stripRedactedThinking(content: string): string {
 
 function stripCodeFences(text: string): string {
   return text
-    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/^```(?:html|markdown|json)?\s*/i, '')
     .replace(/\s*```$/i, '')
     .trim();
 }
@@ -85,59 +87,11 @@ function parseTogetherChatContent(payload: unknown): string | null {
   return text.length > 0 ? text : null;
 }
 
-function assertValidQuiz(parsed: GeneratedQuizPayload): void {
-  if (!parsed.title || !Array.isArray(parsed.questions) || parsed.questions.length === 0) {
-    throw new Error('Together returned an invalid quiz payload');
-  }
-
-  for (const question of parsed.questions) {
-    if (
-      !question.question ||
-      !Array.isArray(question.options) ||
-      question.options.length !== 4 ||
-      typeof question.correctAnswer !== 'number' ||
-      question.correctAnswer < 0 ||
-      question.correctAnswer > 3 ||
-      !question.explanation
-    ) {
-      throw new Error('Together returned malformed quiz questions');
-    }
-  }
-}
-
-export async function generateQuizFromHtml(
-  html: string,
-  documentTitle: string,
-  questionCount: number,
-): Promise<GeneratedQuizPayload> {
+async function callTogetherChat(prompt: string): Promise<string> {
   const apiKey = Deno.env.get('TOGETHER_AI_API_KEY');
   if (!apiKey) {
     throw new Error('Missing TOGETHER_AI_API_KEY environment variable');
   }
-
-  const prompt = `You are an expert quiz creator. Read the following HTML document and create exactly ${questionCount} multiple-choice quiz questions.
-
-Document title: ${documentTitle}
-
-Requirements:
-- Each question must have exactly 4 answer options
-- correctAnswer must be the zero-based index (0-3) of the correct option
-- Include a concise explanation for the correct answer
-- Return ONLY valid JSON with this shape:
-{
-  "title": "Quiz title",
-  "questions": [
-    {
-      "question": "Question text",
-      "options": ["A", "B", "C", "D"],
-      "correctAnswer": 0,
-      "explanation": "Why this answer is correct"
-    }
-  ]
-}
-
-HTML document:
-${html.slice(0, 100_000)}`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -169,6 +123,74 @@ ${html.slice(0, 100_000)}`;
   if (!text) {
     throw new Error('Together returned an empty response');
   }
+
+  return text;
+}
+
+export async function generateDocumentFromPrompt(
+  userPrompt: string,
+  rulesText = '',
+): Promise<string> {
+  const prompt = buildDocumentPrompt(userPrompt, rulesText);
+  const content = await callTogetherChat(prompt);
+
+  if (!content.trim()) {
+    throw new Error('Together returned empty document content');
+  }
+
+  return content;
+}
+
+function assertValidQuiz(parsed: GeneratedQuizPayload): void {
+  if (!parsed.title || !Array.isArray(parsed.questions) || parsed.questions.length === 0) {
+    throw new Error('Together returned an invalid quiz payload');
+  }
+
+  for (const question of parsed.questions) {
+    if (
+      !question.question ||
+      !Array.isArray(question.options) ||
+      question.options.length !== 4 ||
+      typeof question.correctAnswer !== 'number' ||
+      question.correctAnswer < 0 ||
+      question.correctAnswer > 3 ||
+      !question.explanation
+    ) {
+      throw new Error('Together returned malformed quiz questions');
+    }
+  }
+}
+
+export async function generateQuizFromHtml(
+  html: string,
+  documentTitle: string,
+  questionCount: number,
+): Promise<GeneratedQuizPayload> {
+  const prompt = `You are an expert quiz creator. Read the following HTML document and create exactly ${questionCount} multiple-choice quiz questions.
+
+Document title: ${documentTitle}
+
+Requirements:
+- Each question must have exactly 4 answer options
+- correctAnswer must be the zero-based index (0-3) of the correct option
+- Include a concise explanation for the correct answer
+- Return ONLY valid JSON with this shape:
+{
+  "title": "Quiz title",
+  "questions": [
+    {
+      "question": "Question text",
+      "options": ["A", "B", "C", "D"],
+      "correctAnswer": 0,
+      "explanation": "Why this answer is correct"
+    }
+  ]
+}
+
+HTML document:
+${html.slice(0, 100_000)}`;
+
+  const text = await callTogetherChat(prompt);
 
   let parsed: GeneratedQuizPayload;
   try {

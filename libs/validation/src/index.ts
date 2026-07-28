@@ -2,13 +2,13 @@ import { z } from 'zod';
 
 export const createDocumentSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(200),
-  text: z.string().trim().min(1, 'Document text is required').max(100_000),
+  text: z.string().trim().min(1, 'Document prompt is required').max(100_000),
 });
 
 export const generateQuizSchema = z.object({
   documentId: z.string().uuid('Invalid document ID'),
   title: z.string().trim().min(1).max(200).optional(),
-  questionCount: z.number().int().min(1).max(20).optional().default(5),
+  questionCount: z.number().int().min(1).max(10).optional().default(5),
 });
 
 export const quizQuestionSchema = z.object({

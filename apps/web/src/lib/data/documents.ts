@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
+import { downloadDocumentHtml, extractBodyHtml } from '@/lib/storage';
 import type { Document } from '@sf/shared-types';
 
 type DocumentRow = {
@@ -48,4 +49,19 @@ export async function getDocumentById(id: string): Promise<Document | null> {
   }
 
   return mapDocument(data);
+}
+
+export async function getDocumentHtmlById(id: string): Promise<string | null> {
+  const document = await getDocumentById(id);
+
+  if (!document) {
+    return null;
+  }
+
+  try {
+    const html = await downloadDocumentHtml(document.storagePath);
+    return extractBodyHtml(html);
+  } catch {
+    return null;
+  }
 }

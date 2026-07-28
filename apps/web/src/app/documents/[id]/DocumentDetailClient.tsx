@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { DocumentHtmlContent } from '@/components/DocumentHtmlContent';
 import { generateQuiz } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import type { Document, Quiz } from '@sf/shared-types';
@@ -10,9 +11,11 @@ import type { Document, Quiz } from '@sf/shared-types';
 export function DocumentDetailClient({
   document,
   quizzes,
+  htmlContent,
 }: {
   document: Document;
   quizzes: Quiz[];
+  htmlContent: string | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -53,8 +56,17 @@ export function DocumentDetailClient({
         </div>
 
         <div>
+          <h2>Prompt</h2>
+          <p className="muted">{document.description}</p>
+        </div>
+
+        <div>
           <h2>Preview</h2>
-          <p>{document.description}</p>
+          {htmlContent ? (
+            <DocumentHtmlContent html={htmlContent} className="document-preview" />
+          ) : (
+            <p className="muted">Generated HTML is not available for this document.</p>
+          )}
         </div>
       </section>
 

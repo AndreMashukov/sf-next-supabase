@@ -188,6 +188,46 @@ export async function verifyRuleOwnership(
   }
 }
 
+export async function fetchRulesByIds(
+  supabase: { from: (table: string) => unknown },
+  userId: string,
+  ruleIds: string[],
+): Promise<Array<{ name: string; content: string }>> {
+  if (ruleIds.length === 0) {
+    return [];
+  }
+
+  const client = supabase as {
+    from: (table: string) => {
+      select: (columns: string) => {
+        eq: (column: string, value: string) => {
+          in: (column: string, values: string[]) => Promise<{
+            data: Array<{ id: string; name: string; content: string }> | null;
+            error: { message: string } | null;
+          }>;
+        };
+      };
+    };
+  };
+
+  const { data, error } = await client
+    .from('rules')
+    .select('id, name, content')
+    .eq('user_id', userId)
+    .in('id', ruleIds);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const byId = new Map((data ?? []).map((row) => [row.id, row]));
+
+  return ruleIds
+    .map((id) => byId.get(id))
+    .filter((row): row is { id: string; name: string; content: string } => Boolean(row))
+    .map((row) => ({ name: row.name, content: row.content }));
+}
+
 export function formatRulesForPrompt(
   rules: Array<{ name: string; content: string }>,
 ): string {

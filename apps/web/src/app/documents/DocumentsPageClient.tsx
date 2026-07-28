@@ -45,7 +45,9 @@ export function CreateDocumentForm({
     <form className="card stack" onSubmit={handleSubmit}>
       <div>
         <h2>Create document</h2>
-        <p className="muted">Paste text and save it as HTML in Google Cloud Storage.</p>
+        <p className="muted">
+          Describe what to generate. Selected rules guide the AI, and the result is saved as HTML.
+        </p>
       </div>
 
       <label className="label">
@@ -60,12 +62,12 @@ export function CreateDocumentForm({
       </label>
 
       <label className="label">
-        Text
+        Prompt
         <textarea
           className="textarea"
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="Paste your study material here..."
+          placeholder="Explain the topic, depth, and structure you want the AI to generate..."
           required
         />
       </label>
@@ -79,7 +81,7 @@ export function CreateDocumentForm({
       {error ? <div className="error">{error}</div> : null}
 
       <button className="button" type="submit" disabled={loading}>
-        {loading ? 'Saving...' : 'Create document'}
+        {loading ? 'Generating...' : 'Create document'}
       </button>
     </form>
   );

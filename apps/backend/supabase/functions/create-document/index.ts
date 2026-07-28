@@ -6,8 +6,14 @@ import {
   getStorageConfig,
   uploadHtmlToStorage,
 } from '../_shared/storage.ts';
-import { countWords, textToHtml, validateCreateDocument } from '../_shared/validation.ts';
-import { verifyRuleOwnership } from '../_shared/rules.ts';
+import {
+  countWords,
+  normalizeGeneratedHtml,
+  validateCreateDocument,
+  wrapHtmlDocument,
+} from '../_shared/validation.ts';
+import { fetchRulesByIds, formatRulesForPrompt, verifyRuleOwnership } from '../_shared/rules.ts';
+import { generateDocumentFromPrompt } from '../_shared/together.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,13 +32,21 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { title, text, ruleIds } = validateCreateDocument(body);
-    const html = textToHtml(text);
-    const wordCount = countWords(text);
     const documentId = crypto.randomUUID();
     const storagePath = buildDocumentStoragePath(userId, documentId);
 
     const supabase = createServiceClient();
     await verifyRuleOwnership(supabase, userId, ruleIds);
+
+    const rules = await fetchRulesByIds(supabase, userId, ruleIds);
+    const rulesText = formatRulesForPrompt(rules);
+    const generatedContent = await generateDocumentFromPrompt(text, rulesText);
+    const bodyHtml = normalizeGeneratedHtml(generatedContent);
+    if (!bodyHtml) {
+      throw new Error('Generated document content was empty');
+    }
+    const html = wrapHtmlDocument(bodyHtml, title);
+    const wordCount = countWords(bodyHtml.replace(/<[^>]+>/g, ' '));
 
     const storageConfig = getStorageConfig();
     await uploadHtmlToStorage(storageConfig, storagePath, html);
