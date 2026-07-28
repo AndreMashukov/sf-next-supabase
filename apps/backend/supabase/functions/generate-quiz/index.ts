@@ -1,7 +1,7 @@
 import { getAuthenticatedUserId, createServiceClient } from '../_shared/auth.ts';
 import { corsHeaders, errorResponse, jsonResponse } from '../_shared/cors.ts';
 import { downloadHtmlFromStorage, getStorageConfig } from '../_shared/storage.ts';
-import { generateQuizFromHtml } from '../_shared/gemini.ts';
+import { generateQuizFromHtml } from '../_shared/together.ts';
 import { validateGenerateQuiz } from '../_shared/validation.ts';
 
 Deno.serve(async (req) => {

@@ -66,7 +66,7 @@ export function DocumentDetailClient({
         <div>
           <h2>Generate quiz</h2>
           <p className="muted">
-            Create a multiple-choice quiz from this document using Gemini.
+            Create a multiple-choice quiz from this document using Together AI (MiniMax-M3).
           </p>
         </div>
 

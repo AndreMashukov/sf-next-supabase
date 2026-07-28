@@ -14,7 +14,7 @@ Nx monorepo for creating documents and generating quizzes from them.
 - Yarn 1.x
 - Docker (for local Supabase)
 - Supabase CLI (`yarn supabase` or global install)
-- Gemini API key
+- Together AI API key
 
 ## Setup
 
@@ -31,7 +31,7 @@ yarn supabase:start
 
 Copy the `anon`, `service_role`, and **Storage (S3)** credentials from the CLI output into `.env.local`.
 
-Set your Gemini API key in `.env.local`.
+Set your Together AI API key (`TOGETHER_AI_API_KEY`) in `.env.local`.
 
 Serve Edge Functions locally:
 
@@ -51,7 +51,7 @@ Open [http://localhost:4200](http://localhost:4200) (or the port shown by Nx).
 
 1. Sign up or sign in
 2. Paste text to create a document (stored as HTML in Supabase Storage)
-3. Open a document and generate a quiz synchronously via Gemini
+3. Open a document and generate a quiz synchronously via Together AI (`MiniMaxAI/MiniMax-M3`)
 4. Take the quiz and review explanations
 
 There is no dashboard — authenticated users land directly on the documents page.
@@ -83,5 +83,5 @@ For deployed Edge Functions, set secrets via Supabase:
 
 ```bash
 cd apps/backend
-supabase secrets set GEMINI_API_KEY=... STORAGE_BUCKET=documents STORAGE_S3_ENDPOINT=... STORAGE_S3_ACCESS_KEY=... STORAGE_S3_SECRET_KEY=... STORAGE_S3_REGION=local
+supabase secrets set TOGETHER_AI_API_KEY=... STORAGE_BUCKET=documents STORAGE_S3_ENDPOINT=... STORAGE_S3_ACCESS_KEY=... STORAGE_S3_SECRET_KEY=... STORAGE_S3_REGION=local
 ```
