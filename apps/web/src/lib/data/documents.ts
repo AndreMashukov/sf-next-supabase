@@ -10,6 +10,7 @@ type DocumentRow = {
   description: string;
   word_count: number;
   storage_path: string;
+  applied_rule_ids: string[];
   created_at: string;
   updated_at: string;
 };
@@ -22,6 +23,7 @@ function mapDocument(row: DocumentRow): Document {
     description: row.description,
     wordCount: row.word_count,
     storagePath: row.storage_path,
+    appliedRuleIds: row.applied_rule_ids ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

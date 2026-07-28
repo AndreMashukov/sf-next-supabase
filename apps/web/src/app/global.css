@@ -582,3 +582,131 @@ textarea {
   border-color: var(--destructive);
   background: var(--error-bg);
 }
+
+.rules-layout {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 900px) {
+  .rules-layout {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    align-items: start;
+  }
+}
+
+.rule-list-item {
+  align-items: flex-start;
+}
+
+.rule-list-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.rule-list-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgb(210 187 255 / 0.25);
+  background: var(--primary-subtle);
+  color: var(--primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.button-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.button-row.compact {
+  flex-shrink: 0;
+}
+
+.button.danger {
+  background: rgb(127 29 29 / 0.35);
+  color: var(--destructive);
+  border: 1px solid rgb(255 180 171 / 0.25);
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-weight: 500;
+}
+
+.checkbox-row input {
+  margin-top: 0.2rem;
+}
+
+.rule-selector {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: rgb(34 30 40 / 0.35);
+}
+
+.rule-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.rule-selector-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.rule-selector-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.rule-selector-item:hover {
+  border-color: rgb(210 187 255 / 0.3);
+}
+
+.rule-selector-item.selected {
+  border-color: var(--primary);
+  background: var(--primary-subtle);
+}
+
+.rule-selector-item input {
+  margin-top: 0.2rem;
+}
+
+.rule-selector-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.rule-selector-item-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-weight: 600;
+}

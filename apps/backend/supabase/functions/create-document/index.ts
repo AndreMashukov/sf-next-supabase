@@ -7,6 +7,7 @@ import {
   uploadHtmlToStorage,
 } from '../_shared/storage.ts';
 import { countWords, textToHtml, validateCreateDocument } from '../_shared/validation.ts';
+import { verifyRuleOwnership } from '../_shared/rules.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -24,16 +25,18 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { title, text } = validateCreateDocument(body);
+    const { title, text, ruleIds } = validateCreateDocument(body);
     const html = textToHtml(text);
     const wordCount = countWords(text);
     const documentId = crypto.randomUUID();
     const storagePath = buildDocumentStoragePath(userId, documentId);
 
+    const supabase = createServiceClient();
+    await verifyRuleOwnership(supabase, userId, ruleIds);
+
     const storageConfig = getStorageConfig();
     await uploadHtmlToStorage(storageConfig, storagePath, html);
 
-    const supabase = createServiceClient();
     const { data, error } = await supabase
       .from('documents')
       .insert({
@@ -43,6 +46,7 @@ Deno.serve(async (req) => {
         description: text.slice(0, 500),
         word_count: wordCount,
         storage_path: storagePath,
+        applied_rule_ids: ruleIds,
       })
       .select('*')
       .single();
@@ -60,6 +64,7 @@ Deno.serve(async (req) => {
         description: data.description,
         wordCount: data.word_count,
         storagePath: data.storage_path,
+        appliedRuleIds: data.applied_rule_ids ?? [],
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       },

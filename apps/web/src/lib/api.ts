@@ -1,7 +1,13 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import type { CreateDocumentResponse, GenerateQuizResponse } from '@sf/shared-types';
+import type {
+  CreateDocumentResponse,
+  CreateRuleResponse,
+  DeleteRuleResponse,
+  GenerateQuizResponse,
+  UpdateRuleResponse,
+} from '@sf/shared-types';
 
 async function getAccessToken(): Promise<string> {
   const supabase = createClient();
@@ -16,7 +22,7 @@ async function getAccessToken(): Promise<string> {
   return session.access_token;
 }
 
-export async function createDocument(title: string, text: string) {
+export async function createDocument(title: string, text: string, ruleIds: string[] = []) {
   const token = await getAccessToken();
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-document`,
@@ -26,7 +32,7 @@ export async function createDocument(title: string, text: string) {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ title, text }),
+      body: JSON.stringify({ title, text, ruleIds }),
     },
   );
 
@@ -60,6 +66,86 @@ export async function generateQuiz(documentId: string, title?: string, questionC
   }
 
   return payload.quiz;
+}
+
+export async function createRule(input: {
+  name: string;
+  description?: string;
+  content: string;
+  isDefault?: boolean;
+}) {
+  const token = await getAccessToken();
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-rule`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    },
+  );
+
+  const payload = (await response.json()) as CreateRuleResponse & { error?: string };
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? 'Failed to create rule');
+  }
+
+  return payload.rule;
+}
+
+export async function updateRule(input: {
+  ruleId: string;
+  name?: string;
+  description?: string;
+  content?: string;
+  isDefault?: boolean;
+}) {
+  const token = await getAccessToken();
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/update-rule`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    },
+  );
+
+  const payload = (await response.json()) as UpdateRuleResponse & { error?: string };
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? 'Failed to update rule');
+  }
+
+  return payload.rule;
+}
+
+export async function deleteRule(ruleId: string) {
+  const token = await getAccessToken();
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/delete-rule`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ruleId }),
+    },
+  );
+
+  const payload = (await response.json()) as DeleteRuleResponse & { error?: string };
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? 'Failed to delete rule');
+  }
+
+  return payload.success;
 }
 
 export async function signOut() {

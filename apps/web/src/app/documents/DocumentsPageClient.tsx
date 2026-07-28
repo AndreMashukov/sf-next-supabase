@@ -1,17 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { createDocument } from '@/lib/api';
-import type { Document } from '@sf/shared-types';
+import { RuleSelector } from '@/components/RuleSelector';
+import type { Document, Rule } from '@sf/shared-types';
 
 export function CreateDocumentForm({
+  rules,
   onCreated,
 }: {
+  rules: Rule[];
   onCreated: (document: Document) => void;
 }) {
+  const defaultRuleIds = useMemo(
+    () => rules.filter((rule) => rule.isDefault).map((rule) => rule.id),
+    [rules],
+  );
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
+  const [selectedRuleIds, setSelectedRuleIds] = useState<string[]>(defaultRuleIds);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,9 +29,10 @@ export function CreateDocumentForm({
     setError(null);
 
     try {
-      const document = await createDocument(title, text);
+      const document = await createDocument(title, text, selectedRuleIds);
       setTitle('');
       setText('');
+      setSelectedRuleIds(defaultRuleIds);
       onCreated(document);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to create document');
@@ -60,6 +69,12 @@ export function CreateDocumentForm({
           required
         />
       </label>
+
+      <RuleSelector
+        rules={rules}
+        selectedRuleIds={selectedRuleIds}
+        onSelectionChange={setSelectedRuleIds}
+      />
 
       {error ? <div className="error">{error}</div> : null}
 
@@ -101,8 +116,10 @@ export function DocumentList({ documents }: { documents: Document[] }) {
 
 export function DocumentsPageClient({
   initialDocuments,
+  initialRules,
 }: {
   initialDocuments: Document[];
+  initialRules: Rule[];
 }) {
   const [documents, setDocuments] = useState(initialDocuments);
 
@@ -110,6 +127,7 @@ export function DocumentsPageClient({
     <div className="stack">
       <h1 className="page-title">Documents</h1>
       <CreateDocumentForm
+        rules={initialRules}
         onCreated={(document) => setDocuments((current) => [document, ...current])}
       />
       <DocumentList documents={documents} />

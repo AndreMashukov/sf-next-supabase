@@ -48,6 +48,20 @@ function QuizIcon() {
   );
 }
 
+function RulesIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M7 7h10M7 12h10M7 17h6"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+      />
+      <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.75" />
+    </svg>
+  );
+}
+
 function HomeIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -112,6 +126,7 @@ export function Sidebar({
   }, [documents, pathname]);
 
   const isDocumentsActive = pathname === '/documents';
+  const isRulesActive = pathname === '/rules';
 
   function toggleDocument(documentId: string) {
     setExpandedIds((current) => {
@@ -157,6 +172,16 @@ export function Sidebar({
                 <HomeIcon />
               </span>
               {isOpen ? <span className="sidebar-nav-item-text">Documents</span> : null}
+            </Link>
+            <Link
+              href="/rules"
+              className={`sidebar-nav-item${isRulesActive ? ' active' : ''}`}
+              onClick={isMobile ? onClose : undefined}
+            >
+              <span className="sidebar-nav-item-icon">
+                <RulesIcon />
+              </span>
+              {isOpen ? <span className="sidebar-nav-item-text">Rules</span> : null}
             </Link>
           </nav>
 

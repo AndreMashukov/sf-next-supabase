@@ -5,6 +5,18 @@ export interface Document {
   description: string;
   wordCount: number;
   storagePath: string;
+  appliedRuleIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Rule {
+  id: string;
+  userId: string;
+  name: string;
+  description: string;
+  content: string;
+  isDefault: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,6 +41,7 @@ export interface Quiz {
 export interface CreateDocumentRequest {
   title: string;
   text: string;
+  ruleIds?: string[];
 }
 
 export interface CreateDocumentResponse {
@@ -43,6 +56,41 @@ export interface GenerateQuizRequest {
 
 export interface GenerateQuizResponse {
   quiz: Quiz;
+}
+
+export interface CreateRuleRequest {
+  name: string;
+  description?: string;
+  content: string;
+  isDefault?: boolean;
+}
+
+export interface CreateRuleResponse {
+  rule: Rule;
+}
+
+export interface UpdateRuleRequest {
+  ruleId: string;
+  name?: string;
+  description?: string;
+  content?: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateRuleResponse {
+  rule: Rule;
+}
+
+export interface DeleteRuleRequest {
+  ruleId: string;
+}
+
+export interface DeleteRuleResponse {
+  success: boolean;
+}
+
+export interface ListRulesResponse {
+  rules: Rule[];
 }
 
 export interface ApiError {

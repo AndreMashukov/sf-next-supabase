@@ -1,3 +1,5 @@
+import { validateRuleIds } from './rules.ts';
+
 export function textToHtml(text: string): string {
   const escaped = text
     .replace(/&/g, '&amp;')
@@ -22,12 +24,16 @@ export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-export function validateCreateDocument(body: unknown): { title: string; text: string } {
+export function validateCreateDocument(body: unknown): {
+  title: string;
+  text: string;
+  ruleIds: string[];
+} {
   if (!body || typeof body !== 'object') {
     throw new Error('Invalid request body');
   }
 
-  const { title, text } = body as Record<string, unknown>;
+  const { title, text, ruleIds } = body as Record<string, unknown>;
 
   if (typeof title !== 'string' || title.trim().length === 0 || title.length > 200) {
     throw new Error('Title is required and must be 200 characters or fewer');
@@ -37,7 +43,11 @@ export function validateCreateDocument(body: unknown): { title: string; text: st
     throw new Error('Document text is required and must be 100,000 characters or fewer');
   }
 
-  return { title: title.trim(), text: text.trim() };
+  return {
+    title: title.trim(),
+    text: text.trim(),
+    ruleIds: validateRuleIds(ruleIds),
+  };
 }
 
 export function validateGenerateQuiz(body: unknown): {
