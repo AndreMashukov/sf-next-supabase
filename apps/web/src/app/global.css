@@ -930,3 +930,46 @@ textarea {
 .document-html-content tbody tr:hover td {
   background: rgb(255 255 255 / 0.08);
 }
+
+.document-mermaid {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  overflow-x: auto;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 0.5rem;
+  background: rgb(18 18 18);
+}
+
+.document-mermaid:last-child {
+  margin-bottom: 0;
+}
+
+.document-mermaid svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.document-mermaid-loading {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.document-mermaid-error {
+  color: var(--destructive);
+}
+
+.document-mermaid-error p {
+  margin: 0 0 0.75rem;
+}
+
+.document-mermaid-error pre {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  background: rgb(16 13 22);
+  color: var(--muted-foreground);
+  white-space: pre-wrap;
+  font-size: 0.8rem;
+}

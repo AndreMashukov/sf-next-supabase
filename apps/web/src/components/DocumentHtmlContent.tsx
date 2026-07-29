@@ -2,11 +2,13 @@
 
 import { useMemo } from 'react';
 import { DocumentCodeBlock } from '@/components/DocumentCodeBlock';
+import { MermaidDiagram } from '@/components/MermaidDiagram';
 import { cn } from '@/lib/utils';
 
 type HtmlSegment = { type: 'html'; html: string };
 type CodeSegment = { type: 'code'; code: string; language: string };
-type Segment = HtmlSegment | CodeSegment;
+type MermaidSegment = { type: 'mermaid'; code: string };
+type Segment = HtmlSegment | CodeSegment | MermaidSegment;
 
 const PRE_CODE_RE =
   /<pre\b[^>]*>\s*<code\b([^>]*)>([\s\S]*?)<\/code>\s*<\/pre>/gi;
@@ -59,11 +61,14 @@ export function splitHtmlByCodeBlocks(html: string): Segment[] {
       segments.push({ type: 'html', html: html.slice(lastIndex, index) });
     }
 
-    segments.push({
-      type: 'code',
-      language: extractLanguage(match[1] ?? ''),
-      code: decodeBasicEntities(match[2] ?? '').replace(/\n$/, ''),
-    });
+    const language = extractLanguage(match[1] ?? '');
+    const code = decodeBasicEntities(match[2] ?? '').replace(/\n$/, '');
+
+    if (language === 'mermaid') {
+      segments.push({ type: 'mermaid', code });
+    } else {
+      segments.push({ type: 'code', language, code });
+    }
 
     lastIndex = index + match[0].length;
   }
@@ -91,6 +96,10 @@ export function DocumentHtmlContent({
   return (
     <div className={cn('document-html-content', className)}>
       {segments.map((segment, index) => {
+        if (segment.type === 'mermaid') {
+          return <MermaidDiagram key={`mermaid-${index}`} code={segment.code} />;
+        }
+
         if (segment.type === 'code') {
           return (
             <DocumentCodeBlock

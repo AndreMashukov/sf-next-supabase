@@ -25,7 +25,14 @@ ${userPrompt}`;
 - Do NOT include <script>, <iframe>, <style>, <link>, or event handler attributes (onclick, onload, etc.).
 - Do NOT include external stylesheets or inline style attributes.
 - Use semantic headings and paragraphs for readable structure.
-- Prefer <pre><code> for code samples and <ul>/<ol> for lists.`;
+- Prefer <pre><code class="language-…"> for code samples and <ul>/<ol> for lists.
+- When a diagram helps explain the topic, include Mermaid diagrams as:
+  <pre><code class="language-mermaid">flowchart TD
+    A --> B
+  </code></pre>
+- Use only supported Mermaid types: flowchart/graph, sequenceDiagram, classDiagram, erDiagram, or stateDiagram.
+- Keep diagrams compact; avoid bare /, \\, or @ inside square-bracket node labels.
+- NEVER use 4-space indentation for Mermaid — always use the language-mermaid pre/code form above.`;
 
   return [personaSection, rulesSection, userSection, sealedOutputContract]
     .filter(Boolean)
