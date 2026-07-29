@@ -90,6 +90,8 @@ export function DocumentCodeBlock({
             fontFamily:
               'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
             background: 'transparent',
+            padding: 0,
+            display: 'block',
           },
         }}
         PreTag="div"

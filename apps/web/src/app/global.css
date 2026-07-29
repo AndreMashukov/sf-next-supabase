@@ -739,11 +739,15 @@ textarea {
 .document-html-content h1 {
   font-size: 1.5rem;
   color: color-mix(in srgb, var(--primary) 72%, white);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.14);
 }
 
 .document-html-content h2 {
   font-size: 1.25rem;
   color: color-mix(in srgb, var(--primary) 60%, white);
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.12);
 }
 
 .document-html-content h3 {
@@ -826,6 +830,13 @@ textarea {
   border-radius: 0.375rem;
   background: rgb(34 30 40 / 0.8);
   font-size: 0.875em;
+}
+
+.document-html-content .document-code-block code {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: inherit;
 }
 
 .document-html-content pre {
