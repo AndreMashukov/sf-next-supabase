@@ -890,19 +890,43 @@ textarea {
 
 .document-html-content table {
   width: 100%;
-  margin: 0 0 0.875rem;
-  border-collapse: collapse;
+  margin: 0 0 1rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 0.5rem;
+  background: rgb(18 18 18);
 }
 
 .document-html-content th,
 .document-html-content td {
-  border: 1px solid var(--border);
-  padding: 0.5rem 0.75rem;
+  padding: 1rem;
   text-align: left;
+  border: none;
+  border-bottom: 1px solid rgb(255 255 255 / 0.12);
+  vertical-align: middle;
+  font-size: 0.875rem;
+  line-height: 1.43;
+}
+
+.document-html-content tr:last-child th,
+.document-html-content tr:last-child td {
+  border-bottom: none;
 }
 
 .document-html-content th {
   color: color-mix(in srgb, var(--primary) 55%, white);
-  background: color-mix(in srgb, var(--primary) 10%, rgb(34 30 40));
-  font-weight: 600;
+  background: rgb(255 255 255 / 0.05);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.document-html-content td {
+  color: rgb(255 255 255 / 0.87);
+  background: transparent;
+}
+
+.document-html-content tbody tr:hover td {
+  background: rgb(255 255 255 / 0.08);
 }
