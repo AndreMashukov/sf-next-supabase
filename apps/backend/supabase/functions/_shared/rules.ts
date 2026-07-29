@@ -1,3 +1,10 @@
+import {
+  createRuleSchema,
+  deleteRuleSchema,
+  parseRequest,
+  updateRuleSchema,
+} from './schemas.ts';
+
 export interface RuleRecord {
   id: string;
   user_id: string;
@@ -22,130 +29,16 @@ export function mapRuleRow(row: RuleRecord) {
   };
 }
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export function uniqueRuleIds(ruleIds: string[] = []): string[] {
-  return ruleIds.filter((id, index, arr) => Boolean(id) && arr.indexOf(id) === index);
+export function validateCreateRule(body: unknown) {
+  return parseRequest(createRuleSchema, body);
 }
 
-export function validateRuleIds(ruleIds: unknown): string[] {
-  if (ruleIds === undefined || ruleIds === null) {
-    return [];
-  }
-
-  if (!Array.isArray(ruleIds)) {
-    throw new Error('ruleIds must be an array');
-  }
-
-  const normalized = uniqueRuleIds(ruleIds.map(String));
-
-  for (const id of normalized) {
-    if (!UUID_REGEX.test(id)) {
-      throw new Error(`Invalid rule ID: ${id}`);
-    }
-  }
-
-  return normalized;
+export function validateUpdateRule(body: unknown) {
+  return parseRequest(updateRuleSchema, body);
 }
 
-export function validateCreateRule(body: unknown): {
-  name: string;
-  description: string;
-  content: string;
-  isDefault: boolean;
-} {
-  if (!body || typeof body !== 'object') {
-    throw new Error('Invalid request body');
-  }
-
-  const { name, description, content, isDefault } = body as Record<string, unknown>;
-
-  if (typeof name !== 'string' || name.trim().length === 0 || name.length > 100) {
-    throw new Error('Rule name is required and must be 100 characters or fewer');
-  }
-
-  if (typeof content !== 'string' || content.trim().length === 0 || content.length > 100_000) {
-    throw new Error('Rule content is required and must be 100,000 characters or fewer');
-  }
-
-  const normalizedDescription =
-    description === undefined || description === null
-      ? ''
-      : typeof description === 'string'
-        ? description.trim()
-        : (() => {
-            throw new Error('Rule description must be a string');
-          })();
-
-  return {
-    name: name.trim(),
-    description: normalizedDescription,
-    content: content.trim(),
-    isDefault: Boolean(isDefault),
-  };
-}
-
-export function validateUpdateRule(body: unknown): {
-  ruleId: string;
-  name?: string;
-  description?: string;
-  content?: string;
-  isDefault?: boolean;
-} {
-  if (!body || typeof body !== 'object') {
-    throw new Error('Invalid request body');
-  }
-
-  const { ruleId, name, description, content, isDefault } = body as Record<string, unknown>;
-
-  if (typeof ruleId !== 'string' || !UUID_REGEX.test(ruleId)) {
-    throw new Error('Invalid rule ID');
-  }
-
-  if (name !== undefined) {
-    if (typeof name !== 'string' || name.trim().length === 0 || name.length > 100) {
-      throw new Error('Rule name must be 1-100 characters when provided');
-    }
-  }
-
-  if (content !== undefined) {
-    if (typeof content !== 'string' || content.trim().length === 0 || content.length > 100_000) {
-      throw new Error('Rule content must be 1-100,000 characters when provided');
-    }
-  }
-
-  if (description !== undefined && description !== null && typeof description !== 'string') {
-    throw new Error('Rule description must be a string');
-  }
-
-  if (isDefault !== undefined && typeof isDefault !== 'boolean') {
-    throw new Error('isDefault must be a boolean when provided');
-  }
-
-  return {
-    ruleId,
-    name: typeof name === 'string' ? name.trim() : undefined,
-    description:
-      description === undefined || description === null
-        ? undefined
-        : (description as string).trim(),
-    content: typeof content === 'string' ? content.trim() : undefined,
-    isDefault: isDefault === undefined ? undefined : Boolean(isDefault),
-  };
-}
-
-export function validateDeleteRule(body: unknown): { ruleId: string } {
-  if (!body || typeof body !== 'object') {
-    throw new Error('Invalid request body');
-  }
-
-  const { ruleId } = body as Record<string, unknown>;
-
-  if (typeof ruleId !== 'string' || !UUID_REGEX.test(ruleId)) {
-    throw new Error('Invalid rule ID');
-  }
-
-  return { ruleId };
+export function validateDeleteRule(body: unknown) {
+  return parseRequest(deleteRuleSchema, body);
 }
 
 export async function verifyRuleOwnership(

@@ -38,51 +38,46 @@ export interface Quiz {
   updatedAt: string;
 }
 
-export interface CreateDocumentRequest {
-  title: string;
-  text: string;
-  ruleIds?: string[];
-}
+export type {
+  CreateDocumentInput,
+  CreateDocumentRequest,
+  CreateRuleInput,
+  CreateRuleRequest,
+  DeleteRuleRequest,
+  GenerateQuizInput,
+  GenerateQuizRequest,
+  QuizResponsePayload,
+  UpdateRuleInput,
+  UpdateRuleRequest,
+} from './validation';
+
+export {
+  createDocumentSchema,
+  createRuleSchema,
+  deleteRuleSchema,
+  formatValidationError,
+  generateQuizSchema,
+  parseRequest,
+  quizQuestionSchema,
+  quizResponseSchema,
+  updateRuleSchema,
+  countWords,
+} from './validation';
 
 export interface CreateDocumentResponse {
   document: Document;
-}
-
-export interface GenerateQuizRequest {
-  documentId: string;
-  title?: string;
-  questionCount?: number;
 }
 
 export interface GenerateQuizResponse {
   quiz: Quiz;
 }
 
-export interface CreateRuleRequest {
-  name: string;
-  description?: string;
-  content: string;
-  isDefault?: boolean;
-}
-
 export interface CreateRuleResponse {
   rule: Rule;
 }
 
-export interface UpdateRuleRequest {
-  ruleId: string;
-  name?: string;
-  description?: string;
-  content?: string;
-  isDefault?: boolean;
-}
-
 export interface UpdateRuleResponse {
   rule: Rule;
-}
-
-export interface DeleteRuleRequest {
-  ruleId: string;
 }
 
 export interface DeleteRuleResponse {

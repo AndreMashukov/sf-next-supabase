@@ -1,4 +1,5 @@
 import { buildDocumentPrompt } from './document-prompt-builder.ts';
+import { parseRequest, quizResponseSchema } from './schemas.ts';
 
 export interface GeneratedQuizQuestion {
   question: string;
@@ -141,24 +142,8 @@ export async function generateDocumentFromPrompt(
   return content;
 }
 
-function assertValidQuiz(parsed: GeneratedQuizPayload): void {
-  if (!parsed.title || !Array.isArray(parsed.questions) || parsed.questions.length === 0) {
-    throw new Error('Together returned an invalid quiz payload');
-  }
-
-  for (const question of parsed.questions) {
-    if (
-      !question.question ||
-      !Array.isArray(question.options) ||
-      question.options.length !== 4 ||
-      typeof question.correctAnswer !== 'number' ||
-      question.correctAnswer < 0 ||
-      question.correctAnswer > 3 ||
-      !question.explanation
-    ) {
-      throw new Error('Together returned malformed quiz questions');
-    }
-  }
+function assertValidQuiz(parsed: unknown): GeneratedQuizPayload {
+  return parseRequest(quizResponseSchema, parsed);
 }
 
 export async function generateQuizFromHtml(
@@ -192,13 +177,12 @@ ${html.slice(0, 100_000)}`;
 
   const text = await callTogetherChat(prompt);
 
-  let parsed: GeneratedQuizPayload;
+  let parsed: unknown;
   try {
-    parsed = JSON.parse(text) as GeneratedQuizPayload;
+    parsed = JSON.parse(text);
   } catch {
     throw new Error('Together returned non-JSON quiz content');
   }
 
-  assertValidQuiz(parsed);
-  return parsed;
+  return assertValidQuiz(parsed);
 }

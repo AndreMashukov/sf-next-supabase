@@ -1,4 +1,5 @@
-import { countWords, textToHtml } from '../index';
+import { countWords } from '@sf/shared-types';
+import { textToHtml } from '../index';
 
 describe('textToHtml', () => {
   it('wraps plain text in HTML paragraphs', () => {

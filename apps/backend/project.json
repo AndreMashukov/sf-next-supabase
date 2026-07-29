@@ -36,7 +36,11 @@
     "serve-functions": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "supabase functions serve --env-file ../../.env.local",
+        "commands": [
+          "node ../../scripts/sync-validation-schemas.mjs",
+          "supabase functions serve --env-file ../../.env.local"
+        ],
+        "parallel": false,
         "cwd": "apps/backend"
       }
     },

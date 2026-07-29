@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
-import { createDocument } from '@/lib/api';
+import { createDocument, createDocumentSchema, formatValidationError } from '@/lib/api';
 import { RuleSelector } from '@/components/RuleSelector';
 import type { Document, Rule } from '@sf/shared-types';
 
@@ -27,6 +27,18 @@ export function CreateDocumentForm({
     event.preventDefault();
     setLoading(true);
     setError(null);
+
+    const validation = createDocumentSchema.safeParse({
+      title,
+      text,
+      ruleIds: selectedRuleIds,
+    });
+
+    if (!validation.success) {
+      setError(formatValidationError(validation.error));
+      setLoading(false);
+      return;
+    }
 
     try {
       const document = await createDocument(title, text, selectedRuleIds);

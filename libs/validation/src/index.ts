@@ -1,31 +1,25 @@
-import { z } from 'zod';
-
-export const createDocumentSchema = z.object({
-  title: z.string().trim().min(1, 'Title is required').max(200),
-  text: z.string().trim().min(1, 'Document prompt is required').max(100_000),
-});
-
-export const generateQuizSchema = z.object({
-  documentId: z.string().uuid('Invalid document ID'),
-  title: z.string().trim().min(1).max(200).optional(),
-  questionCount: z.number().int().min(1).max(10).optional().default(5),
-});
-
-export const quizQuestionSchema = z.object({
-  question: z.string().min(1),
-  options: z.tuple([z.string(), z.string(), z.string(), z.string()]),
-  correctAnswer: z.number().int().min(0).max(3),
-  explanation: z.string().min(1),
-});
-
-export const quizResponseSchema = z.object({
-  title: z.string().min(1),
-  questions: z.array(quizQuestionSchema).min(1),
-});
-
-export type CreateDocumentInput = z.infer<typeof createDocumentSchema>;
-export type GenerateQuizInput = z.infer<typeof generateQuizSchema>;
-export type QuizResponsePayload = z.infer<typeof quizResponseSchema>;
+export {
+  countWords,
+  createDocumentSchema,
+  createRuleSchema,
+  deleteRuleSchema,
+  formatValidationError,
+  generateQuizSchema,
+  parseRequest,
+  quizQuestionSchema,
+  quizResponseSchema,
+  updateRuleSchema,
+  type CreateDocumentInput,
+  type CreateDocumentRequest,
+  type CreateRuleInput,
+  type CreateRuleRequest,
+  type DeleteRuleRequest,
+  type GenerateQuizInput,
+  type GenerateQuizRequest,
+  type QuizResponsePayload,
+  type UpdateRuleInput,
+  type UpdateRuleRequest,
+} from '@sf/shared-types';
 
 export function textToHtml(text: string): string {
   const escaped = text
@@ -45,8 +39,4 @@ export function textToHtml(text: string): string {
     .join('\n');
 
   return `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8" />\n<title>Document</title>\n</head>\n<body>\n${paragraphs}\n</body>\n</html>`;
-}
-
-export function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
 }

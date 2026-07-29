@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useMemo, useState } from 'react';
-import { createRule, deleteRule, updateRule } from '@/lib/api';
+import { createRule, createRuleSchema, deleteRule, formatValidationError, updateRule, updateRuleSchema } from '@/lib/api';
 import type { Rule } from '@sf/shared-types';
 
 type RuleFormState = {
@@ -140,6 +140,17 @@ export function RulesPageClient({ initialRules }: { initialRules: Rule[] }) {
   }, [editingRule]);
 
   async function handleCreate(values: RuleFormState) {
+    const validation = createRuleSchema.safeParse({
+      name: values.name,
+      description: values.description || undefined,
+      content: values.content,
+      isDefault: values.isDefault,
+    });
+
+    if (!validation.success) {
+      throw new Error(formatValidationError(validation.error));
+    }
+
     const rule = await createRule({
       name: values.name,
       description: values.description || undefined,
@@ -152,6 +163,18 @@ export function RulesPageClient({ initialRules }: { initialRules: Rule[] }) {
   async function handleUpdate(values: RuleFormState) {
     if (!editingRule) {
       return;
+    }
+
+    const validation = updateRuleSchema.safeParse({
+      ruleId: editingRule.id,
+      name: values.name,
+      description: values.description,
+      content: values.content,
+      isDefault: values.isDefault,
+    });
+
+    if (!validation.success) {
+      throw new Error(formatValidationError(validation.error));
     }
 
     const rule = await updateRule({

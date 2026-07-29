@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { DocumentHtmlContent } from '@/components/DocumentHtmlContent';
-import { generateQuiz } from '@/lib/api';
+import { generateQuiz, formatValidationError, generateQuizSchema } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import type { Document, Quiz } from '@sf/shared-types';
 
@@ -25,6 +25,18 @@ export function DocumentDetailClient({
   async function handleGenerateQuiz() {
     setLoading(true);
     setError(null);
+
+    const validation = generateQuizSchema.safeParse({
+      documentId: document.id,
+      title: quizTitle,
+      questionCount: 5,
+    });
+
+    if (!validation.success) {
+      setError(formatValidationError(validation.error));
+      setLoading(false);
+      return;
+    }
 
     try {
       const quiz = await generateQuiz(document.id, quizTitle, 5);

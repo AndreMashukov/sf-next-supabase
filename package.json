@@ -13,7 +13,8 @@
     "supabase:start": "cd apps/backend && supabase start",
     "supabase:stop": "cd apps/backend && supabase stop",
     "supabase:reset": "cd apps/backend && supabase db reset",
-    "supabase:gen-types": "cd apps/backend && supabase gen types typescript --local > ../../libs/shared-types/src/database.types.ts"
+    "supabase:gen-types": "cd apps/backend && supabase gen types typescript --local > ../../libs/shared-types/src/database.types.ts",
+    "sync:validation-schemas": "node scripts/sync-validation-schemas.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",

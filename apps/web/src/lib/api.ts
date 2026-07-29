@@ -1,12 +1,18 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import type {
-  CreateDocumentResponse,
-  CreateRuleResponse,
-  DeleteRuleResponse,
-  GenerateQuizResponse,
-  UpdateRuleResponse,
+import {
+  createDocumentSchema,
+  createRuleSchema,
+  deleteRuleSchema,
+  generateQuizSchema,
+  parseRequest,
+  updateRuleSchema,
+  type CreateDocumentResponse,
+  type CreateRuleResponse,
+  type DeleteRuleResponse,
+  type GenerateQuizResponse,
+  type UpdateRuleResponse,
 } from '@sf/shared-types';
 
 async function getAccessToken(): Promise<string> {
@@ -23,6 +29,7 @@ async function getAccessToken(): Promise<string> {
 }
 
 export async function createDocument(title: string, text: string, ruleIds: string[] = []) {
+  const body = parseRequest(createDocumentSchema, { title, text, ruleIds });
   const token = await getAccessToken();
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-document`,
@@ -32,7 +39,7 @@ export async function createDocument(title: string, text: string, ruleIds: strin
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ title, text, ruleIds }),
+      body: JSON.stringify(body),
     },
   );
 
@@ -46,6 +53,7 @@ export async function createDocument(title: string, text: string, ruleIds: strin
 }
 
 export async function generateQuiz(documentId: string, title?: string, questionCount = 5) {
+  const body = parseRequest(generateQuizSchema, { documentId, title, questionCount });
   const token = await getAccessToken();
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-quiz`,
@@ -55,7 +63,7 @@ export async function generateQuiz(documentId: string, title?: string, questionC
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ documentId, title, questionCount }),
+      body: JSON.stringify(body),
     },
   );
 
@@ -74,6 +82,7 @@ export async function createRule(input: {
   content: string;
   isDefault?: boolean;
 }) {
+  const body = parseRequest(createRuleSchema, input);
   const token = await getAccessToken();
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-rule`,
@@ -83,7 +92,7 @@ export async function createRule(input: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(input),
+      body: JSON.stringify(body),
     },
   );
 
@@ -103,6 +112,7 @@ export async function updateRule(input: {
   content?: string;
   isDefault?: boolean;
 }) {
+  const body = parseRequest(updateRuleSchema, input);
   const token = await getAccessToken();
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/update-rule`,
@@ -112,7 +122,7 @@ export async function updateRule(input: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(input),
+      body: JSON.stringify(body),
     },
   );
 
@@ -126,6 +136,7 @@ export async function updateRule(input: {
 }
 
 export async function deleteRule(ruleId: string) {
+  const body = parseRequest(deleteRuleSchema, { ruleId });
   const token = await getAccessToken();
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/delete-rule`,
@@ -135,7 +146,7 @@ export async function deleteRule(ruleId: string) {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ruleId }),
+      body: JSON.stringify(body),
     },
   );
 
@@ -152,3 +163,12 @@ export async function signOut() {
   const supabase = createClient();
   await supabase.auth.signOut();
 }
+
+export {
+  createDocumentSchema,
+  createRuleSchema,
+  formatValidationError,
+  generateQuizSchema,
+  parseRequest,
+  updateRuleSchema,
+};

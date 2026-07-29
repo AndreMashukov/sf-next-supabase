@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateQuizSchema, quizResponseSchema } from '../index';
+import { generateQuizSchema, quizResponseSchema } from '@sf/shared-types';
 
 describe('generateQuizSchema', () => {
   it('rejects question counts above 10', () => {

@@ -26,10 +26,6 @@ Deno.serve(async (req) => {
     if (content !== undefined) updates.content = content;
     if (isDefault !== undefined) updates.is_default = isDefault;
 
-    if (Object.keys(updates).length === 0) {
-      throw new Error('No fields to update');
-    }
-
     const supabase = createServiceClient();
     const { data, error } = await supabase
       .from('rules')
