@@ -18,6 +18,7 @@
       "@sf/shared-types": ["libs/shared-types/src/index.ts"],
       "@sf/validation": ["libs/validation/src/index.ts"],
       "@sf/gcs": ["libs/gcs/src/index.ts"],
+      "@sf/document-agent": ["libs/document-agent/src/index.ts"],
       "shared-types": ["./libs/shared-types/src/index.ts"],
       "validation": ["./libs/validation/src/index.ts"],
       "gcs": ["./libs/gcs/src/index.ts"]

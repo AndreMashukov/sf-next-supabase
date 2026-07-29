@@ -13,6 +13,10 @@ import {
   wrapHtmlDocument,
 } from '../_shared/validation.ts';
 import { fetchRulesByIds, formatRulesForPrompt, verifyRuleOwnership } from '../_shared/rules.ts';
+import {
+  generateDocumentViaAgent,
+  isDocumentAgentEnabled,
+} from '../_shared/document-agent-client.ts';
 import { generateDocumentFromPrompt } from '../_shared/together.ts';
 
 Deno.serve(async (req) => {
@@ -40,7 +44,9 @@ Deno.serve(async (req) => {
 
     const rules = await fetchRulesByIds(supabase, userId, ruleIds);
     const rulesText = formatRulesForPrompt(rules);
-    const generatedContent = await generateDocumentFromPrompt(text, rulesText);
+    const generatedContent = isDocumentAgentEnabled()
+      ? await generateDocumentViaAgent(title, text, rules)
+      : await generateDocumentFromPrompt(text, rulesText);
     const bodyHtml = normalizeGeneratedHtml(generatedContent);
     if (!bodyHtml) {
       throw new Error('Generated document content was empty');

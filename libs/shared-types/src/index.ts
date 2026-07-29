@@ -93,3 +93,17 @@ export interface ApiError {
 }
 
 export type { Database } from './database.types';
+
+export {
+  ALLOWED_HTML_TAGS,
+  buildDocumentPrompt,
+  buildDocumentPromptSections,
+  buildSealedOutputContract,
+  DISALLOWED_EVENT_HANDLER_PREFIX,
+  DISALLOWED_HTML_ATTRIBUTES,
+  DISALLOWED_HTML_TAGS,
+  DOCUMENT_AGENT_MAX_REPAIR_RETRIES,
+  MERMAID_DIAGRAM_PREFIXES,
+  SEALED_OUTPUT_CONTRACT_LINES,
+  WRAPPER_HTML_TAGS,
+} from './document-contract';

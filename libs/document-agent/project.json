@@ -1,0 +1,26 @@
+{
+  "name": "document-agent",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/document-agent/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/document-agent",
+        "main": "libs/document-agent/src/index.ts",
+        "tsConfig": "libs/document-agent/tsconfig.lib.json",
+        "assets": ["libs/document-agent/*.md"]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --config libs/document-agent/vitest.config.mts",
+        "cwd": "."
+      }
+    }
+  }
+}

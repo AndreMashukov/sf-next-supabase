@@ -14,7 +14,9 @@
     "supabase:stop": "cd apps/backend && supabase stop",
     "supabase:reset": "cd apps/backend && supabase db reset",
     "supabase:gen-types": "cd apps/backend && supabase gen types typescript --local > ../../libs/shared-types/src/database.types.ts",
-    "sync:validation-schemas": "node scripts/sync-validation-schemas.mjs"
+    "sync:validation-schemas": "node scripts/sync-validation-schemas.mjs",
+    "sync:document-contract": "node scripts/sync-document-contract.mjs",
+    "test:document-agent": "vitest run --config libs/document-agent/vitest.config.mts"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
@@ -32,6 +34,7 @@
     "@swc/core": "1.15.8",
     "@swc/helpers": "0.5.21",
     "@types/node": "20.19.9",
+    "@types/parse5": "^7.0.0",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
     "@types/react-syntax-highlighter": "^15.5.13",
@@ -58,11 +61,16 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@langchain/core": "^1.2.3",
+    "@langchain/langgraph": "^1.4.8",
+    "@langchain/openai": "^1.5.5",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "2.49.8",
     "clsx": "^2.1.1",
+    "html-validate": "^11.6.0",
     "mermaid": "^11.16.0",
     "next": "~16.1.6",
+    "parse5": "^8.0.1",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-hook-form": "^7.62.0",
