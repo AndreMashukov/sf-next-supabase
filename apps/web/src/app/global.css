@@ -837,18 +837,31 @@ textarea {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  left: auto;
   z-index: 1;
-  padding: 0.2rem 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 0.375rem;
   background: rgb(34 30 40 / 0.95);
   color: var(--muted-foreground);
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1.2;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.document-code-block:hover .document-code-copy,
+.document-code-block:focus-within .document-code-copy {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .document-code-copy:hover {
