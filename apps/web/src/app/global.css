@@ -738,14 +738,32 @@ textarea {
 
 .document-html-content h1 {
   font-size: 1.5rem;
+  color: color-mix(in srgb, var(--primary) 72%, white);
 }
 
 .document-html-content h2 {
   font-size: 1.25rem;
+  color: color-mix(in srgb, var(--primary) 60%, white);
 }
 
 .document-html-content h3 {
   font-size: 1.1rem;
+  color: color-mix(in srgb, var(--primary) 50%, white);
+}
+
+.document-html-content h4 {
+  font-size: 1.05rem;
+  color: color-mix(in srgb, var(--primary) 42%, white);
+}
+
+.document-html-content h5 {
+  font-size: 1rem;
+  color: color-mix(in srgb, var(--primary) 34%, white);
+}
+
+.document-html-content h6 {
+  font-size: 0.95rem;
+  color: color-mix(in srgb, var(--primary) 28%, white);
 }
 
 .document-html-content p {
@@ -884,6 +902,7 @@ textarea {
 }
 
 .document-html-content th {
-  background: rgb(34 30 40 / 0.6);
+  color: color-mix(in srgb, var(--primary) 55%, white);
+  background: color-mix(in srgb, var(--primary) 10%, rgb(34 30 40));
   font-weight: 600;
 }
