@@ -1,148 +1,101 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import type { Quiz, QuizQuestion } from '@sf/shared-types';
+import { ArrowLeft } from 'lucide-react';
+import type { Quiz } from '@sf/shared-types';
+import { QuizQuestionCard } from '@/components/quiz/QuizQuestionCard';
+import { QuizScoreCard } from '@/components/quiz/QuizScoreCard';
+import {
+  computeQuizProgress,
+  computeQuizScore,
+  type QuizAnswerRecord,
+} from '@/lib/quiz-utils';
+
+type QuizPhase = 'playing' | 'completed';
 
 export function QuizPageClient({ quiz }: { quiz: Quiz }) {
+  const [phase, setPhase] = useState<QuizPhase>('playing');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [answers, setAnswers] = useState<Record<number, QuizAnswerRecord>>({});
+  const [startTime, setStartTime] = useState(() => Date.now());
+  const [completedAt, setCompletedAt] = useState<number | null>(null);
 
   const currentQuestion = quiz.questions[currentIndex];
-  const score = useMemo(() => {
-    return quiz.questions.reduce((total, question, index) => {
-      return answers[index] === question.correctAnswer ? total + 1 : total;
-    }, 0);
-  }, [answers, quiz.questions]);
+  const selectedAnswer = answers[currentIndex]?.selected ?? null;
+  const showExplanation = selectedAnswer !== null;
+  const score = useMemo(() => computeQuizScore(answers, quiz.questions), [answers, quiz.questions]);
+  const answeredCount = Object.keys(answers).length;
+  const progress = computeQuizProgress(currentIndex, quiz.questions.length);
 
   function selectAnswer(optionIndex: number) {
-    if (submitted) {
+    if (selectedAnswer !== null) {
       return;
     }
 
-    setAnswers((current) => ({ ...current, [currentIndex]: optionIndex }));
+    const isCorrect = optionIndex === currentQuestion.correctAnswer;
+    setAnswers((current) => ({
+      ...current,
+      [currentIndex]: { selected: optionIndex, isCorrect },
+    }));
   }
 
-  function handleSubmit() {
-    setSubmitted(true);
-  }
-
-  function handleNext() {
+  function handleNextQuestion() {
     if (currentIndex < quiz.questions.length - 1) {
       setCurrentIndex((index) => index + 1);
+      return;
     }
+
+    setCompletedAt(Date.now());
+    setPhase('completed');
   }
 
-  function handlePrevious() {
-    if (currentIndex > 0) {
-      setCurrentIndex((index) => index - 1);
-    }
+  function handleRetake() {
+    setPhase('playing');
+    setCurrentIndex(0);
+    setAnswers({});
+    setCompletedAt(null);
+    setStartTime(Date.now());
+  }
+
+  if (phase === 'completed') {
+    const breakdown = quiz.questions.map((_question, index) =>
+      answers[index] ?? { selected: -1, isCorrect: false },
+    );
+
+    return (
+      <QuizScoreCard
+        title={quiz.title}
+        score={score}
+        totalQuestions={quiz.questions.length}
+        timeTakenMs={(completedAt ?? Date.now()) - startTime}
+        answersBreakdown={breakdown}
+        onRetake={handleRetake}
+      />
+    );
   }
 
   return (
-    <div className="stack">
-      <h1 className="page-title">{quiz.title}</h1>
-
-      <section className="card stack">
-        <div className="row">
-          <p className="muted" style={{ margin: 0 }}>
-            Question {currentIndex + 1} of {quiz.questions.length}
-          </p>
-        </div>
-
-        <QuestionCard
-          question={currentQuestion}
-          questionIndex={currentIndex}
-          selectedAnswer={answers[currentIndex]}
-          submitted={submitted}
-          onSelect={selectAnswer}
-        />
-
-        <div className="row">
-          <button
-            className="button secondary"
-            type="button"
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-          >
-            Previous
-          </button>
-
-          {currentIndex < quiz.questions.length - 1 ? (
-            <button className="button" type="button" onClick={handleNext}>
-              Next
-            </button>
-          ) : (
-            <button className="button" type="button" onClick={handleSubmit} disabled={submitted}>
-              {submitted ? 'Submitted' : 'Submit quiz'}
-            </button>
-          )}
-        </div>
-
-        {submitted ? (
-          <div className="card subtle">
-            <strong>
-              Score: {score}/{quiz.questions.length}
-            </strong>
-            <p className="muted" style={{ marginBottom: 0 }}>
-              Review each question to see explanations.
-            </p>
-          </div>
-        ) : null}
-      </section>
-    </div>
-  );
-}
-
-function QuestionCard({
-  question,
-  questionIndex,
-  selectedAnswer,
-  submitted,
-  onSelect,
-}: {
-  question: QuizQuestion;
-  questionIndex: number;
-  selectedAnswer?: number;
-  submitted: boolean;
-  onSelect: (optionIndex: number) => void;
-}) {
-  return (
-    <div className="stack">
-      <h2>{question.question}</h2>
-      <div className="stack">
-        {question.options.map((option, optionIndex) => {
-          const isSelected = selectedAnswer === optionIndex;
-          const isCorrect = optionIndex === question.correctAnswer;
-          const className = [
-            'quiz-option',
-            isSelected ? 'selected' : '',
-            submitted && isCorrect ? 'correct' : '',
-            submitted && isSelected && !isCorrect ? 'incorrect' : '',
-          ]
-            .filter(Boolean)
-            .join(' ');
-
-          return (
-            <button
-              key={`${questionIndex}-${optionIndex}`}
-              type="button"
-              className={className}
-              onClick={() => onSelect(optionIndex)}
-            >
-              <span>{String.fromCharCode(65 + optionIndex)}.</span>
-              <span>{option}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {submitted ? (
-        <div className="card">
-          <strong>Explanation</strong>
-          <p style={{ marginBottom: 0 }}>{question.explanation}</p>
-        </div>
-      ) : null}
+    <div className="quiz-play-page">
+      <h1 className="quiz-play-title">{quiz.title}</h1>
+      <QuizQuestionCard
+        question={currentQuestion}
+        questionIndex={currentIndex}
+        totalQuestions={quiz.questions.length}
+        progress={progress}
+        score={score}
+        answeredCount={answeredCount}
+        selectedAnswer={selectedAnswer}
+        showExplanation={showExplanation}
+        onAnswerSelect={selectAnswer}
+        onNextQuestion={handleNextQuestion}
+        isLastQuestion={currentIndex === quiz.questions.length - 1}
+        leadingAction={
+          <Link href={`/documents/${quiz.documentId}`} className="quiz-back-link icon-button" aria-label="Back to document">
+            <ArrowLeft size={16} />
+          </Link>
+        }
+      />
     </div>
   );
 }

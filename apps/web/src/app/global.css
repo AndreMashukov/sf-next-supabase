@@ -1108,21 +1108,31 @@ textarea {
   cursor: pointer;
 }
 
+.dropdown-menu-root {
+  position: relative;
+  display: inline-flex;
+}
+
+.dropdown-menu-portal {
+  position: fixed;
+  z-index: 1000;
+  min-width: 10rem;
+  padding: 0.25rem 0;
+}
+
 .folder-card-menu {
-  position: absolute;
-  top: calc(100% + 0.25rem);
-  right: 0;
-  min-width: 8rem;
+  min-width: 10rem;
   border: 1px solid var(--border);
   border-radius: 0.625rem;
   background: var(--card);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
-  z-index: 2;
   overflow: hidden;
 }
 
 .folder-card-menu-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   width: 100%;
   padding: 0.625rem 0.875rem;
   border: none;
@@ -1130,6 +1140,9 @@ textarea {
   color: inherit;
   text-align: left;
   text-decoration: none;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  white-space: nowrap;
   cursor: pointer;
 }
 

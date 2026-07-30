@@ -11,6 +11,8 @@ type DirectoryRow = {
   description: string;
   path: string;
   level: number;
+  color: string;
+  icon: string;
   created_at: string;
   updated_at: string;
 };
@@ -29,6 +31,8 @@ function mapDirectory(row: DirectoryRow): Directory {
     description: row.description,
     path: row.path,
     level: row.level,
+    color: row.color ?? '#8b5cf6',
+    icon: row.icon ?? 'Folder',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

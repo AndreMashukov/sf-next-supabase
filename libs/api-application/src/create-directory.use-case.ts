@@ -33,6 +33,8 @@ export class CreateDirectoryUseCase {
       description: input.description,
       path: buildDirectoryPath(parent?.path ?? null, input.name),
       level,
+      color: input.color,
+      icon: input.icon,
     });
   }
 }

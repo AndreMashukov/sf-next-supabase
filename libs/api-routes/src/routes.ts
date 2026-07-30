@@ -158,6 +158,8 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
         name: body.name,
         parentId: body.parentId,
         description: body.description,
+        color: body.color,
+        icon: body.icon,
       });
 
       return reply.status(201).send({ directory });
@@ -171,6 +173,8 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
         directoryId: body.directoryId,
         name: body.name,
         description: body.description,
+        color: body.color,
+        icon: body.icon,
       });
 
       return reply.send({ directory });

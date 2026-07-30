@@ -344,6 +344,8 @@ export class SupabaseDirectoryRepository implements DirectoryRepository {
     description: string;
     path: string;
     level: number;
+    color: string;
+    icon: string;
   }) {
     const { data, error } = await this.client
       .from('directories')
@@ -354,6 +356,8 @@ export class SupabaseDirectoryRepository implements DirectoryRepository {
         description: input.description,
         path: input.path,
         level: input.level,
+        color: input.color,
+        icon: input.icon,
       })
       .select('*')
       .single();
@@ -370,6 +374,8 @@ export class SupabaseDirectoryRepository implements DirectoryRepository {
     directoryId: string;
     name?: string;
     description?: string;
+    color?: string;
+    icon?: string;
     parentId?: string | null;
     path?: string;
     level?: number;
@@ -377,6 +383,8 @@ export class SupabaseDirectoryRepository implements DirectoryRepository {
     const updates: {
       name?: string;
       description?: string;
+      color?: string;
+      icon?: string;
       parent_id?: string | null;
       path?: string;
       level?: number;
@@ -384,6 +392,8 @@ export class SupabaseDirectoryRepository implements DirectoryRepository {
 
     if (input.name !== undefined) updates.name = input.name;
     if (input.description !== undefined) updates.description = input.description;
+    if (input.color !== undefined) updates.color = input.color;
+    if (input.icon !== undefined) updates.icon = input.icon;
     if (input.parentId !== undefined) updates.parent_id = input.parentId;
     if (input.path !== undefined) updates.path = input.path;
     if (input.level !== undefined) updates.level = input.level;

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import {
   getDirectoryAncestors,
@@ -12,8 +13,9 @@ import {
 } from '@/lib/data/directory-summaries';
 import { listDocuments } from '@/lib/data/documents';
 import { listRules } from '@/lib/data/rules';
+import { listQuizzesForDocuments } from '@/lib/data/quizzes';
 import { partitionDirectAndInheritedRules } from '@/lib/directory-rules';
-import { DirectoryPageClient } from '@/app/documents/DocumentsPageClient';
+import { DirectoryDetailClient } from '@/components/DirectoryDetailClient';
 
 export default async function DirectoryPage({
   params,
@@ -27,14 +29,18 @@ export default async function DirectoryPage({
     notFound();
   }
 
-  const [ancestors, allFolders, documents, rules, attachedRuleIds, deleteImpact] = await Promise.all([
-    getDirectoryAncestors(id),
-    listDirectorySummaries(),
-    listDocuments(id),
-    listRules(),
-    listDirectoryRuleIds(id),
-    getDirectoryDeleteImpact(id),
-  ]);
+  const [ancestors, allFolders, documents, rules, attachedRuleIds, deleteImpact] =
+    await Promise.all([
+      getDirectoryAncestors(id),
+      listDirectorySummaries(),
+      listDocuments(id),
+      listRules(),
+      listDirectoryRuleIds(id),
+      getDirectoryDeleteImpact(id),
+    ]);
+  const quizzes = await listQuizzesForDocuments(
+    documents.map((document) => ({ id: document.id, title: document.title })),
+  );
 
   const childFolders = allFolders.filter((item) => item.parentId === id);
   const childDeleteImpacts = await getDeleteImpactsForFolders(childFolders.map((folder) => folder.id));
@@ -49,18 +55,21 @@ export default async function DirectoryPage({
   );
 
   return (
-    <DirectoryPageClient
-      directory={directory}
-      ancestors={ancestors}
-      childFolders={childFolders}
-      documents={documents}
-      rules={rules}
-      attachedRuleIds={attachedRuleIds}
-      inheritedRules={inheritedRules}
-      directRules={directRules}
-      allFolders={allFolders}
-      deleteImpact={deleteImpact}
-      childDeleteImpacts={childDeleteImpacts}
-    />
+    <Suspense fallback={<div className="muted">Loading directory...</div>}>
+      <DirectoryDetailClient
+        directory={directory}
+        ancestors={ancestors}
+        childFolders={childFolders}
+        documents={documents}
+        rules={rules}
+        attachedRuleIds={attachedRuleIds}
+        inheritedRules={inheritedRules}
+        directRules={directRules}
+        allFolders={allFolders}
+        deleteImpact={deleteImpact}
+        childDeleteImpacts={childDeleteImpacts}
+        quizzes={quizzes}
+      />
+    </Suspense>
   );
 }

@@ -126,6 +126,8 @@ export async function createDirectory(input: {
   name: string;
   parentId?: string;
   description?: string;
+  color?: string;
+  icon?: string;
 }) {
   const body = parseRequest(createDirectorySchema, input);
   const payload = await postJson<CreateDirectoryResponse>('create-directory', body);
@@ -136,6 +138,8 @@ export async function updateDirectory(input: {
   directoryId: string;
   name?: string;
   description?: string;
+  color?: string;
+  icon?: string;
 }) {
   const body = parseRequest(updateDirectorySchema, input);
   const payload = await postJson<UpdateDirectoryResponse>('update-directory', body);

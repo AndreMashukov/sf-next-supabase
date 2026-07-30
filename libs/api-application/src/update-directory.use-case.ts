@@ -39,6 +39,15 @@ export class UpdateDirectoryUseCase {
       });
     }
 
+    if (input.color !== undefined || input.icon !== undefined) {
+      await this.directoryRepository.update({
+        userId: input.userId,
+        directoryId: input.directoryId,
+        color: input.color,
+        icon: input.icon,
+      });
+    }
+
     return getDirectoryOrThrow(this.directoryRepository, input.directoryId, input.userId);
   }
 }

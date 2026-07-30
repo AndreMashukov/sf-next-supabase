@@ -19,6 +19,8 @@ export interface Directory {
   description: string;
   path: string;
   level: number;
+  color: string;
+  icon: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +46,7 @@ export interface QuizQuestion {
   options: [string, string, string, string];
   correctAnswer: number;
   explanation: string;
+  hint?: string;
 }
 
 export interface Quiz {

@@ -106,6 +106,7 @@ Requirements:
 - Each question must have exactly 4 answer options
 - correctAnswer must be the zero-based index (0-3) of the correct option
 - Include a concise explanation for the correct answer
+- Include an optional short hint that nudges the learner without revealing the answer
 - Return ONLY valid JSON with this shape:
 {
   "title": "Quiz title",
@@ -114,7 +115,8 @@ Requirements:
       "question": "Question text",
       "options": ["A", "B", "C", "D"],
       "correctAnswer": 0,
-      "explanation": "Why this answer is correct"
+      "explanation": "Why this answer is correct",
+      "hint": "Optional hint"
     }
   ]
 }

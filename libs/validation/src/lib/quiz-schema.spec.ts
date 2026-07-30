@@ -29,6 +29,23 @@ describe('quizResponseSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts optional hints on quiz questions', () => {
+    const result = quizResponseSchema.safeParse({
+      title: 'Sample Quiz',
+      questions: [
+        {
+          question: 'What is 2 + 2?',
+          options: ['3', '4', '5', '6'],
+          correctAnswer: 1,
+          explanation: 'Two plus two equals four.',
+          hint: 'Think about pairs.',
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it('rejects malformed quiz questions', () => {
     const result = quizResponseSchema.safeParse({
       title: 'Sample Quiz',

@@ -1,4 +1,6 @@
 import './global.css';
+import './directory-ui-parity.css';
+import './quiz-ui-parity.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {

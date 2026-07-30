@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
+import { FolderPlus } from 'lucide-react';
 import {
   attachRuleToDirectory,
   createDirectory,
@@ -18,6 +19,8 @@ import { DirectoryPickerDialog } from '@/components/DirectoryPickerDialog';
 import { FolderCardGrid } from '@/components/FolderCard';
 import { InheritedRulesPreview } from '@/components/InheritedRulesPreview';
 import { RuleSelector } from '@/components/RuleSelector';
+import { CreateDirectoryDialog } from '@/components/CreateDirectoryDialog';
+import { UnfiledCleanupBanner } from '@/components/UnfiledCleanupBanner';
 import type { DirectoryDeleteImpact, DirectorySummary } from '@/lib/data/directory-summaries';
 import { partitionDirectAndInheritedRules } from '@/lib/directory-rules';
 import type { Directory, Document, Rule } from '@sf/shared-types';
@@ -471,7 +474,7 @@ export function DocumentList({
 
 export function DocumentsPageClient({
   initialDocuments,
-  initialRules,
+  initialRules: _initialRules,
   initialFolders,
   allFolders,
   deleteImpacts,
@@ -484,151 +487,67 @@ export function DocumentsPageClient({
 }) {
   const [documents, setDocuments] = useState(initialDocuments);
   const [folders, setFolders] = useState(initialFolders);
+  const [createOpen, setCreateOpen] = useState(false);
 
   return (
-    <div className="stack">
-      <h1 className="page-title">Documents</h1>
-      <Breadcrumbs ancestors={[]} />
-      <section className="card stack">
-        <div>
-          <h2>Folders</h2>
-          <p className="muted" style={{ margin: '0.25rem 0 0' }}>
-            Create a folder first, then add documents inside it.
-          </p>
-        </div>
-        <CreateDirectoryForm
-          onCreated={(directory) => setFolders((current) => [...current, directory])}
-        />
-        {folders.length > 0 ? (
-          <FolderCardGrid
-            folders={folders}
-            allFolders={allFolders}
-            deleteImpacts={deleteImpacts}
-            onFolderDeleted={(folderId) =>
-              setFolders((current) => current.filter((folder) => folder.id !== folderId))
-            }
-          />
-        ) : (
-          <p className="muted" style={{ margin: 0 }}>
-            No folders yet. Create your first folder to get started.
-          </p>
-        )}
-      </section>
-      {documents.length > 0 ? (
-        <section className="stack">
-          <h2>Unfiled documents</h2>
-          <p className="muted">
-            These documents were created before folders were required. Move them into a folder to
-            keep things organized.
-          </p>
-          <DocumentList
-            documents={documents}
-            emptyMessage=""
-            allFolders={allFolders}
-            onDocumentMoved={(document) =>
-              setDocuments((current) => current.filter((item) => item.id !== document.id))
-            }
-          />
-        </section>
-      ) : null}
-    </div>
-  );
-}
+    <div className="root-documents-page">
+      <div className="root-documents-header">
+        <h1 className="page-title">Root</h1>
+        <button type="button" className="button secondary" onClick={() => setCreateOpen(true)}>
+          <FolderPlus size={16} />
+          New Folder
+        </button>
+      </div>
 
-export function DirectoryPageClient({
-  directory,
-  ancestors,
-  childFolders,
-  documents,
-  rules,
-  attachedRuleIds,
-  inheritedRules,
-  directRules,
-  allFolders,
-  deleteImpact,
-  childDeleteImpacts,
-}: {
-  directory: Directory;
-  ancestors: Directory[];
-  childFolders: DirectorySummary[];
-  documents: Document[];
-  rules: Rule[];
-  attachedRuleIds: string[];
-  inheritedRules: Rule[];
-  directRules: Rule[];
-  allFolders: DirectorySummary[];
-  deleteImpact: DirectoryDeleteImpact;
-  childDeleteImpacts: Record<string, DirectoryDeleteImpact>;
-}) {
-  const [currentDirectory, setCurrentDirectory] = useState(directory);
-  const [folderRules, setFolderRules] = useState(attachedRuleIds);
-  const [childFolderList, setChildFolderList] = useState(childFolders);
-  const [documentList, setDocumentList] = useState(documents);
-
-  return (
-    <div className="stack">
-      <h1 className="page-title">{currentDirectory.name}</h1>
-      <Breadcrumbs ancestors={ancestors} currentName={currentDirectory.name} />
-      <CreateDocumentForm
-        rules={rules}
-        directoryId={currentDirectory.id}
-        inheritedRules={inheritedRules}
-        directRules={directRules}
-        onCreated={(document) => setDocumentList((current) => [document, ...current])}
-      />
-      <section className="card stack">
-        <div>
-          <h2>Subfolders</h2>
-          <p className="muted" style={{ margin: '0.25rem 0 0' }}>
-            Create nested folders inside {currentDirectory.name}.
-          </p>
-        </div>
-        <CreateDirectoryForm
-          parentId={currentDirectory.id}
-          onCreated={(folder) => setChildFolderList((current) => [...current, folder])}
-        />
-        {childFolderList.length > 0 ? (
-          <FolderCardGrid
-            folders={childFolderList}
-            allFolders={allFolders}
-            deleteImpacts={childDeleteImpacts}
-            onFolderDeleted={(folderId) =>
-              setChildFolderList((current) => current.filter((folder) => folder.id !== folderId))
-            }
-          />
-        ) : (
-          <p className="muted" style={{ margin: 0 }}>
-            No subfolders yet.
-          </p>
-        )}
-      </section>
-      <DirectoryRuleManager
-        directoryId={currentDirectory.id}
-        rules={rules}
-        attachedRuleIds={folderRules}
-        inheritedRules={inheritedRules}
-        onChanged={setFolderRules}
-      />
-      <DirectorySettings
-        directory={currentDirectory}
-        deleteImpact={deleteImpact}
-        onUpdated={setCurrentDirectory}
-        onDeleted={() => {
-          window.location.href = ancestors.length
-            ? `/directories/${ancestors[ancestors.length - 1]?.id}`
-            : '/documents';
-        }}
-      />
-      <DocumentList
-        documents={documentList}
-        emptyMessage="No documents in this folder yet."
+      <UnfiledCleanupBanner
+        documents={documents}
         allFolders={allFolders}
-        onDocumentMoved={(document) =>
-          setDocumentList((current) => current.filter((item) => item.id !== document.id))
+        onDocumentMoved={(documentId) =>
+          setDocuments((current) => current.filter((item) => item.id !== documentId))
         }
       />
+
+      {folders.length > 0 ? (
+        <FolderCardGrid
+          folders={folders}
+          allFolders={allFolders}
+          deleteImpacts={deleteImpacts}
+          onFolderMoved={(folder) =>
+            setFolders((current) =>
+              current.map((item) => (item.id === folder.id ? { ...item, ...folder } : item)),
+            )
+          }
+          onFolderDeleted={(folderId) =>
+            setFolders((current) => current.filter((folder) => folder.id !== folderId))
+          }
+          onFolderUpdated={(folder) =>
+            setFolders((current) =>
+              current.map((item) => (item.id === folder.id ? { ...item, ...folder } : item)),
+            )
+          }
+          onManageRules={(folderId) => {
+            window.location.href = `/directories/${folderId}?tab=rules`;
+          }}
+        />
+      ) : (
+        <div className="root-empty-state">
+          <p className="muted">No folders yet. Create your first folder to organize documents.</p>
+          <button type="button" className="button" onClick={() => setCreateOpen(true)}>
+            <FolderPlus size={16} />
+            New Folder
+          </button>
+        </div>
+      )}
+
+      <CreateDirectoryDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(directory) => setFolders((current) => [...current, directory])}
+      />
     </div>
   );
 }
+
+export { DirectoryDetailClient as DirectoryPageClient } from '@/components/DirectoryDetailClient';
 
 export { Breadcrumbs };

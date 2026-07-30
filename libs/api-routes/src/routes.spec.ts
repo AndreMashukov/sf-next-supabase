@@ -34,6 +34,8 @@ function createMockContext(overrides: Partial<ApiContext> = {}): ApiContext {
         description: '',
         path: '/Folder',
         level: 0,
+        color: '#8b5cf6',
+        icon: 'Folder',
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
       }),
@@ -152,6 +154,8 @@ describe('createApiServer', () => {
       name: 'Folder',
       parentId: undefined,
       description: '',
+      color: '#8b5cf6',
+      icon: 'Folder',
     });
     await app.close();
   });

@@ -36,6 +36,33 @@ export async function listQuizzesByDocumentId(documentId: string): Promise<Quiz[
   return (data ?? []).map(mapQuiz);
 }
 
+export type QuizWithDocumentTitle = Quiz & {
+  documentTitle: string;
+};
+
+export async function listQuizzesForDocuments(
+  documents: Array<{ id: string; title: string }>,
+): Promise<QuizWithDocumentTitle[]> {
+  if (documents.length === 0) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const documentIds = documents.map((document) => document.id);
+  const titleById = new Map(documents.map((document) => [document.id, document.title]));
+
+  const { data } = await supabase
+    .from('quizzes')
+    .select('*')
+    .in('document_id', documentIds)
+    .order('created_at', { ascending: false });
+
+  return (data ?? []).map((row) => ({
+    ...mapQuiz(row),
+    documentTitle: titleById.get(row.document_id) ?? 'Unknown source',
+  }));
+}
+
 export async function getQuizById(id: string): Promise<Quiz | null> {
   const supabase = await createClient();
   const { data } = await supabase.from('quizzes').select('*').eq('id', id).single();

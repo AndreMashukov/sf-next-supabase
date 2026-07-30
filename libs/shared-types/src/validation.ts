@@ -32,6 +32,21 @@ export const createDocumentSchema = z
     }
   });
 
+const directoryColorSchema = z
+  .string()
+  .trim()
+  .regex(/^#[0-9a-fA-F]{6}$/, 'Invalid color')
+  .optional()
+  .default('#8b5cf6');
+
+const directoryIconSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(50)
+  .optional()
+  .default('Folder');
+
 export const createDirectorySchema = z.object({
   name: z
     .string()
@@ -41,6 +56,8 @@ export const createDirectorySchema = z.object({
     .refine((value) => !/[\\/:*?"<>|]/.test(value), 'Directory name contains invalid characters'),
   parentId: directoryIdSchema,
   description: z.string().trim().optional().default(''),
+  color: directoryColorSchema,
+  icon: directoryIconSchema,
 });
 
 export const updateDirectorySchema = z
@@ -54,9 +71,16 @@ export const updateDirectorySchema = z
       .refine((value) => !/[\\/:*?"<>|]/.test(value), 'Directory name contains invalid characters')
       .optional(),
     description: z.string().trim().optional(),
+    color: directoryColorSchema.optional(),
+    icon: directoryIconSchema.optional(),
   })
   .superRefine((value, ctx) => {
-    if (value.name === undefined && value.description === undefined) {
+    if (
+      value.name === undefined &&
+      value.description === undefined &&
+      value.color === undefined &&
+      value.icon === undefined
+    ) {
       ctx.addIssue({
         code: 'custom',
         message: 'No fields to update',
@@ -135,6 +159,7 @@ export const quizQuestionSchema = z.object({
   options: z.tuple([z.string(), z.string(), z.string(), z.string()]),
   correctAnswer: z.number().int().min(0).max(3),
   explanation: z.string().min(1),
+  hint: z.string().min(1).optional(),
 });
 
 export const quizResponseSchema = z.object({
