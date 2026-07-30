@@ -204,6 +204,7 @@ function DirectoryTreeItem({
   expandedIds,
   toggleExpanded,
   documentsByDirectoryId,
+  directoryCounts,
   depth = 0,
 }: {
   directory: DirectoryTreeNode;
@@ -215,6 +216,7 @@ function DirectoryTreeItem({
   expandedIds: Set<string>;
   toggleExpanded: (id: string) => void;
   documentsByDirectoryId: Record<string, NavDocument[]>;
+  directoryCounts: Record<string, { documentCount: number; childCount: number }>;
   depth?: number;
 }) {
   const directoryPath = `/directories/${directory.id}`;
@@ -223,6 +225,7 @@ function DirectoryTreeItem({
   const isExpanded = expandedIds.has(expandedKey);
   const childDocuments = documentsByDirectoryId[directory.id] ?? documents;
   const hasChildren = directory.children.length > 0 || childDocuments.length > 0;
+  const counts = directoryCounts[directory.id];
 
   return (
     <div>
@@ -245,7 +248,14 @@ function DirectoryTreeItem({
           <span className="sidebar-nav-item-icon">
             <FolderIcon />
           </span>
-          {isOpen ? <span className="sidebar-nav-item-text">{directory.name}</span> : null}
+          {isOpen ? (
+            <span className="sidebar-nav-item-text">
+              {directory.name}
+              {counts && counts.documentCount > 0 ? (
+                <span className="sidebar-count-badge">{counts.documentCount}</span>
+              ) : null}
+            </span>
+          ) : null}
         </Link>
       </div>
 
@@ -275,6 +285,7 @@ function DirectoryTreeItem({
               expandedIds={expandedIds}
               toggleExpanded={toggleExpanded}
               documentsByDirectoryId={documentsByDirectoryId}
+              directoryCounts={directoryCounts}
               depth={depth + 1}
             />
           ))}
@@ -413,6 +424,7 @@ export function Sidebar({
                     expandedIds={expandedIds}
                     toggleExpanded={toggleExpanded}
                     documentsByDirectoryId={navigation.documentsByDirectoryId}
+                    directoryCounts={navigation.directoryCounts}
                   />
                 ))}
               </>

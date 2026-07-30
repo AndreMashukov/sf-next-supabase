@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createClient } from '@/lib/supabase/server';
 import { listDirectoryTree } from '@/lib/data/directories';
+import { buildDirectorySummaries } from '@/lib/directory-utils';
 import type { DirectoryTreeNode } from '@sf/shared-types';
 
 export interface NavQuiz {
@@ -17,10 +18,16 @@ export interface NavDocument {
   quizzes: NavQuiz[];
 }
 
+export interface DirectoryCounts {
+  documentCount: number;
+  childCount: number;
+}
+
 export interface NavigationTree {
   directories: DirectoryTreeNode[];
   documentsByDirectoryId: Record<string, NavDocument[]>;
   rootDocuments: NavDocument[];
+  directoryCounts: Record<string, DirectoryCounts>;
 }
 
 type DocumentRow = {
@@ -38,11 +45,44 @@ type QuizRow = {
 export async function listNavigationTree(): Promise<NavigationTree> {
   const supabase = await createClient();
 
-  const [{ data: documents }, { data: quizzes }, directories] = await Promise.all([
-    supabase.from('documents').select('id, title, directory_id').order('created_at', { ascending: false }),
-    supabase.from('quizzes').select('id, title, document_id').order('created_at', { ascending: false }),
-    listDirectoryTree(),
-  ]);
+  const [{ data: documents }, { data: quizzes }, directories, { data: allDirectories }, { data: directoryRules }] =
+    await Promise.all([
+      supabase.from('documents').select('id, title, directory_id').order('created_at', { ascending: false }),
+      supabase.from('quizzes').select('id, title, document_id').order('created_at', { ascending: false }),
+      listDirectoryTree(),
+      supabase.from('directories').select('id, user_id, parent_id, name, description, path, level, created_at, updated_at'),
+      supabase.from('directory_rules').select('directory_id, rule_id'),
+    ]);
+
+  const ruleIdsByDirectory = new Map<string, string[]>();
+  for (const row of directoryRules ?? []) {
+    const existing = ruleIdsByDirectory.get(row.directory_id) ?? [];
+    existing.push(row.rule_id);
+    ruleIdsByDirectory.set(row.directory_id, existing);
+  }
+
+  const summaries = buildDirectorySummaries(
+    (allDirectories ?? []).map((row) => ({
+      id: row.id,
+      userId: row.user_id,
+      parentId: row.parent_id,
+      name: row.name,
+      description: row.description,
+      path: row.path,
+      level: row.level,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })),
+    (documents ?? []).map((row) => ({ directory_id: row.directory_id })),
+    ruleIdsByDirectory,
+  );
+
+  const directoryCounts = Object.fromEntries(
+    summaries.map((summary) => [
+      summary.id,
+      { documentCount: summary.documentCount, childCount: summary.childCount },
+    ]),
+  );
 
   const quizzesByDocument = new Map<string, NavQuiz[]>();
 
@@ -82,6 +122,7 @@ export async function listNavigationTree(): Promise<NavigationTree> {
     directories,
     documentsByDirectoryId,
     rootDocuments,
+    directoryCounts,
   };
 }
 

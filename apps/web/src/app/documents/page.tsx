@@ -1,22 +1,25 @@
-import { listDirectories } from '@/lib/data/directories';
+import { getDeleteImpactsForFolders, listDirectorySummaries } from '@/lib/data/directory-summaries';
 import { listDocuments } from '@/lib/data/documents';
 import { listRules } from '@/lib/data/rules';
 import { DocumentsPageClient } from './DocumentsPageClient';
 
 export default async function DocumentsPage() {
-  const [documents, rules, directories] = await Promise.all([
+  const [documents, rules, allFolders] = await Promise.all([
     listDocuments(null),
     listRules(),
-    listDirectories(),
+    listDirectorySummaries(),
   ]);
 
-  const rootFolders = directories.filter((directory) => !directory.parentId);
+  const rootFolders = allFolders.filter((directory) => !directory.parentId);
+  const deleteImpacts = await getDeleteImpactsForFolders(rootFolders.map((folder) => folder.id));
 
   return (
     <DocumentsPageClient
       initialDocuments={documents}
       initialRules={rules}
       initialFolders={rootFolders}
+      allFolders={allFolders}
+      deleteImpacts={deleteImpacts}
     />
   );
 }

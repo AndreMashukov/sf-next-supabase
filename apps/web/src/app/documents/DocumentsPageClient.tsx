@@ -8,12 +8,18 @@ import {
   createDocument,
   createDocumentSchema,
   createDirectorySchema,
-  deleteDirectory,
   detachRuleFromDirectory,
   formatValidationError,
+  moveDocument,
   updateDirectory,
 } from '@/lib/api';
+import { DeleteDirectoryDialog } from '@/components/DeleteDirectoryDialog';
+import { DirectoryPickerDialog } from '@/components/DirectoryPickerDialog';
+import { FolderCardGrid } from '@/components/FolderCard';
+import { InheritedRulesPreview } from '@/components/InheritedRulesPreview';
 import { RuleSelector } from '@/components/RuleSelector';
+import type { DirectoryDeleteImpact, DirectorySummary } from '@/lib/data/directory-summaries';
+import { partitionDirectAndInheritedRules } from '@/lib/directory-rules';
 import type { Directory, Document, Rule } from '@sf/shared-types';
 
 function Breadcrumbs({
@@ -51,7 +57,7 @@ export function CreateDirectoryForm({
   onCreated,
 }: {
   parentId?: string;
-  onCreated: (directory: Directory) => void;
+  onCreated: (directory: DirectorySummary) => void;
 }) {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -72,8 +78,13 @@ export function CreateDirectoryForm({
 
     try {
       const directory = await createDirectory({ name, parentId });
+      onCreated({
+        ...directory,
+        documentCount: 0,
+        childCount: 0,
+        ruleIds: [],
+      });
       setName('');
-      onCreated(directory);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to create folder');
     } finally {
@@ -104,10 +115,14 @@ export function CreateDirectoryForm({
 export function CreateDocumentForm({
   rules,
   directoryId,
+  inheritedRules,
+  directRules,
   onCreated,
 }: {
   rules: Rule[];
-  directoryId?: string;
+  directoryId: string;
+  inheritedRules: Rule[];
+  directRules: Rule[];
   onCreated: (document: Document) => void;
 }) {
   const defaultRuleIds = useMemo(
@@ -160,6 +175,8 @@ export function CreateDocumentForm({
         </p>
       </div>
 
+      <InheritedRulesPreview inheritedRules={inheritedRules} directRules={directRules} />
+
       <label className="label">
         Title
         <input
@@ -201,15 +218,22 @@ export function DirectoryRuleManager({
   directoryId,
   rules,
   attachedRuleIds,
+  inheritedRules,
   onChanged,
 }: {
   directoryId: string;
   rules: Rule[];
   attachedRuleIds: string[];
+  inheritedRules: Rule[];
   onChanged: (ruleIds: string[]) => void;
 }) {
   const [loadingRuleId, setLoadingRuleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const { directRules, inheritedRules: inheritedOnly } = useMemo(
+    () => partitionDirectAndInheritedRules(rules, attachedRuleIds, inheritedRules.map((rule) => rule.id)),
+    [rules, attachedRuleIds, inheritedRules],
+  );
 
   async function toggleRule(ruleId: string, attached: boolean) {
     setLoadingRuleId(ruleId);
@@ -242,8 +266,21 @@ export function DirectoryRuleManager({
     <section className="card stack">
       <div>
         <h3>Folder rules</h3>
-        <p className="muted">Attached rules are inherited by this folder and its subfolders.</p>
+        <p className="muted">Direct rules apply here. Parent folder rules are inherited automatically.</p>
       </div>
+      {inheritedOnly.length > 0 ? (
+        <div className="rules-preview-list">
+          {inheritedOnly.map((rule) => (
+            <span key={rule.id} className="rules-preview-chip inherited">
+              {rule.name}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="muted" style={{ margin: 0 }}>
+          No inherited rules from parent folders.
+        </p>
+      )}
       <div className="list">
         {rules.map((rule) => {
           const attached = attachedRuleIds.includes(rule.id);
@@ -267,85 +304,112 @@ export function DirectoryRuleManager({
           );
         })}
       </div>
+      {directRules.length > 0 ? (
+        <p className="muted" style={{ margin: 0 }}>
+          Direct rules on this folder: {directRules.map((rule) => rule.name).join(', ')}
+        </p>
+      ) : null}
       {error ? <div className="error">{error}</div> : null}
     </section>
   );
 }
 
-export function DirectoryActions({
+export function DirectorySettings({
   directory,
+  deleteImpact,
   onUpdated,
   onDeleted,
 }: {
   directory: Directory;
+  deleteImpact: DirectoryDeleteImpact;
   onUpdated: (directory: Directory) => void;
   onDeleted: () => void;
 }) {
   const [name, setName] = useState(directory.name);
+  const [description, setDescription] = useState(directory.description);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleRename(event: FormEvent) {
+  async function handleSave(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const updated = await updateDirectory({ directoryId: directory.id, name });
+      const updated = await updateDirectory({
+        directoryId: directory.id,
+        name,
+        description,
+      });
       onUpdated(updated);
-    } catch (renameError) {
-      setError(renameError instanceof Error ? renameError.message : 'Failed to rename folder');
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Failed to update folder');
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleDelete() {
-    if (!window.confirm('Delete this folder and all nested folders and documents?')) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      await deleteDirectory(directory.id);
-      onDeleted();
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : 'Failed to delete folder');
-      setLoading(false);
-    }
-  }
-
   return (
-    <section className="card stack">
-      <div>
-        <h3>Folder settings</h3>
-      </div>
-      <form className="folder-create-form" onSubmit={handleRename}>
-        <label className="label folder-create-label">
-          Name
-          <input className="input" value={name} onChange={(event) => setName(event.target.value)} />
-        </label>
-        <button className="button secondary" type="submit" disabled={loading}>
-          Rename
-        </button>
-        <button className="button danger" type="button" disabled={loading} onClick={handleDelete}>
-          Delete folder
-        </button>
-        {error ? <div className="error folder-create-error">{error}</div> : null}
-      </form>
-    </section>
+    <>
+      <section className="card stack">
+        <div>
+          <h3>Folder settings</h3>
+        </div>
+        <form className="stack" onSubmit={handleSave}>
+          <label className="label">
+            Name
+            <input className="input" value={name} onChange={(event) => setName(event.target.value)} />
+          </label>
+          <label className="label">
+            Description
+            <textarea
+              className="textarea compact-textarea"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Optional notes about this folder"
+            />
+          </label>
+          <div className="button-row">
+            <button className="button secondary" type="submit" disabled={loading}>
+              Save changes
+            </button>
+            <button
+              className="button danger"
+              type="button"
+              disabled={loading}
+              onClick={() => setDeleteOpen(true)}
+            >
+              Delete folder
+            </button>
+          </div>
+          {error ? <div className="error">{error}</div> : null}
+        </form>
+      </section>
+      <DeleteDirectoryDialog
+        directory={directory}
+        impact={deleteImpact}
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={onDeleted}
+      />
+    </>
   );
 }
 
 export function DocumentList({
   documents,
   emptyMessage,
+  allFolders,
+  onDocumentMoved,
 }: {
   documents: Document[];
   emptyMessage: string;
+  allFolders?: DirectorySummary[];
+  onDocumentMoved?: (document: Document) => void;
 }) {
+  const [movingDocumentId, setMovingDocumentId] = useState<string | null>(null);
+
   if (documents.length === 0) {
     return (
       <div className="card">
@@ -355,22 +419,53 @@ export function DocumentList({
   }
 
   return (
-    <section className="stack">
-      <h2>Documents</h2>
-      <div className="list">
-        {documents.map((document) => (
-          <Link key={document.id} href={`/documents/${document.id}`} className="list-item">
-            <div>
-              <strong>{document.title}</strong>
-              <p className="muted" style={{ margin: '0.25rem 0 0' }}>
-                {document.wordCount} words
-              </p>
+    <>
+      <section className="stack">
+        <h2>Documents</h2>
+        <div className="list">
+          {documents.map((document) => (
+            <div key={document.id} className="list-item document-list-item">
+              <Link href={`/documents/${document.id}`} className="document-list-link">
+                <div>
+                  <strong>{document.title}</strong>
+                  <p className="muted" style={{ margin: '0.25rem 0 0' }}>
+                    {document.wordCount} words
+                  </p>
+                </div>
+                <span className="muted">View</span>
+              </Link>
+              {allFolders ? (
+                <button
+                  type="button"
+                  className="button secondary compact-button"
+                  onClick={() => setMovingDocumentId(document.id)}
+                >
+                  Move
+                </button>
+              ) : null}
             </div>
-            <span className="muted">View</span>
-          </Link>
-        ))}
-      </div>
-    </section>
+          ))}
+        </div>
+      </section>
+      {allFolders && movingDocumentId ? (
+        <DirectoryPickerDialog
+          title="Move document"
+          folders={allFolders}
+          currentDirectoryId={documents.find((document) => document.id === movingDocumentId)?.directoryId}
+          open={Boolean(movingDocumentId)}
+          onClose={() => setMovingDocumentId(null)}
+          onConfirm={async (targetDirectoryId) => {
+            if (!targetDirectoryId) {
+              throw new Error('Documents must be moved into a folder');
+            }
+
+            const updated = await moveDocument(movingDocumentId, targetDirectoryId);
+            onDocumentMoved?.(updated);
+            setMovingDocumentId(null);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -378,10 +473,14 @@ export function DocumentsPageClient({
   initialDocuments,
   initialRules,
   initialFolders,
+  allFolders,
+  deleteImpacts,
 }: {
   initialDocuments: Document[];
   initialRules: Rule[];
-  initialFolders: Directory[];
+  initialFolders: DirectorySummary[];
+  allFolders: DirectorySummary[];
+  deleteImpacts: Record<string, DirectoryDeleteImpact>;
 }) {
   const [documents, setDocuments] = useState(initialDocuments);
   const [folders, setFolders] = useState(initialFolders);
@@ -390,39 +489,48 @@ export function DocumentsPageClient({
     <div className="stack">
       <h1 className="page-title">Documents</h1>
       <Breadcrumbs ancestors={[]} />
-      <CreateDocumentForm
-        rules={initialRules}
-        onCreated={(document) => setDocuments((current) => [document, ...current])}
-      />
       <section className="card stack">
         <div>
           <h2>Folders</h2>
           <p className="muted" style={{ margin: '0.25rem 0 0' }}>
-            Group documents into nested folders.
+            Create a folder first, then add documents inside it.
           </p>
         </div>
-        <CreateDirectoryForm onCreated={(directory) => setFolders((current) => [...current, directory])} />
+        <CreateDirectoryForm
+          onCreated={(directory) => setFolders((current) => [...current, directory])}
+        />
         {folders.length > 0 ? (
-          <div className="list">
-            {folders.map((folder) => (
-              <Link key={folder.id} href={`/directories/${folder.id}`} className="list-item">
-                <div>
-                  <strong>{folder.name}</strong>
-                  <p className="muted" style={{ margin: '0.25rem 0 0' }}>
-                    {folder.path}
-                  </p>
-                </div>
-                <span className="muted">Open</span>
-              </Link>
-            ))}
-          </div>
+          <FolderCardGrid
+            folders={folders}
+            allFolders={allFolders}
+            deleteImpacts={deleteImpacts}
+            onFolderDeleted={(folderId) =>
+              setFolders((current) => current.filter((folder) => folder.id !== folderId))
+            }
+          />
         ) : (
           <p className="muted" style={{ margin: 0 }}>
-            No folders yet.
+            No folders yet. Create your first folder to get started.
           </p>
         )}
       </section>
-      <DocumentList documents={documents} emptyMessage="No documents yet. Create your first one above." />
+      {documents.length > 0 ? (
+        <section className="stack">
+          <h2>Unfiled documents</h2>
+          <p className="muted">
+            These documents were created before folders were required. Move them into a folder to
+            keep things organized.
+          </p>
+          <DocumentList
+            documents={documents}
+            emptyMessage=""
+            allFolders={allFolders}
+            onDocumentMoved={(document) =>
+              setDocuments((current) => current.filter((item) => item.id !== document.id))
+            }
+          />
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -434,13 +542,23 @@ export function DirectoryPageClient({
   documents,
   rules,
   attachedRuleIds,
+  inheritedRules,
+  directRules,
+  allFolders,
+  deleteImpact,
+  childDeleteImpacts,
 }: {
   directory: Directory;
   ancestors: Directory[];
-  childFolders: Directory[];
+  childFolders: DirectorySummary[];
   documents: Document[];
   rules: Rule[];
   attachedRuleIds: string[];
+  inheritedRules: Rule[];
+  directRules: Rule[];
+  allFolders: DirectorySummary[];
+  deleteImpact: DirectoryDeleteImpact;
+  childDeleteImpacts: Record<string, DirectoryDeleteImpact>;
 }) {
   const [currentDirectory, setCurrentDirectory] = useState(directory);
   const [folderRules, setFolderRules] = useState(attachedRuleIds);
@@ -454,6 +572,8 @@ export function DirectoryPageClient({
       <CreateDocumentForm
         rules={rules}
         directoryId={currentDirectory.id}
+        inheritedRules={inheritedRules}
+        directRules={directRules}
         onCreated={(document) => setDocumentList((current) => [document, ...current])}
       />
       <section className="card stack">
@@ -468,19 +588,14 @@ export function DirectoryPageClient({
           onCreated={(folder) => setChildFolderList((current) => [...current, folder])}
         />
         {childFolderList.length > 0 ? (
-          <div className="list">
-            {childFolderList.map((folder) => (
-              <Link key={folder.id} href={`/directories/${folder.id}`} className="list-item">
-                <div>
-                  <strong>{folder.name}</strong>
-                  <p className="muted" style={{ margin: '0.25rem 0 0' }}>
-                    {folder.path}
-                  </p>
-                </div>
-                <span className="muted">Open</span>
-              </Link>
-            ))}
-          </div>
+          <FolderCardGrid
+            folders={childFolderList}
+            allFolders={allFolders}
+            deleteImpacts={childDeleteImpacts}
+            onFolderDeleted={(folderId) =>
+              setChildFolderList((current) => current.filter((folder) => folder.id !== folderId))
+            }
+          />
         ) : (
           <p className="muted" style={{ margin: 0 }}>
             No subfolders yet.
@@ -491,10 +606,12 @@ export function DirectoryPageClient({
         directoryId={currentDirectory.id}
         rules={rules}
         attachedRuleIds={folderRules}
+        inheritedRules={inheritedRules}
         onChanged={setFolderRules}
       />
-      <DirectoryActions
+      <DirectorySettings
         directory={currentDirectory}
+        deleteImpact={deleteImpact}
         onUpdated={setCurrentDirectory}
         onDeleted={() => {
           window.location.href = ancestors.length
@@ -505,6 +622,10 @@ export function DirectoryPageClient({
       <DocumentList
         documents={documentList}
         emptyMessage="No documents in this folder yet."
+        allFolders={allFolders}
+        onDocumentMoved={(document) =>
+          setDocumentList((current) => current.filter((item) => item.id !== document.id))
+        }
       />
     </div>
   );

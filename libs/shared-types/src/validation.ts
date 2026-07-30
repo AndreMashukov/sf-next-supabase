@@ -15,12 +15,22 @@ const directoryIdSchema = z
   .nullable()
   .transform((value) => value ?? undefined);
 
-export const createDocumentSchema = z.object({
-  title: z.string().trim().min(1, 'Title is required').max(200),
-  text: z.string().trim().min(1, 'Document prompt is required').max(100_000),
-  ruleIds: ruleIdsSchema,
-  directoryId: directoryIdSchema,
-});
+export const createDocumentSchema = z
+  .object({
+    title: z.string().trim().min(1, 'Title is required').max(200),
+    text: z.string().trim().min(1, 'Document prompt is required').max(100_000),
+    ruleIds: ruleIdsSchema,
+    directoryId: directoryIdSchema,
+  })
+  .superRefine((value, ctx) => {
+    if (!value.directoryId) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Documents must be created inside a folder',
+        path: ['directoryId'],
+      });
+    }
+  });
 
 export const createDirectorySchema = z.object({
   name: z

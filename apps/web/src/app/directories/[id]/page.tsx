@@ -2,11 +2,17 @@ import { notFound } from 'next/navigation';
 import {
   getDirectoryAncestors,
   getDirectoryById,
-  listDirectories,
   listDirectoryRuleIds,
 } from '@/lib/data/directories';
+import {
+  getDeleteImpactsForFolders,
+  getDirectoryDeleteImpact,
+  listDirectorySummaries,
+  listInheritedRuleIds,
+} from '@/lib/data/directory-summaries';
 import { listDocuments } from '@/lib/data/documents';
 import { listRules } from '@/lib/data/rules';
+import { partitionDirectAndInheritedRules } from '@/lib/directory-rules';
 import { DirectoryPageClient } from '@/app/documents/DocumentsPageClient';
 
 export default async function DirectoryPage({
@@ -21,15 +27,26 @@ export default async function DirectoryPage({
     notFound();
   }
 
-  const [ancestors, directories, documents, rules, attachedRuleIds] = await Promise.all([
+  const [ancestors, allFolders, documents, rules, attachedRuleIds, deleteImpact] = await Promise.all([
     getDirectoryAncestors(id),
-    listDirectories(),
+    listDirectorySummaries(),
     listDocuments(id),
     listRules(),
     listDirectoryRuleIds(id),
+    getDirectoryDeleteImpact(id),
   ]);
 
-  const childFolders = directories.filter((item) => item.parentId === id);
+  const childFolders = allFolders.filter((item) => item.parentId === id);
+  const childDeleteImpacts = await getDeleteImpactsForFolders(childFolders.map((folder) => folder.id));
+  const inheritedRuleIds = await listInheritedRuleIds(
+    id,
+    ancestors.map((ancestor) => ancestor.id),
+  );
+  const { directRules, inheritedRules } = partitionDirectAndInheritedRules(
+    rules,
+    attachedRuleIds,
+    inheritedRuleIds,
+  );
 
   return (
     <DirectoryPageClient
@@ -39,6 +56,11 @@ export default async function DirectoryPage({
       documents={documents}
       rules={rules}
       attachedRuleIds={attachedRuleIds}
+      inheritedRules={inheritedRules}
+      directRules={directRules}
+      allFolders={allFolders}
+      deleteImpact={deleteImpact}
+      childDeleteImpacts={childDeleteImpacts}
     />
   );
 }

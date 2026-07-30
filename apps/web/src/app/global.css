@@ -1046,3 +1046,226 @@ textarea {
   color: var(--foreground);
 }
 
+.folder-card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.folder-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgb(34 30 40 / 0.45);
+  overflow: hidden;
+}
+
+.folder-card-link {
+  display: flex;
+  gap: 0.875rem;
+  padding: 1rem 1rem 0.875rem;
+}
+
+.folder-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: var(--primary-subtle);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.folder-card-body h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.folder-card-body p {
+  margin: 0.35rem 0 0;
+}
+
+.folder-card-meta {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.folder-card-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.icon-button {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--card);
+  color: var(--foreground);
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+}
+
+.folder-card-menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+  background: var(--card);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+  z-index: 2;
+  overflow: hidden;
+}
+
+.folder-card-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.folder-card-menu-item:hover {
+  background: var(--primary-subtle);
+}
+
+.folder-card-menu-item.danger {
+  color: var(--destructive);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.modal-card {
+  width: min(100%, 32rem);
+  max-height: min(85vh, 40rem);
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.35);
+}
+
+.directory-picker-list {
+  display: grid;
+  gap: 0.375rem;
+  max-height: 16rem;
+  overflow: auto;
+}
+
+.directory-picker-option {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.625rem;
+  background: var(--input);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.directory-picker-option.selected {
+  border-color: var(--primary);
+  background: var(--primary-subtle);
+}
+
+.directory-picker-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.delete-impact {
+  padding: 0.875rem 1rem;
+}
+
+.compact-textarea {
+  min-height: 6rem;
+}
+
+.compact-button {
+  padding: 0.5rem 0.875rem;
+}
+
+.document-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.document-list-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.inherited-rules-preview {
+  padding: 1rem;
+}
+
+.rules-preview-label {
+  margin: 0 0 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.rules-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rules-preview-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  border: 1px solid rgb(210 187 255 / 0.25);
+  background: var(--primary-subtle);
+  color: var(--primary);
+  font-size: 0.8125rem;
+}
+
+.rules-preview-chip.inherited {
+  border-color: var(--border);
+  background: var(--secondary);
+  color: var(--muted-foreground);
+}
+
+.sidebar-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 0.375rem;
+  padding: 0 0.375rem;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+

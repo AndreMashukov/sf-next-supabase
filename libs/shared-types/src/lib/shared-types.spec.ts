@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Document, QuizQuestion } from '../index';
+import { createDocumentSchema } from '../validation';
 
 describe('shared types contracts', () => {
   it('allows constructing a document shape', () => {
@@ -28,5 +29,15 @@ describe('shared types contracts', () => {
     };
 
     expect(question.options).toHaveLength(4);
+  });
+
+  it('requires documents to be created inside a folder', () => {
+    const result = createDocumentSchema.safeParse({
+      title: 'Sample',
+      text: 'Prompt text',
+      ruleIds: [],
+    });
+
+    expect(result.success).toBe(false);
   });
 });

@@ -3,31 +3,37 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { DirectoryPickerDialog } from '@/components/DirectoryPickerDialog';
 import { DocumentHtmlContent } from '@/components/DocumentHtmlContent';
-import { generateQuiz, formatValidationError, generateQuizSchema } from '@/lib/api';
+import { generateQuiz, formatValidationError, generateQuizSchema, moveDocument } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import type { DirectorySummary } from '@/lib/data/directory-summaries';
 import type { Document, Quiz } from '@sf/shared-types';
 
 export function DocumentDetailClient({
   document,
   quizzes,
   htmlContent,
+  allFolders,
 }: {
   document: Document;
   quizzes: Quiz[];
   htmlContent: string | null;
+  allFolders: DirectorySummary[];
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState(`${document.title} Quiz`);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [currentDocument, setCurrentDocument] = useState(document);
 
   async function handleGenerateQuiz() {
     setLoading(true);
     setError(null);
 
     const validation = generateQuizSchema.safeParse({
-      documentId: document.id,
+      documentId: currentDocument.id,
       title: quizTitle,
       questionCount: 5,
     });
@@ -39,7 +45,7 @@ export function DocumentDetailClient({
     }
 
     try {
-      const quiz = await generateQuiz(document.id, quizTitle, 5);
+      const quiz = await generateQuiz(currentDocument.id, quizTitle, 5);
       router.push(`/quizzes/${quiz.id}`);
       router.refresh();
     } catch (generateError) {
@@ -53,23 +59,26 @@ export function DocumentDetailClient({
 
   return (
     <div className="stack">
-      <h1 className="page-title">{document.title}</h1>
+      <h1 className="page-title">{currentDocument.title}</h1>
 
       <section className="card stack">
         <div className="row">
           <div>
             <p className="muted" style={{ margin: 0 }}>
-              Created {formatDate(document.createdAt)}
+              Created {formatDate(currentDocument.createdAt)}
             </p>
             <p className="muted" style={{ margin: '0.25rem 0 0' }}>
-              {document.wordCount} words
+              {currentDocument.wordCount} words
             </p>
           </div>
+          <button className="button secondary compact-button" type="button" onClick={() => setMoveOpen(true)}>
+            Move to folder
+          </button>
         </div>
 
         <div>
           <h2>Prompt</h2>
-          <p className="muted">{document.description}</p>
+          <p className="muted">{currentDocument.description}</p>
         </div>
 
         <div>
@@ -83,13 +92,7 @@ export function DocumentDetailClient({
       </section>
 
       <section className="card stack">
-        <div>
-          <h2>Generate quiz</h2>
-          <p className="muted">
-            Create a multiple-choice quiz from this document using Together AI (MiniMax-M3).
-          </p>
-        </div>
-
+        <h2>Generate quiz</h2>
         <label className="label">
           Quiz title
           <input
@@ -98,36 +101,42 @@ export function DocumentDetailClient({
             onChange={(event) => setQuizTitle(event.target.value)}
           />
         </label>
-
         {error ? <div className="error">{error}</div> : null}
-
-        <button className="button" type="button" onClick={handleGenerateQuiz} disabled={loading}>
-          {loading ? 'Generating quiz...' : 'Generate quiz'}
+        <button className="button" type="button" disabled={loading} onClick={handleGenerateQuiz}>
+          {loading ? 'Generating...' : 'Generate quiz'}
         </button>
       </section>
 
-      <section className="stack">
-        <h2>Existing quizzes</h2>
-        {quizzes.length === 0 ? (
-          <div className="card">
-            <p className="muted">No quizzes yet for this document.</p>
-          </div>
-        ) : (
+      {quizzes.length > 0 ? (
+        <section className="stack">
+          <h2>Quizzes</h2>
           <div className="list">
             {quizzes.map((quiz) => (
               <Link key={quiz.id} href={`/quizzes/${quiz.id}`} className="list-item">
-                <div>
-                  <strong>{quiz.title}</strong>
-                  <p className="muted" style={{ margin: '0.25rem 0 0' }}>
-                    {quiz.questions.length} questions
-                  </p>
-                </div>
-                <span className="muted">Take quiz</span>
+                <strong>{quiz.title}</strong>
+                <span className="muted">Open</span>
               </Link>
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      ) : null}
+
+      <DirectoryPickerDialog
+        title="Move document"
+        folders={allFolders}
+        currentDirectoryId={currentDocument.directoryId}
+        open={moveOpen}
+        onClose={() => setMoveOpen(false)}
+        onConfirm={async (targetDirectoryId) => {
+          if (!targetDirectoryId) {
+            throw new Error('Documents must be moved into a folder');
+          }
+
+          const updated = await moveDocument(currentDocument.id, targetDirectoryId);
+          setCurrentDocument(updated);
+          router.refresh();
+        }}
+      />
     </div>
   );
 }
