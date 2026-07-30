@@ -21,12 +21,17 @@ export default async function DocumentDetailPage({
     notFound();
   }
 
+  const parentDirectory = document.directoryId
+    ? allFolders.find((folder) => folder.id === document.directoryId) ?? null
+    : null;
+
   return (
     <DocumentDetailClient
       document={document}
       quizzes={quizzes}
       htmlContent={htmlContent}
       allFolders={allFolders}
+      parentDirectory={parentDirectory}
     />
   );
 }
