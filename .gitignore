@@ -150,5 +150,5 @@ vite.config.ts.timestamp-*
 vitest.config.*.timestamp*
 
 # Supabase local
-apps/backend/supabase/.temp
-apps/backend/supabase/.branches
+supabase/.temp
+supabase/.branches

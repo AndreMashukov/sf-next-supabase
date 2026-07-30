@@ -1,0 +1,51 @@
+{
+  "name": "supabase",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "supabase",
+  "projectType": "application",
+  "tags": ["scope:infra", "type:tooling"],
+  "targets": {
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase start",
+        "cwd": "."
+      }
+    },
+    "stop": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase stop",
+        "cwd": "."
+      }
+    },
+    "reset": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase db reset",
+        "cwd": "."
+      }
+    },
+    "push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase db push --local --yes",
+        "cwd": "."
+      }
+    },
+    "push-remote": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase db push --linked --yes",
+        "cwd": "."
+      }
+    },
+    "gen-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "supabase gen types typescript --local > libs/shared-types/src/database.types.ts",
+        "cwd": "."
+      }
+    }
+  }
+}

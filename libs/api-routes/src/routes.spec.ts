@@ -15,6 +15,7 @@ function createMockContext(overrides: Partial<ApiContext> = {}): ApiContext {
         description: 'Prompt',
         wordCount: 10,
         storagePath: 'users/user-1/documents/doc-1/content.html',
+        directoryId: null,
         appliedRuleIds: [],
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
@@ -24,6 +25,31 @@ function createMockContext(overrides: Partial<ApiContext> = {}): ApiContext {
     createRuleUseCase: { execute: vi.fn() },
     updateRuleUseCase: { execute: vi.fn() },
     deleteRuleUseCase: { execute: vi.fn() },
+    createDirectoryUseCase: {
+      execute: vi.fn().mockResolvedValue({
+        id: 'dir-1',
+        userId: 'user-1',
+        parentId: null,
+        name: 'Folder',
+        description: '',
+        path: '/Folder',
+        level: 0,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      }),
+    },
+    updateDirectoryUseCase: { execute: vi.fn() },
+    moveDirectoryUseCase: { execute: vi.fn() },
+    deleteDirectoryUseCase: {
+      execute: vi.fn().mockResolvedValue({
+        success: true,
+        deletedDirectories: 1,
+        deletedDocuments: 0,
+      }),
+    },
+    moveDocumentUseCase: { execute: vi.fn() },
+    attachRuleToDirectoryUseCase: { execute: vi.fn().mockResolvedValue({ success: true }) },
+    detachRuleFromDirectoryUseCase: { execute: vi.fn().mockResolvedValue({ success: true }) },
     ...overrides,
   } as ApiContext;
 }
@@ -86,7 +112,12 @@ describe('createApiServer', () => {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',
       },
-      payload: { title: 'Title', text: 'Prompt', ruleIds: [] },
+      payload: {
+        title: 'Title',
+        text: 'Prompt',
+        ruleIds: [],
+        directoryId: '11111111-1111-4111-8111-111111111111',
+      },
     });
 
     expect(response.statusCode).toBe(201);
@@ -96,6 +127,53 @@ describe('createApiServer', () => {
       title: 'Title',
       text: 'Prompt',
       ruleIds: [],
+      directoryId: '11111111-1111-4111-8111-111111111111',
+    });
+    await app.close();
+  });
+
+  it('creates a directory for authenticated requests', async () => {
+    const context = createMockContext();
+    const app = await createApiServer(context);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/functions/v1/create-directory',
+      headers: {
+        authorization: 'Bearer test-token',
+        'content-type': 'application/json',
+      },
+      payload: { name: 'Folder' },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json().directory.id).toBe('dir-1');
+    expect(context.createDirectoryUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      name: 'Folder',
+      parentId: undefined,
+      description: '',
+    });
+    await app.close();
+  });
+
+  it('deletes a directory for authenticated requests', async () => {
+    const context = createMockContext();
+    const app = await createApiServer(context);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/functions/v1/delete-directory',
+      headers: {
+        authorization: 'Bearer test-token',
+        'content-type': 'application/json',
+      },
+      payload: { directoryId: '11111111-1111-4111-8111-111111111111' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      success: true,
+      deletedDirectories: 1,
+      deletedDocuments: 0,
     });
     await app.close();
   });

@@ -1,4 +1,6 @@
-import type { Document, Quiz, Rule } from '@sf/shared-types';
+import type { Directory, Document, DirectoryTreeNode, Quiz, Rule } from '@sf/shared-types';
+
+export const MAX_DIRECTORY_DEPTH = 10;
 
 export class AppError extends Error {
   constructor(
@@ -40,6 +42,50 @@ export interface CreateDocumentInput {
   title: string;
   text: string;
   ruleIds: string[];
+  directoryId?: string;
+}
+
+export interface CreateDirectoryInput {
+  userId: string;
+  name: string;
+  parentId?: string;
+  description: string;
+}
+
+export interface UpdateDirectoryInput {
+  userId: string;
+  directoryId: string;
+  name?: string;
+  description?: string;
+}
+
+export interface MoveDirectoryInput {
+  userId: string;
+  directoryId: string;
+  parentId?: string;
+}
+
+export interface DeleteDirectoryInput {
+  userId: string;
+  directoryId: string;
+}
+
+export interface MoveDocumentInput {
+  userId: string;
+  documentId: string;
+  directoryId?: string;
+}
+
+export interface AttachRuleToDirectoryInput {
+  userId: string;
+  directoryId: string;
+  ruleId: string;
+}
+
+export interface DetachRuleFromDirectoryInput {
+  userId: string;
+  directoryId: string;
+  ruleId: string;
 }
 
 export interface GenerateQuizInput {
@@ -84,10 +130,54 @@ export interface DocumentRepository {
     description: string;
     wordCount: number;
     storagePath: string;
+    directoryId?: string;
     appliedRuleIds: string[];
   }): Promise<Document>;
 
   findByIdForUser(documentId: string, userId: string): Promise<Document | null>;
+
+  updateDirectoryId(documentId: string, userId: string, directoryId: string | null): Promise<Document>;
+
+  listByDirectoryIds(userId: string, directoryIds: string[]): Promise<Document[]>;
+
+  deleteByIds(userId: string, documentIds: string[]): Promise<number>;
+}
+
+export interface DirectoryRepository {
+  findByIdForUser(directoryId: string, userId: string): Promise<Directory | null>;
+
+  listForUser(userId: string): Promise<Directory[]>;
+
+  listRuleIdsByDirectoryIds(directoryIds: string[]): Promise<Map<string, string[]>>;
+
+  countAttachedRules(ruleId: string): Promise<number>;
+
+  create(input: {
+    userId: string;
+    name: string;
+    parentId?: string;
+    description: string;
+    path: string;
+    level: number;
+  }): Promise<Directory>;
+
+  update(input: {
+    userId: string;
+    directoryId: string;
+    name?: string;
+    description?: string;
+    parentId?: string | null;
+    path?: string;
+    level?: number;
+  }): Promise<Directory>;
+
+  listDescendantIds(userId: string, directoryId: string): Promise<string[]>;
+
+  deleteByIds(userId: string, directoryIds: string[]): Promise<number>;
+
+  attachRule(directoryId: string, ruleId: string): Promise<void>;
+
+  detachRule(directoryId: string, ruleId: string): Promise<boolean>;
 }
 
 export interface RuleRepository {
@@ -151,7 +241,20 @@ export interface DocumentRecordRow {
   description: string;
   word_count: number;
   storage_path: string;
+  directory_id: string | null;
   applied_rule_ids: string[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DirectoryRecordRow {
+  id: string;
+  user_id: string;
+  parent_id: string | null;
+  name: string;
+  description: string;
+  path: string;
+  level: number;
   created_at: string;
   updated_at: string;
 }
@@ -187,10 +290,112 @@ export function mapDocumentRow(row: DocumentRecordRow): Document {
     description: row.description,
     wordCount: row.word_count,
     storagePath: row.storage_path,
+    directoryId: row.directory_id,
     appliedRuleIds: row.applied_rule_ids ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+export function mapDirectoryRow(row: DirectoryRecordRow): Directory {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    parentId: row.parent_id,
+    name: row.name,
+    description: row.description,
+    path: row.path,
+    level: row.level,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function buildDirectoryPath(parentPath: string | null, name: string): string {
+  if (!parentPath) {
+    return `/${name}`;
+  }
+
+  return `${parentPath}/${name}`;
+}
+
+export function buildDirectoryTree(
+  directories: Directory[],
+  ruleIdsByDirectory: Map<string, string[]>,
+): DirectoryTreeNode[] {
+  const nodes = new Map<string, DirectoryTreeNode>();
+
+  for (const directory of directories) {
+    nodes.set(directory.id, {
+      ...directory,
+      children: [],
+      ruleIds: ruleIdsByDirectory.get(directory.id) ?? [],
+    });
+  }
+
+  const roots: DirectoryTreeNode[] = [];
+
+  for (const node of nodes.values()) {
+    if (node.parentId && nodes.has(node.parentId)) {
+      nodes.get(node.parentId)?.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  const sortNodes = (items: DirectoryTreeNode[]) => {
+    items.sort((left, right) => left.name.localeCompare(right.name));
+    for (const item of items) {
+      sortNodes(item.children);
+    }
+  };
+
+  sortNodes(roots);
+  return roots;
+}
+
+export function getDirectoryAncestorIds(
+  directories: Directory[],
+  directoryId: string,
+): string[] {
+  const byId = new Map(directories.map((directory) => [directory.id, directory]));
+  const ancestorIds: string[] = [];
+  let current = byId.get(directoryId);
+
+  while (current?.parentId) {
+    ancestorIds.unshift(current.parentId);
+    current = byId.get(current.parentId);
+  }
+
+  return [...ancestorIds, directoryId];
+}
+
+export function resolveEffectiveRuleIds(
+  directories: Directory[],
+  directoryId: string | undefined,
+  ruleIdsByDirectory: Map<string, string[]>,
+  explicitRuleIds: string[],
+): string[] {
+  const orderedIds: string[] = [];
+
+  if (directoryId) {
+    const chain = getDirectoryAncestorIds(directories, directoryId);
+    for (const id of chain) {
+      for (const ruleId of ruleIdsByDirectory.get(id) ?? []) {
+        if (!orderedIds.includes(ruleId)) {
+          orderedIds.push(ruleId);
+        }
+      }
+    }
+  }
+
+  for (const ruleId of explicitRuleIds) {
+    if (!orderedIds.includes(ruleId)) {
+      orderedIds.push(ruleId);
+    }
+  }
+
+  return orderedIds;
 }
 
 export function mapQuizRow(row: QuizRecordRow): Quiz {

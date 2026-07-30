@@ -1,5 +1,6 @@
 export { SupabaseAuthService } from './supabase-auth.service';
 export {
+  SupabaseDirectoryRepository,
   SupabaseDocumentRepository,
   SupabaseQuizRepository,
   SupabaseRuleRepository,

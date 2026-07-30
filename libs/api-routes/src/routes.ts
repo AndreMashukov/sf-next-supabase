@@ -1,11 +1,18 @@
 import cors from '@fastify/cors';
 import type { FastifyInstance } from 'fastify';
 import {
+  attachRuleToDirectorySchema,
+  createDirectorySchema,
   createDocumentSchema,
   createRuleSchema,
+  deleteDirectorySchema,
   deleteRuleSchema,
+  detachRuleFromDirectorySchema,
   generateQuizSchema,
+  moveDirectorySchema,
+  moveDocumentSchema,
   parseRequest,
+  updateDirectorySchema,
   updateRuleSchema,
 } from '@sf/shared-types';
 import type { ApiContext } from './context';
@@ -59,6 +66,13 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
     '/functions/v1/create-rule',
     '/functions/v1/update-rule',
     '/functions/v1/delete-rule',
+    '/functions/v1/create-directory',
+    '/functions/v1/update-directory',
+    '/functions/v1/move-directory',
+    '/functions/v1/delete-directory',
+    '/functions/v1/move-document',
+    '/functions/v1/attach-rule-to-directory',
+    '/functions/v1/detach-rule-from-directory',
   ] as const;
 
   for (const path of compatibilityPaths) {
@@ -77,6 +91,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
         title: body.title,
         text: body.text,
         ruleIds: body.ruleIds,
+        directoryId: body.directoryId,
       });
 
       return reply.status(201).send({ document });
@@ -129,6 +144,91 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       const body = parseRequest(deleteRuleSchema, request.body);
       const result = await context.deleteRuleUseCase.execute({
         userId,
+        ruleId: body.ruleId,
+      });
+
+      return reply.send(result);
+    });
+
+    protectedApp.post('/functions/v1/create-directory', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(createDirectorySchema, request.body);
+      const directory = await context.createDirectoryUseCase.execute({
+        userId,
+        name: body.name,
+        parentId: body.parentId,
+        description: body.description,
+      });
+
+      return reply.status(201).send({ directory });
+    });
+
+    protectedApp.post('/functions/v1/update-directory', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(updateDirectorySchema, request.body);
+      const directory = await context.updateDirectoryUseCase.execute({
+        userId,
+        directoryId: body.directoryId,
+        name: body.name,
+        description: body.description,
+      });
+
+      return reply.send({ directory });
+    });
+
+    protectedApp.post('/functions/v1/move-directory', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(moveDirectorySchema, request.body);
+      const directory = await context.moveDirectoryUseCase.execute({
+        userId,
+        directoryId: body.directoryId,
+        parentId: body.parentId,
+      });
+
+      return reply.send({ directory });
+    });
+
+    protectedApp.post('/functions/v1/delete-directory', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(deleteDirectorySchema, request.body);
+      const result = await context.deleteDirectoryUseCase.execute({
+        userId,
+        directoryId: body.directoryId,
+      });
+
+      return reply.send(result);
+    });
+
+    protectedApp.post('/functions/v1/move-document', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(moveDocumentSchema, request.body);
+      const document = await context.moveDocumentUseCase.execute({
+        userId,
+        documentId: body.documentId,
+        directoryId: body.directoryId,
+      });
+
+      return reply.send({ document });
+    });
+
+    protectedApp.post('/functions/v1/attach-rule-to-directory', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(attachRuleToDirectorySchema, request.body);
+      const result = await context.attachRuleToDirectoryUseCase.execute({
+        userId,
+        directoryId: body.directoryId,
+        ruleId: body.ruleId,
+      });
+
+      return reply.send(result);
+    });
+
+    protectedApp.post('/functions/v1/detach-rule-from-directory', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(detachRuleFromDirectorySchema, request.body);
+      const result = await context.detachRuleFromDirectoryUseCase.execute({
+        userId,
+        directoryId: body.directoryId,
         ruleId: body.ruleId,
       });
 

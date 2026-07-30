@@ -5,9 +5,27 @@ export interface Document {
   description: string;
   wordCount: number;
   storagePath: string;
+  directoryId: string | null;
   appliedRuleIds: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Directory {
+  id: string;
+  userId: string;
+  parentId: string | null;
+  name: string;
+  description: string;
+  path: string;
+  level: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DirectoryTreeNode extends Directory {
+  children: DirectoryTreeNode[];
+  ruleIds: string[];
 }
 
 export interface Rule {
@@ -39,27 +57,48 @@ export interface Quiz {
 }
 
 export type {
+  AttachRuleToDirectoryInput,
+  AttachRuleToDirectoryRequest,
+  CreateDirectoryInput,
+  CreateDirectoryRequest,
   CreateDocumentInput,
   CreateDocumentRequest,
   CreateRuleInput,
   CreateRuleRequest,
+  DeleteDirectoryInput,
+  DeleteDirectoryRequest,
   DeleteRuleRequest,
+  DetachRuleFromDirectoryInput,
+  DetachRuleFromDirectoryRequest,
   GenerateQuizInput,
   GenerateQuizRequest,
+  MoveDirectoryInput,
+  MoveDirectoryRequest,
+  MoveDocumentInput,
+  MoveDocumentRequest,
   QuizResponsePayload,
+  UpdateDirectoryInput,
+  UpdateDirectoryRequest,
   UpdateRuleInput,
   UpdateRuleRequest,
 } from './validation';
 
 export {
+  attachRuleToDirectorySchema,
+  createDirectorySchema,
   createDocumentSchema,
   createRuleSchema,
+  deleteDirectorySchema,
   deleteRuleSchema,
+  detachRuleFromDirectorySchema,
   formatValidationError,
   generateQuizSchema,
+  moveDirectorySchema,
+  moveDocumentSchema,
   parseRequest,
   quizQuestionSchema,
   quizResponseSchema,
+  updateDirectorySchema,
   updateRuleSchema,
   countWords,
 } from './validation';
@@ -81,6 +120,36 @@ export interface UpdateRuleResponse {
 }
 
 export interface DeleteRuleResponse {
+  success: boolean;
+}
+
+export interface CreateDirectoryResponse {
+  directory: Directory;
+}
+
+export interface UpdateDirectoryResponse {
+  directory: Directory;
+}
+
+export interface MoveDirectoryResponse {
+  directory: Directory;
+}
+
+export interface DeleteDirectoryResponse {
+  success: boolean;
+  deletedDirectories: number;
+  deletedDocuments: number;
+}
+
+export interface MoveDocumentResponse {
+  document: Document;
+}
+
+export interface AttachRuleToDirectoryResponse {
+  success: boolean;
+}
+
+export interface DetachRuleFromDirectoryResponse {
   success: boolean;
 }
 

@@ -11,6 +11,7 @@ describe('shared types contracts', () => {
       wordCount: 2,
       storagePath: 'users/user-1/documents/doc-1/content.html',
       appliedRuleIds: [],
+      directoryId: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

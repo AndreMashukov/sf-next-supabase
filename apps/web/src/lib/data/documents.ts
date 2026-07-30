@@ -11,6 +11,7 @@ type DocumentRow = {
   description: string;
   word_count: number;
   storage_path: string;
+  directory_id: string | null;
   applied_rule_ids: string[];
   created_at: string;
   updated_at: string;
@@ -24,20 +25,25 @@ function mapDocument(row: DocumentRow): Document {
     description: row.description,
     wordCount: row.word_count,
     storagePath: row.storage_path,
+    directoryId: row.directory_id,
     appliedRuleIds: row.applied_rule_ids ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-export async function listDocuments(): Promise<Document[]> {
+export async function listDocuments(directoryId?: string | null): Promise<Document[]> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from('documents')
-    .select('*')
-    .order('created_at', { ascending: false });
+  let query = supabase.from('documents').select('*').order('created_at', { ascending: false });
 
-  return (data ?? []).map(mapDocument);
+  if (directoryId === null) {
+    query = query.is('directory_id', null);
+  } else if (directoryId) {
+    query = query.eq('directory_id', directoryId);
+  }
+
+  const { data } = await query;
+  return (data ?? []).map((row) => mapDocument(row as DocumentRow));
 }
 
 export async function getDocumentById(id: string): Promise<Document | null> {
@@ -48,7 +54,7 @@ export async function getDocumentById(id: string): Promise<Document | null> {
     return null;
   }
 
-  return mapDocument(data);
+  return mapDocument(data as DocumentRow);
 }
 
 export async function getDocumentHtmlById(id: string): Promise<string | null> {

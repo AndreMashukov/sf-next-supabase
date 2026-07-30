@@ -1,19 +1,34 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
 import {
+  attachRuleToDirectorySchema,
+  createDirectorySchema,
   createDocumentSchema,
   createRuleSchema,
+  deleteDirectorySchema,
   deleteRuleSchema,
+  detachRuleFromDirectorySchema,
   generateQuizSchema,
+  moveDirectorySchema,
+  moveDocumentSchema,
   parseRequest,
+  updateDirectorySchema,
   updateRuleSchema,
+  type AttachRuleToDirectoryResponse,
+  type CreateDirectoryResponse,
   type CreateDocumentResponse,
   type CreateRuleResponse,
+  type DeleteDirectoryResponse,
   type DeleteRuleResponse,
+  type DetachRuleFromDirectoryResponse,
   type GenerateQuizResponse,
+  type MoveDirectoryResponse,
+  type MoveDocumentResponse,
+  type UpdateDirectoryResponse,
   type UpdateRuleResponse,
+  formatValidationError,
 } from '@sf/shared-types';
+import { createClient } from '@/lib/supabase/client';
 
 async function getAccessToken(): Promise<string> {
   const supabase = createClient();
@@ -61,8 +76,13 @@ async function postJson<TResponse>(path: string, body: unknown): Promise<TRespon
   return payload;
 }
 
-export async function createDocument(title: string, text: string, ruleIds: string[] = []) {
-  const body = parseRequest(createDocumentSchema, { title, text, ruleIds });
+export async function createDocument(
+  title: string,
+  text: string,
+  ruleIds: string[] = [],
+  directoryId?: string,
+) {
+  const body = parseRequest(createDocumentSchema, { title, text, ruleIds, directoryId });
   const payload = await postJson<CreateDocumentResponse>('create-document', body);
   return payload.document;
 }
@@ -102,6 +122,56 @@ export async function deleteRule(ruleId: string) {
   return payload.success;
 }
 
+export async function createDirectory(input: {
+  name: string;
+  parentId?: string;
+  description?: string;
+}) {
+  const body = parseRequest(createDirectorySchema, input);
+  const payload = await postJson<CreateDirectoryResponse>('create-directory', body);
+  return payload.directory;
+}
+
+export async function updateDirectory(input: {
+  directoryId: string;
+  name?: string;
+  description?: string;
+}) {
+  const body = parseRequest(updateDirectorySchema, input);
+  const payload = await postJson<UpdateDirectoryResponse>('update-directory', body);
+  return payload.directory;
+}
+
+export async function moveDirectory(directoryId: string, parentId?: string) {
+  const body = parseRequest(moveDirectorySchema, { directoryId, parentId });
+  const payload = await postJson<MoveDirectoryResponse>('move-directory', body);
+  return payload.directory;
+}
+
+export async function deleteDirectory(directoryId: string) {
+  const body = parseRequest(deleteDirectorySchema, { directoryId });
+  const payload = await postJson<DeleteDirectoryResponse>('delete-directory', body);
+  return payload;
+}
+
+export async function moveDocument(documentId: string, directoryId?: string) {
+  const body = parseRequest(moveDocumentSchema, { documentId, directoryId });
+  const payload = await postJson<MoveDocumentResponse>('move-document', body);
+  return payload.document;
+}
+
+export async function attachRuleToDirectory(directoryId: string, ruleId: string) {
+  const body = parseRequest(attachRuleToDirectorySchema, { directoryId, ruleId });
+  const payload = await postJson<AttachRuleToDirectoryResponse>('attach-rule-to-directory', body);
+  return payload.success;
+}
+
+export async function detachRuleFromDirectory(directoryId: string, ruleId: string) {
+  const body = parseRequest(detachRuleFromDirectorySchema, { directoryId, ruleId });
+  const payload = await postJson<DetachRuleFromDirectoryResponse>('detach-rule-from-directory', body);
+  return payload.success;
+}
+
 export async function signOut() {
   const supabase = createClient();
   await supabase.auth.signOut();
@@ -109,9 +179,11 @@ export async function signOut() {
 
 export {
   createDocumentSchema,
+  createDirectorySchema,
   createRuleSchema,
   formatValidationError,
   generateQuizSchema,
   parseRequest,
+  updateDirectorySchema,
   updateRuleSchema,
 };

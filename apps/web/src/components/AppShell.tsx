@@ -1,7 +1,8 @@
 import {
   getAuthenticatedUserEmail,
-  listDocumentsWithQuizzes,
+  listNavigationTree,
   type NavDocument,
+  type NavigationTree,
 } from '@/lib/data/navigation';
 import { AppShellClient } from './AppShellClient';
 
@@ -12,16 +13,16 @@ export async function AppShell({
   children: React.ReactNode;
   pageTitle?: string;
 }) {
-  const [documents, userEmail] = await Promise.all([
-    listDocumentsWithQuizzes(),
+  const [navigation, userEmail] = await Promise.all([
+    listNavigationTree(),
     getAuthenticatedUserEmail(),
   ]);
 
   return (
-    <AppShellClient documents={documents} userEmail={userEmail} pageTitle={pageTitle}>
+    <AppShellClient navigation={navigation} userEmail={userEmail} pageTitle={pageTitle}>
       {children}
     </AppShellClient>
   );
 }
 
-export type { NavDocument };
+export type { NavDocument, NavigationTree };

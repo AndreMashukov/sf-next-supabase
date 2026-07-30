@@ -1,6 +1,12 @@
+export { AttachRuleToDirectoryUseCase, DetachRuleFromDirectoryUseCase } from './directory-rules.use-case';
+export { CreateDirectoryUseCase } from './create-directory.use-case';
 export { CreateDocumentUseCase } from './create-document.use-case';
 export { CreateRuleUseCase } from './create-rule.use-case';
+export { DeleteDirectoryUseCase } from './delete-directory.use-case';
 export { DeleteRuleUseCase } from './delete-rule.use-case';
 export { GenerateQuizUseCase } from './generate-quiz.use-case';
+export { MoveDirectoryUseCase } from './move-directory.use-case';
+export { MoveDocumentUseCase } from './move-document.use-case';
+export { UpdateDirectoryUseCase } from './update-directory.use-case';
 export { UpdateRuleUseCase } from './update-rule.use-case';
 export { normalizeGeneratedHtml, wrapHtmlDocument } from './html';

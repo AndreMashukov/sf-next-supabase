@@ -4,7 +4,7 @@ Nx monorepo for creating documents and generating quizzes from them.
 
 - `apps/web` — Next.js frontend
 - `apps/api` — Dockerized Fastify backend (replaces Deno Edge Functions)
-- `apps/backend` — Supabase CLI project (migrations, RLS, local stack)
+- `supabase/` — Supabase CLI project (migrations, RLS, local stack)
 - `libs/shared-types` — shared TypeScript contracts and Zod schemas
 - `libs/validation` — Zod re-exports and text-to-HTML helpers
 - `libs/gcs` — Supabase Storage path helpers
@@ -63,8 +63,11 @@ There is no dashboard — authenticated users land directly on the documents pag
 ```bash
 yarn dev:web              # Start Next.js app
 yarn dev:api              # Start Fastify API on port 3001
-yarn nx run backend:start # Start local Supabase
-yarn nx run backend:reset # Reset DB and apply migrations
+yarn nx run supabase:start       # Start local Supabase
+yarn nx run supabase:push        # Apply pending migrations to local DB
+yarn nx run supabase:reset       # Reset local DB and reapply all migrations
+yarn nx run supabase:push-remote # Push migrations to linked remote project
+yarn test:supabase               # Run Supabase RLS integration tests
 yarn nx run api:build     # Bundle Fastify API for production
 yarn test                 # Run unit tests
 yarn lint                 # Lint all projects

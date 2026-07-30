@@ -17,6 +17,7 @@ export interface Database {
           description: string;
           word_count: number;
           storage_path: string;
+          directory_id: string | null;
           applied_rule_ids: string[];
           created_at: string;
           updated_at: string;
@@ -28,6 +29,7 @@ export interface Database {
           description?: string;
           word_count?: number;
           storage_path: string;
+          directory_id?: string | null;
           applied_rule_ids?: string[];
           created_at?: string;
           updated_at?: string;
@@ -39,9 +41,64 @@ export interface Database {
           description?: string;
           word_count?: number;
           storage_path?: string;
+          directory_id?: string | null;
           applied_rule_ids?: string[];
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      directories: {
+        Row: {
+          id: string;
+          user_id: string;
+          parent_id: string | null;
+          name: string;
+          description: string;
+          path: string;
+          level: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          parent_id?: string | null;
+          name: string;
+          description?: string;
+          path: string;
+          level?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          parent_id?: string | null;
+          name?: string;
+          description?: string;
+          path?: string;
+          level?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      directory_rules: {
+        Row: {
+          directory_id: string;
+          rule_id: string;
+          created_at: string;
+        };
+        Insert: {
+          directory_id: string;
+          rule_id: string;
+          created_at?: string;
+        };
+        Update: {
+          directory_id?: string;
+          rule_id?: string;
+          created_at?: string;
         };
         Relationships: [];
       };

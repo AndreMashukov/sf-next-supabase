@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import type { NavDocument } from '@/lib/data/navigation';
+import type { NavDocument, NavigationTree } from '@/lib/data/navigation';
+import type { DirectoryTreeNode } from '@sf/shared-types';
 
 function ChevronIcon({ expanded }: { expanded: boolean }) {
   return (
@@ -75,29 +76,221 @@ function HomeIcon() {
   );
 }
 
-function getInitialExpandedIds(documents: NavDocument[], pathname: string): Set<string> {
+function getInitialExpandedIds(
+  navigation: NavigationTree,
+  pathname: string,
+): Set<string> {
   const expanded = new Set<string>();
 
-  for (const document of documents) {
+  const expandForDocument = (document: NavDocument) => {
     const documentPath = `/documents/${document.id}`;
     const isDocumentActive = pathname === documentPath || pathname.startsWith(`${documentPath}/`);
     const hasActiveQuiz = document.quizzes.some((quiz) => pathname === `/quizzes/${quiz.id}`);
 
     if (isDocumentActive || hasActiveQuiz) {
-      expanded.add(document.id);
+      expanded.add(`doc:${document.id}`);
+    }
+  };
+
+  for (const document of navigation.rootDocuments) {
+    expandForDocument(document);
+  }
+
+  for (const [directoryId, documents] of Object.entries(navigation.documentsByDirectoryId)) {
+    for (const document of documents) {
+      expandForDocument(document);
+    }
+
+    if (pathname === `/directories/${directoryId}`) {
+      expanded.add(`dir:${directoryId}`);
     }
   }
 
+  const walkDirectories = (nodes: DirectoryTreeNode[]) => {
+    for (const node of nodes) {
+      if (pathname === `/directories/${node.id}`) {
+        expanded.add(`dir:${node.id}`);
+      }
+
+      walkDirectories(node.children);
+    }
+  };
+
+  walkDirectories(navigation.directories);
   return expanded;
 }
 
-export function Sidebar({
+function DocumentTreeItem({
+  document,
+  pathname,
+  isOpen,
+  isMobile,
+  onClose,
+  expandedIds,
+  toggleExpanded,
+}: {
+  document: NavDocument;
+  pathname: string;
+  isOpen: boolean;
+  isMobile: boolean;
+  onClose: () => void;
+  expandedIds: Set<string>;
+  toggleExpanded: (id: string) => void;
+}) {
+  const documentPath = `/documents/${document.id}`;
+  const isDocumentActive = pathname === documentPath;
+  const expandedKey = `doc:${document.id}`;
+  const isExpanded = expandedIds.has(expandedKey);
+  const hasQuizzes = document.quizzes.length > 0;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.125rem' }}>
+        <button
+          type="button"
+          className={`sidebar-tree-toggle${hasQuizzes ? '' : ' hidden'}`}
+          onClick={() => toggleExpanded(expandedKey)}
+          aria-label={isExpanded ? 'Collapse document' : 'Expand document'}
+          aria-expanded={isExpanded}
+        >
+          {hasQuizzes ? <ChevronIcon expanded={isExpanded} /> : null}
+        </button>
+        <Link
+          href={documentPath}
+          className={`sidebar-nav-item${isDocumentActive ? ' active' : ''}`}
+          style={{ flex: 1, minWidth: 0 }}
+          onClick={isMobile ? onClose : undefined}
+        >
+          <span className="sidebar-nav-item-icon">
+            <FolderIcon />
+          </span>
+          {isOpen ? <span className="sidebar-nav-item-text">{document.title}</span> : null}
+        </Link>
+      </div>
+
+      {isOpen && isExpanded && hasQuizzes ? (
+        <div className="sidebar-tree-children">
+          {document.quizzes.map((quiz) => {
+            const quizPath = `/quizzes/${quiz.id}`;
+            const isQuizActive = pathname === quizPath;
+
+            return (
+              <Link
+                key={quiz.id}
+                href={quizPath}
+                className={`sidebar-tree-child${isQuizActive ? ' active' : ''}`}
+                onClick={isMobile ? onClose : undefined}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+                  <QuizIcon />
+                  {quiz.title}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DirectoryTreeItem({
+  directory,
   documents,
+  pathname,
+  isOpen,
+  isMobile,
+  onClose,
+  expandedIds,
+  toggleExpanded,
+  documentsByDirectoryId,
+  depth = 0,
+}: {
+  directory: DirectoryTreeNode;
+  documents: NavDocument[];
+  pathname: string;
+  isOpen: boolean;
+  isMobile: boolean;
+  onClose: () => void;
+  expandedIds: Set<string>;
+  toggleExpanded: (id: string) => void;
+  documentsByDirectoryId: Record<string, NavDocument[]>;
+  depth?: number;
+}) {
+  const directoryPath = `/directories/${directory.id}`;
+  const isDirectoryActive = pathname === directoryPath;
+  const expandedKey = `dir:${directory.id}`;
+  const isExpanded = expandedIds.has(expandedKey);
+  const childDocuments = documentsByDirectoryId[directory.id] ?? documents;
+  const hasChildren = directory.children.length > 0 || childDocuments.length > 0;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.125rem', paddingLeft: `${depth * 0.75}rem` }}>
+        <button
+          type="button"
+          className={`sidebar-tree-toggle${hasChildren ? '' : ' hidden'}`}
+          onClick={() => toggleExpanded(expandedKey)}
+          aria-label={isExpanded ? 'Collapse directory' : 'Expand directory'}
+          aria-expanded={isExpanded}
+        >
+          {hasChildren ? <ChevronIcon expanded={isExpanded} /> : null}
+        </button>
+        <Link
+          href={directoryPath}
+          className={`sidebar-nav-item${isDirectoryActive ? ' active' : ''}`}
+          style={{ flex: 1, minWidth: 0 }}
+          onClick={isMobile ? onClose : undefined}
+        >
+          <span className="sidebar-nav-item-icon">
+            <FolderIcon />
+          </span>
+          {isOpen ? <span className="sidebar-nav-item-text">{directory.name}</span> : null}
+        </Link>
+      </div>
+
+      {isOpen && isExpanded ? (
+        <div className="sidebar-tree-children">
+          {childDocuments.map((document) => (
+            <DocumentTreeItem
+              key={document.id}
+              document={document}
+              pathname={pathname}
+              isOpen={isOpen}
+              isMobile={isMobile}
+              onClose={onClose}
+              expandedIds={expandedIds}
+              toggleExpanded={toggleExpanded}
+            />
+          ))}
+          {directory.children.map((child) => (
+            <DirectoryTreeItem
+              key={child.id}
+              directory={child}
+              documents={documentsByDirectoryId[child.id] ?? []}
+              pathname={pathname}
+              isOpen={isOpen}
+              isMobile={isMobile}
+              onClose={onClose}
+              expandedIds={expandedIds}
+              toggleExpanded={toggleExpanded}
+              documentsByDirectoryId={documentsByDirectoryId}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function Sidebar({
+  navigation,
   userEmail,
   isOpen,
   onClose,
 }: {
-  documents: NavDocument[];
+  navigation: NavigationTree;
   userEmail: string | null;
   isOpen: boolean;
   onClose: () => void;
@@ -105,7 +298,7 @@ export function Sidebar({
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() =>
-    getInitialExpandedIds(documents, pathname),
+    getInitialExpandedIds(navigation, pathname),
   );
 
   useEffect(() => {
@@ -118,23 +311,23 @@ export function Sidebar({
   useEffect(() => {
     setExpandedIds((current) => {
       const next = new Set(current);
-      for (const id of getInitialExpandedIds(documents, pathname)) {
+      for (const id of getInitialExpandedIds(navigation, pathname)) {
         next.add(id);
       }
       return next;
     });
-  }, [documents, pathname]);
+  }, [navigation, pathname]);
 
   const isDocumentsActive = pathname === '/documents';
   const isRulesActive = pathname === '/rules';
 
-  function toggleDocument(documentId: string) {
+  function toggleExpanded(id: string) {
     setExpandedIds((current) => {
       const next = new Set(current);
-      if (next.has(documentId)) {
-        next.delete(documentId);
+      if (next.has(id)) {
+        next.delete(id);
       } else {
-        next.add(documentId);
+        next.add(id);
       }
       return next;
     });
@@ -146,6 +339,9 @@ export function Sidebar({
     }
     return userEmail.charAt(0).toUpperCase();
   }, [userEmail]);
+
+  const hasTreeContent =
+    navigation.directories.length > 0 || navigation.rootDocuments.length > 0;
 
   if (isMobile && !isOpen) {
     return null;
@@ -187,69 +383,39 @@ export function Sidebar({
 
           <div className="sidebar-section-label">Directory</div>
           <nav className="sidebar-nav" aria-label="Directory">
-            {documents.length === 0 ? (
+            {!hasTreeContent ? (
               <p className="muted" style={{ padding: '0.25rem 0.625rem', margin: 0, fontSize: '0.8125rem' }}>
-                {isOpen ? 'No documents yet' : '—'}
+                {isOpen ? 'No folders yet' : '—'}
               </p>
             ) : (
-              documents.map((document) => {
-                const documentPath = `/documents/${document.id}`;
-                const isDocumentActive = pathname === documentPath;
-                const isExpanded = expandedIds.has(document.id);
-                const hasQuizzes = document.quizzes.length > 0;
-
-                return (
-                  <div key={document.id}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.125rem' }}>
-                      <button
-                        type="button"
-                        className={`sidebar-tree-toggle${hasQuizzes ? '' : ' hidden'}`}
-                        onClick={() => toggleDocument(document.id)}
-                        aria-label={isExpanded ? 'Collapse document' : 'Expand document'}
-                        aria-expanded={isExpanded}
-                      >
-                        {hasQuizzes ? <ChevronIcon expanded={isExpanded} /> : null}
-                      </button>
-                      <Link
-                        href={documentPath}
-                        className={`sidebar-nav-item${isDocumentActive ? ' active' : ''}`}
-                        style={{ flex: 1, minWidth: 0 }}
-                        onClick={isMobile ? onClose : undefined}
-                      >
-                        <span className="sidebar-nav-item-icon">
-                          <FolderIcon />
-                        </span>
-                        {isOpen ? (
-                          <span className="sidebar-nav-item-text">{document.title}</span>
-                        ) : null}
-                      </Link>
-                    </div>
-
-                    {isOpen && isExpanded && hasQuizzes ? (
-                      <div className="sidebar-tree-children">
-                        {document.quizzes.map((quiz) => {
-                          const quizPath = `/quizzes/${quiz.id}`;
-                          const isQuizActive = pathname === quizPath;
-
-                          return (
-                            <Link
-                              key={quiz.id}
-                              href={quizPath}
-                              className={`sidebar-tree-child${isQuizActive ? ' active' : ''}`}
-                              onClick={isMobile ? onClose : undefined}
-                            >
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
-                                <QuizIcon />
-                                {quiz.title}
-                              </span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })
+              <>
+                {navigation.rootDocuments.map((document) => (
+                  <DocumentTreeItem
+                    key={document.id}
+                    document={document}
+                    pathname={pathname}
+                    isOpen={isOpen}
+                    isMobile={isMobile}
+                    onClose={onClose}
+                    expandedIds={expandedIds}
+                    toggleExpanded={toggleExpanded}
+                  />
+                ))}
+                {navigation.directories.map((directory) => (
+                  <DirectoryTreeItem
+                    key={directory.id}
+                    directory={directory}
+                    documents={navigation.documentsByDirectoryId[directory.id] ?? []}
+                    pathname={pathname}
+                    isOpen={isOpen}
+                    isMobile={isMobile}
+                    onClose={onClose}
+                    expandedIds={expandedIds}
+                    toggleExpanded={toggleExpanded}
+                    documentsByDirectoryId={navigation.documentsByDirectoryId}
+                  />
+                ))}
+              </>
             )}
           </nav>
         </div>

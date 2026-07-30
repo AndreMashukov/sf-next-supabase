@@ -1,9 +1,12 @@
 import {
+  mapDirectoryRow,
   mapDocumentRow,
   mapQuizRow,
   mapRuleRow,
   type CreateRuleInput,
   type DeleteRuleInput,
+  type DirectoryRecordRow,
+  type DirectoryRepository,
   type DocumentRecordRow,
   type DocumentRepository,
   type QuizRecordRow,
@@ -24,6 +27,7 @@ export class SupabaseDocumentRepository implements DocumentRepository {
     description: string;
     wordCount: number;
     storagePath: string;
+    directoryId?: string;
     appliedRuleIds: string[];
   }) {
     const { data, error } = await this.client
@@ -35,6 +39,7 @@ export class SupabaseDocumentRepository implements DocumentRepository {
         description: input.description,
         word_count: input.wordCount,
         storage_path: input.storagePath,
+        directory_id: input.directoryId ?? null,
         applied_rule_ids: input.appliedRuleIds,
       })
       .select('*')
@@ -64,6 +69,58 @@ export class SupabaseDocumentRepository implements DocumentRepository {
     }
 
     return mapDocumentRow(data as DocumentRecordRow);
+  }
+
+  async updateDirectoryId(documentId: string, userId: string, directoryId: string | null) {
+    const { data, error } = await this.client
+      .from('documents')
+      .update({ directory_id: directoryId })
+      .eq('id', documentId)
+      .eq('user_id', userId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Document not found');
+    }
+
+    return mapDocumentRow(data as DocumentRecordRow);
+  }
+
+  async listByDirectoryIds(userId: string, directoryIds: string[]) {
+    if (directoryIds.length === 0) {
+      return [];
+    }
+
+    const { data, error } = await this.client
+      .from('documents')
+      .select('*')
+      .eq('user_id', userId)
+      .in('directory_id', directoryIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapDocumentRow(row as DocumentRecordRow));
+  }
+
+  async deleteByIds(userId: string, documentIds: string[]) {
+    if (documentIds.length === 0) {
+      return 0;
+    }
+
+    const { error, count } = await this.client
+      .from('documents')
+      .delete({ count: 'exact' })
+      .eq('user_id', userId)
+      .in('id', documentIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return count ?? 0;
   }
 }
 
@@ -203,5 +260,209 @@ export class SupabaseQuizRepository implements QuizRepository {
     }
 
     return mapQuizRow(data as QuizRecordRow);
+  }
+}
+
+export class SupabaseDirectoryRepository implements DirectoryRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async findByIdForUser(directoryId: string, userId: string) {
+    const { data, error } = await this.client
+      .from('directories')
+      .select('*')
+      .eq('id', directoryId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return mapDirectoryRow(data as DirectoryRecordRow);
+  }
+
+  async listForUser(userId: string) {
+    const { data, error } = await this.client
+      .from('directories')
+      .select('*')
+      .eq('user_id', userId)
+      .order('path', { ascending: true });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapDirectoryRow(row as DirectoryRecordRow));
+  }
+
+  async listRuleIdsByDirectoryIds(directoryIds: string[]) {
+    const result = new Map<string, string[]>();
+
+    if (directoryIds.length === 0) {
+      return result;
+    }
+
+    const { data, error } = await this.client
+      .from('directory_rules')
+      .select('directory_id, rule_id')
+      .in('directory_id', directoryIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    for (const row of data ?? []) {
+      const existing = result.get(row.directory_id) ?? [];
+      existing.push(row.rule_id);
+      result.set(row.directory_id, existing);
+    }
+
+    return result;
+  }
+
+  async countAttachedRules(ruleId: string) {
+    const { count, error } = await this.client
+      .from('directory_rules')
+      .select('*', { count: 'exact', head: true })
+      .eq('rule_id', ruleId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return count ?? 0;
+  }
+
+  async create(input: {
+    userId: string;
+    name: string;
+    parentId?: string;
+    description: string;
+    path: string;
+    level: number;
+  }) {
+    const { data, error } = await this.client
+      .from('directories')
+      .insert({
+        user_id: input.userId,
+        parent_id: input.parentId ?? null,
+        name: input.name,
+        description: input.description,
+        path: input.path,
+        level: input.level,
+      })
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Failed to create directory');
+    }
+
+    return mapDirectoryRow(data as DirectoryRecordRow);
+  }
+
+  async update(input: {
+    userId: string;
+    directoryId: string;
+    name?: string;
+    description?: string;
+    parentId?: string | null;
+    path?: string;
+    level?: number;
+  }) {
+    const updates: {
+      name?: string;
+      description?: string;
+      parent_id?: string | null;
+      path?: string;
+      level?: number;
+    } = {};
+
+    if (input.name !== undefined) updates.name = input.name;
+    if (input.description !== undefined) updates.description = input.description;
+    if (input.parentId !== undefined) updates.parent_id = input.parentId;
+    if (input.path !== undefined) updates.path = input.path;
+    if (input.level !== undefined) updates.level = input.level;
+
+    const { data, error } = await this.client
+      .from('directories')
+      .update(updates)
+      .eq('id', input.directoryId)
+      .eq('user_id', input.userId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Directory not found');
+    }
+
+    return mapDirectoryRow(data as DirectoryRecordRow);
+  }
+
+  async listDescendantIds(userId: string, directoryId: string) {
+    const directory = await this.findByIdForUser(directoryId, userId);
+
+    if (!directory) {
+      throw new Error('Directory not found');
+    }
+
+    const { data, error } = await this.client
+      .from('directories')
+      .select('id, path')
+      .eq('user_id', userId)
+      .like('path', `${directory.path}/%`);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return [directoryId, ...(data ?? []).map((row) => row.id)];
+  }
+
+  async deleteByIds(userId: string, directoryIds: string[]) {
+    if (directoryIds.length === 0) {
+      return 0;
+    }
+
+    const { error, count } = await this.client
+      .from('directories')
+      .delete({ count: 'exact' })
+      .eq('user_id', userId)
+      .in('id', directoryIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return count ?? 0;
+  }
+
+  async attachRule(directoryId: string, ruleId: string) {
+    const { error } = await this.client.from('directory_rules').insert({
+      directory_id: directoryId,
+      rule_id: ruleId,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async detachRule(directoryId: string, ruleId: string) {
+    const { error, count } = await this.client
+      .from('directory_rules')
+      .delete({ count: 'exact' })
+      .eq('directory_id', directoryId)
+      .eq('rule_id', ruleId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return Boolean(count);
   }
 }

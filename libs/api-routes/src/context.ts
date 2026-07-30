@@ -1,8 +1,15 @@
 import {
+  AttachRuleToDirectoryUseCase,
+  CreateDirectoryUseCase,
   CreateDocumentUseCase,
   CreateRuleUseCase,
+  DeleteDirectoryUseCase,
   DeleteRuleUseCase,
+  DetachRuleFromDirectoryUseCase,
   GenerateQuizUseCase,
+  MoveDirectoryUseCase,
+  MoveDocumentUseCase,
+  UpdateDirectoryUseCase,
   UpdateRuleUseCase,
 } from '@sf/api-application';
 import type { AuthService } from '@sf/api-domain';
@@ -21,6 +28,7 @@ import {
 import {
   createServiceClient,
   SupabaseAuthService,
+  SupabaseDirectoryRepository,
   SupabaseDocumentRepository,
   SupabaseQuizRepository,
   SupabaseRuleRepository,
@@ -40,6 +48,13 @@ export interface ApiContext {
   createRuleUseCase: CreateRuleUseCase;
   updateRuleUseCase: UpdateRuleUseCase;
   deleteRuleUseCase: DeleteRuleUseCase;
+  createDirectoryUseCase: CreateDirectoryUseCase;
+  updateDirectoryUseCase: UpdateDirectoryUseCase;
+  moveDirectoryUseCase: MoveDirectoryUseCase;
+  deleteDirectoryUseCase: DeleteDirectoryUseCase;
+  moveDocumentUseCase: MoveDocumentUseCase;
+  attachRuleToDirectoryUseCase: AttachRuleToDirectoryUseCase;
+  detachRuleFromDirectoryUseCase: DetachRuleFromDirectoryUseCase;
 }
 
 export function createSupabaseConfigFromEnv(env: NodeJS.ProcessEnv): SupabaseConfig {
@@ -62,6 +77,7 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
   const documentRepository = new SupabaseDocumentRepository(serviceClient);
   const ruleRepository = new SupabaseRuleRepository(serviceClient);
   const quizRepository = new SupabaseQuizRepository(serviceClient);
+  const directoryRepository = new SupabaseDirectoryRepository(serviceClient);
   const storageService = new S3StorageService(createStorageConfigFromEnv(env));
 
   const togetherAi = new TogetherAiClient(createTogetherAiConfigFromEnv(env));
@@ -78,6 +94,7 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
     createDocumentUseCase: new CreateDocumentUseCase(
       documentRepository,
       ruleRepository,
+      directoryRepository,
       storageService,
       documentGenerator,
     ),
@@ -89,7 +106,21 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
     ),
     createRuleUseCase: new CreateRuleUseCase(ruleRepository),
     updateRuleUseCase: new UpdateRuleUseCase(ruleRepository),
-    deleteRuleUseCase: new DeleteRuleUseCase(ruleRepository),
+    deleteRuleUseCase: new DeleteRuleUseCase(ruleRepository, directoryRepository),
+    createDirectoryUseCase: new CreateDirectoryUseCase(directoryRepository),
+    updateDirectoryUseCase: new UpdateDirectoryUseCase(directoryRepository),
+    moveDirectoryUseCase: new MoveDirectoryUseCase(directoryRepository),
+    deleteDirectoryUseCase: new DeleteDirectoryUseCase(
+      directoryRepository,
+      documentRepository,
+      storageService,
+    ),
+    moveDocumentUseCase: new MoveDocumentUseCase(documentRepository, directoryRepository),
+    attachRuleToDirectoryUseCase: new AttachRuleToDirectoryUseCase(
+      directoryRepository,
+      ruleRepository,
+    ),
+    detachRuleFromDirectoryUseCase: new DetachRuleFromDirectoryUseCase(directoryRepository),
   };
 }
 

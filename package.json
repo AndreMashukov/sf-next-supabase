@@ -11,10 +11,13 @@
     "lint": "nx run-many -t lint",
     "test": "nx run-many -t test",
     "typecheck": "nx run-many -t typecheck",
-    "supabase:start": "cd apps/backend && supabase start",
-    "supabase:stop": "cd apps/backend && supabase stop",
-    "supabase:reset": "cd apps/backend && supabase db reset",
-    "supabase:gen-types": "cd apps/backend && supabase gen types typescript --local > ../../libs/shared-types/src/database.types.ts",
+    "supabase:start": "nx run supabase:start",
+    "supabase:stop": "nx run supabase:stop",
+    "supabase:reset": "nx run supabase:reset",
+    "supabase:push": "nx run supabase:push",
+    "supabase:push-remote": "nx run supabase:push-remote",
+    "supabase:gen-types": "nx run supabase:gen-types",
+    "test:supabase": "vitest run --config supabase/vitest.config.mts",
     "test:document-agent": "vitest run --config libs/document-agent/vitest.config.mts"
   },
   "devDependencies": {

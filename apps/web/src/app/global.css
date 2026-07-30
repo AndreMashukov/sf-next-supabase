@@ -475,6 +475,12 @@ textarea {
   padding: 0.75rem 0.9rem;
   background: var(--input);
   color: var(--foreground);
+  box-sizing: border-box;
+}
+
+.input {
+  height: 2.75rem;
+  line-height: 1.25;
 }
 
 .input:focus,
@@ -498,6 +504,9 @@ textarea {
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s ease, transform 0.2s ease;
+  align-self: start;
+  height: fit-content;
+  white-space: nowrap;
 }
 
 .button:hover:not(:disabled) {
@@ -984,3 +993,56 @@ textarea {
   white-space: pre-wrap;
   font-size: 0.8rem;
 }
+
+.two-column-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: start;
+}
+
+.folder-create-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.folder-create-label {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.folder-create-error {
+  flex: 1 1 100%;
+}
+
+.folder-create-form .button {
+  margin-bottom: 0;
+}
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.breadcrumb-link {
+  color: var(--primary);
+}
+
+.breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  margin: 0 0.125rem;
+}
+
+.breadcrumb-current {
+  color: var(--foreground);
+}
+

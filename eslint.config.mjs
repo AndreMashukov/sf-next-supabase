@@ -49,10 +49,6 @@ export default [
               sourceTag: 'scope:web',
               onlyDependOnLibsWithTags: ['scope:shared'],
             },
-            {
-              sourceTag: 'scope:backend',
-              onlyDependOnLibsWithTags: ['scope:shared', 'scope:backend', 'scope:api'],
-            },
           ],
         },
       ],

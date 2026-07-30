@@ -8,10 +8,75 @@ export const ruleIdsSchema = z
   .default([])
   .transform((ids) => ids.filter((id, index, arr) => arr.indexOf(id) === index));
 
+const directoryIdSchema = z
+  .string()
+  .uuid('Invalid directory ID')
+  .optional()
+  .nullable()
+  .transform((value) => value ?? undefined);
+
 export const createDocumentSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(200),
   text: z.string().trim().min(1, 'Document prompt is required').max(100_000),
   ruleIds: ruleIdsSchema,
+  directoryId: directoryIdSchema,
+});
+
+export const createDirectorySchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Directory name is required')
+    .max(100, 'Directory name must be 100 characters or fewer')
+    .refine((value) => !/[\\/:*?"<>|]/.test(value), 'Directory name contains invalid characters'),
+  parentId: directoryIdSchema,
+  description: z.string().trim().optional().default(''),
+});
+
+export const updateDirectorySchema = z
+  .object({
+    directoryId: z.string().uuid('Invalid directory ID'),
+    name: z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .refine((value) => !/[\\/:*?"<>|]/.test(value), 'Directory name contains invalid characters')
+      .optional(),
+    description: z.string().trim().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.name === undefined && value.description === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'No fields to update',
+        path: [],
+      });
+    }
+  });
+
+export const moveDirectorySchema = z.object({
+  directoryId: z.string().uuid('Invalid directory ID'),
+  parentId: directoryIdSchema,
+});
+
+export const deleteDirectorySchema = z.object({
+  directoryId: z.string().uuid('Invalid directory ID'),
+});
+
+export const moveDocumentSchema = z.object({
+  documentId: z.string().uuid('Invalid document ID'),
+  directoryId: directoryIdSchema,
+});
+
+export const attachRuleToDirectorySchema = z.object({
+  directoryId: z.string().uuid('Invalid directory ID'),
+  ruleId: uuidSchema,
+});
+
+export const detachRuleFromDirectorySchema = z.object({
+  directoryId: z.string().uuid('Invalid directory ID'),
+  ruleId: uuidSchema,
 });
 
 export const generateQuizSchema = z.object({
@@ -69,6 +134,20 @@ export const quizResponseSchema = z.object({
 
 export type CreateDocumentRequest = z.input<typeof createDocumentSchema>;
 export type CreateDocumentInput = z.output<typeof createDocumentSchema>;
+export type CreateDirectoryRequest = z.input<typeof createDirectorySchema>;
+export type CreateDirectoryInput = z.output<typeof createDirectorySchema>;
+export type UpdateDirectoryRequest = z.input<typeof updateDirectorySchema>;
+export type UpdateDirectoryInput = z.output<typeof updateDirectorySchema>;
+export type MoveDirectoryRequest = z.input<typeof moveDirectorySchema>;
+export type MoveDirectoryInput = z.output<typeof moveDirectorySchema>;
+export type DeleteDirectoryRequest = z.input<typeof deleteDirectorySchema>;
+export type DeleteDirectoryInput = z.output<typeof deleteDirectorySchema>;
+export type MoveDocumentRequest = z.input<typeof moveDocumentSchema>;
+export type MoveDocumentInput = z.output<typeof moveDocumentSchema>;
+export type AttachRuleToDirectoryRequest = z.input<typeof attachRuleToDirectorySchema>;
+export type AttachRuleToDirectoryInput = z.output<typeof attachRuleToDirectorySchema>;
+export type DetachRuleFromDirectoryRequest = z.input<typeof detachRuleFromDirectorySchema>;
+export type DetachRuleFromDirectoryInput = z.output<typeof detachRuleFromDirectorySchema>;
 export type GenerateQuizRequest = z.input<typeof generateQuizSchema>;
 export type GenerateQuizInput = z.output<typeof generateQuizSchema>;
 export type CreateRuleRequest = z.input<typeof createRuleSchema>;

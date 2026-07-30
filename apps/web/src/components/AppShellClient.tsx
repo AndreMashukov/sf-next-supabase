@@ -1,18 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { NavDocument } from '@/lib/data/navigation';
+import type { NavigationTree } from '@/lib/data/navigation';
 import { Sidebar } from './Sidebar';
 import { TopAppBar } from './TopAppBar';
 
 export function AppShellClient({
   children,
-  documents,
+  navigation,
   userEmail,
   pageTitle,
 }: {
   children: React.ReactNode;
-  documents: NavDocument[];
+  navigation: NavigationTree;
   userEmail: string | null;
   pageTitle?: string;
 }) {
@@ -47,7 +47,7 @@ export function AppShellClient({
       />
       <div className="app-body">
         <Sidebar
-          documents={documents}
+          navigation={navigation}
           userEmail={userEmail}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
