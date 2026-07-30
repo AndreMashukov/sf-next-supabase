@@ -91,12 +91,12 @@ export function CreateDirectoryDialog({
 
   return (
     <div className="modal-overlay" role="presentation" onClick={onClose}>
-      <dialog
-        open
+      <div
         className="modal-card modal-card-wide directory-dialog"
+        role="dialog"
+        aria-modal="true"
         aria-labelledby="create-folder-title"
         onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => event.stopPropagation()}
       >
         <div className="directory-dialog-header">
           <div className="directory-dialog-icon-wrap">
@@ -178,7 +178,7 @@ export function CreateDirectoryDialog({
             </button>
           </div>
         </form>
-      </dialog>
+      </div>
     </div>
   );
 }

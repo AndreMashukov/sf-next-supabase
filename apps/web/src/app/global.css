@@ -1115,7 +1115,7 @@ textarea {
 
 .dropdown-menu-portal {
   position: fixed;
-  z-index: 1000;
+  z-index: 1400;
   min-width: 10rem;
   padding: 0.25rem 0;
 }
@@ -1157,23 +1157,33 @@ textarea {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 0.55);
+  z-index: 1300;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  z-index: 50;
+  background: rgb(8 6 12 / 0.72);
+  backdrop-filter: blur(6px);
 }
 
 .modal-card {
+  position: relative;
   width: min(100%, 32rem);
   max-height: min(85vh, 40rem);
+  margin: 0;
   overflow: auto;
-  background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.25rem;
-  box-shadow: 0 16px 48px rgb(0 0 0 / 0.35);
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 20px 48px rgb(0 0 0 / 0.45);
+}
+
+/* Reset native <dialog> UA positioning that fights the flex overlay. */
+dialog.modal-card {
+  inset: auto;
+  max-width: none;
 }
 
 .directory-picker-list {

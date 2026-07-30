@@ -36,12 +36,12 @@ export function UnfiledCleanupBanner({
 
       {open ? (
         <div className="modal-overlay" role="presentation" onClick={() => setOpen(false)}>
-          <dialog
-            open
+          <div
             className="modal-card modal-card-wide"
+            role="dialog"
+            aria-modal="true"
             aria-labelledby="unfiled-title"
             onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
           >
             <h2 id="unfiled-title">Unfiled documents</h2>
             <p className="muted">
@@ -71,7 +71,7 @@ export function UnfiledCleanupBanner({
                 Close
               </button>
             </div>
-          </dialog>
+          </div>
         </div>
       ) : null}
 

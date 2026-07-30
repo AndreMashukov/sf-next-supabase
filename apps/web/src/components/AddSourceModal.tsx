@@ -27,12 +27,12 @@ export function AddSourceModal({
 
   return (
     <div className="modal-overlay" role="presentation" onClick={onClose}>
-      <dialog
-        open
+      <div
         className="modal-card modal-card-wide add-source-dialog"
+        role="dialog"
+        aria-modal="true"
         aria-labelledby="add-source-title"
         onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => event.stopPropagation()}
       >
         <div className="add-source-dialog-header">
           <h2 id="add-source-title">Add source</h2>
@@ -50,7 +50,7 @@ export function AddSourceModal({
             onClose();
           }}
         />
-      </dialog>
+      </div>
     </div>
   );
 }
