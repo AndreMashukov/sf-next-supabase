@@ -1,0 +1,18 @@
+{
+  "name": "api-infra-storage",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api-infra-storage/src",
+  "projectType": "library",
+  "tags": ["scope:api", "type:infra"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/api-infra-storage",
+        "main": "libs/api-infra-storage/src/index.ts",
+        "tsConfig": "libs/api-infra-storage/tsconfig.lib.json"
+      }
+    }
+  }
+}

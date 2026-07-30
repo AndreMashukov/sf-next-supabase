@@ -1,0 +1,14 @@
+{
+  "name": "api-infra-supabase",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "dependencies": {
+    "@sf/api-domain": "0.0.1",
+    "@sf/shared-types": "0.0.1",
+    "@supabase/supabase-js": "2.49.8",
+    "tslib": "^2.3.0"
+  }
+}

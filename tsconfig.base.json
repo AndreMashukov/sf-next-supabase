@@ -19,6 +19,12 @@
       "@sf/validation": ["libs/validation/src/index.ts"],
       "@sf/gcs": ["libs/gcs/src/index.ts"],
       "@sf/document-agent": ["libs/document-agent/src/index.ts"],
+      "@sf/api-domain": ["libs/api-domain/src/index.ts"],
+      "@sf/api-application": ["libs/api-application/src/index.ts"],
+      "@sf/api-infra-supabase": ["libs/api-infra-supabase/src/index.ts"],
+      "@sf/api-infra-storage": ["libs/api-infra-storage/src/index.ts"],
+      "@sf/api-infra-ai": ["libs/api-infra-ai/src/index.ts"],
+      "@sf/api-routes": ["libs/api-routes/src/index.ts"],
       "shared-types": ["./libs/shared-types/src/index.ts"],
       "validation": ["./libs/validation/src/index.ts"],
       "gcs": ["./libs/gcs/src/index.ts"]

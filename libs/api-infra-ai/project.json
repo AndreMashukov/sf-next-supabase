@@ -1,0 +1,25 @@
+{
+  "name": "api-infra-ai",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api-infra-ai/src",
+  "projectType": "library",
+  "tags": ["scope:api", "type:infra"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/api-infra-ai",
+        "main": "libs/api-infra-ai/src/index.ts",
+        "tsConfig": "libs/api-infra-ai/tsconfig.lib.json"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --config libs/api-infra-ai/vitest.config.mts",
+        "cwd": "."
+      }
+    }
+  }
+}

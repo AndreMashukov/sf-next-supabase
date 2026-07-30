@@ -17,8 +17,41 @@ export default [
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
             {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
+              sourceTag: 'scope:shared',
+              onlyDependOnLibsWithTags: ['scope:shared'],
+            },
+            {
+              sourceTag: 'type:domain',
+              onlyDependOnLibsWithTags: ['scope:shared'],
+            },
+            {
+              sourceTag: 'type:application',
+              onlyDependOnLibsWithTags: ['type:domain', 'scope:shared'],
+            },
+            {
+              sourceTag: 'type:infra',
+              onlyDependOnLibsWithTags: ['type:domain', 'scope:shared'],
+            },
+            {
+              sourceTag: 'type:routes',
+              onlyDependOnLibsWithTags: [
+                'type:application',
+                'type:infra',
+                'type:domain',
+                'scope:shared',
+              ],
+            },
+            {
+              sourceTag: 'type:app',
+              onlyDependOnLibsWithTags: ['type:routes', 'scope:shared'],
+            },
+            {
+              sourceTag: 'scope:web',
+              onlyDependOnLibsWithTags: ['scope:shared'],
+            },
+            {
+              sourceTag: 'scope:backend',
+              onlyDependOnLibsWithTags: ['scope:shared', 'scope:backend', 'scope:api'],
             },
           ],
         },
@@ -36,7 +69,6 @@ export default [
       '**/*.cjs',
       '**/*.mjs',
     ],
-    // Override or add rules here
     rules: {},
   },
 ];

@@ -1,6 +1,6 @@
 /**
  * Shared HTML output contract for document generation and validation.
- * Source of truth — synced to Edge Functions via scripts/sync-document-contract.mjs
+ * Source of truth for document generation contracts.
  */
 
 export const ALLOWED_HTML_TAGS = [

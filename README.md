@@ -3,16 +3,18 @@
 Nx monorepo for creating documents and generating quizzes from them.
 
 - `apps/web` — Next.js frontend
-- `apps/backend` — Supabase CLI project (migrations, RLS, Edge Functions)
-- `libs/shared-types` — shared TypeScript contracts
-- `libs/validation` — Zod schemas and text-to-HTML helpers
+- `apps/api` — Dockerized Fastify backend (replaces Deno Edge Functions)
+- `apps/backend` — Supabase CLI project (migrations, RLS, local stack)
+- `libs/shared-types` — shared TypeScript contracts and Zod schemas
+- `libs/validation` — Zod re-exports and text-to-HTML helpers
 - `libs/gcs` — Supabase Storage path helpers
+- `libs/api-*` — layered Fastify backend libraries (domain, application, infra, routes)
 
 ## Prerequisites
 
 - Node.js 20+
 - Yarn 1.x
-- Docker (for local Supabase)
+- Docker (for local Supabase and production API image)
 - Supabase CLI (`yarn supabase` or global install)
 - Together AI API key
 
@@ -20,7 +22,7 @@ Nx monorepo for creating documents and generating quizzes from them.
 
 ```bash
 yarn install
-cp .env.local.example .env.local
+cp .env.example .env.local
 ```
 
 Start Supabase locally:
@@ -33,10 +35,10 @@ Copy the `anon`, `service_role`, and **Storage (S3)** credentials from the CLI o
 
 Set your Together AI API key (`TOGETHER_AI_API_KEY`) in `.env.local`.
 
-Serve Edge Functions locally:
+Start the Fastify API:
 
 ```bash
-yarn nx run backend:serve-functions
+yarn dev:api
 ```
 
 Start the web app:
@@ -59,29 +61,35 @@ There is no dashboard — authenticated users land directly on the documents pag
 ## Useful Commands
 
 ```bash
-yarn dev:web                 # Start Next.js app
-yarn nx run backend:start    # Start local Supabase
-yarn nx run backend:reset    # Reset DB and apply migrations
-yarn nx run backend:serve-functions  # Serve Edge Functions
-yarn test                    # Run unit tests
-yarn lint                    # Lint all projects
-yarn build                   # Build all projects
+yarn dev:web              # Start Next.js app
+yarn dev:api              # Start Fastify API on port 3001
+yarn nx run backend:start # Start local Supabase
+yarn nx run backend:reset # Reset DB and apply migrations
+yarn nx run api:build     # Bundle Fastify API for production
+yarn test                 # Run unit tests
+yarn lint                 # Lint all projects
+yarn build                # Build all projects
 ```
 
 ## Architecture
 
-- Document metadata lives in Supabase Postgres (`documents`, `quizzes`)
+- Document metadata lives in Supabase Postgres (`documents`, `quizzes`, `rules`)
 - Document HTML content lives in Supabase Storage (S3-compatible API)
-- Edge Functions handle authenticated create/generate workflows
-- Row Level Security ensures users only access their own records
+- Fastify API handles authenticated create/generate workflows at `/functions/v1/*`
+- Supabase remains the database, auth, and storage provider
+- Row Level Security ensures users only access their own records on read paths
 
 ## Environment Variables
 
 See [`.env.example`](.env.example) for the full list.
 
-For deployed Edge Functions, set secrets via Supabase:
+The web client uses `NEXT_PUBLIC_API_URL` (default `http://127.0.0.1:3001`) and calls `${NEXT_PUBLIC_API_URL}/functions/v1/*` for mutations.
+
+## Docker
+
+Build and run the API container:
 
 ```bash
-cd apps/backend
-supabase secrets set TOGETHER_AI_API_KEY=... STORAGE_BUCKET=documents STORAGE_S3_ENDPOINT=... STORAGE_S3_ACCESS_KEY=... STORAGE_S3_SECRET_KEY=... STORAGE_S3_REGION=local
+docker build -f apps/api/Dockerfile -t sf-api .
+docker run --env-file .env.local -p 3001:3001 sf-api
 ```

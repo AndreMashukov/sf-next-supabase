@@ -8,7 +8,7 @@ The read path is intentionally modeled after the study-forge **admin** app: thin
 
 ```text
 lib/
-├── api.ts                 # Client-side mutation helpers (Edge Functions)
+├── api.ts                 # Client-side mutation helpers (Fastify API)
 ├── utils.ts               # Shared UI helpers (classNames, dates)
 ├── data/                  # Server-only read models (Postgres via RLS)
 │   ├── documents.ts
@@ -25,7 +25,7 @@ lib/
    `app/**/page.tsx` resolves params, calls `notFound()`, and composes UI. Queries and snake_case → camelCase mapping live in `lib/data`.
 
 2. **Keep writes out of the page layer.**  
-   Create-document and generate-quiz run in Supabase Edge Functions (GCS/Storage + LLM). The browser calls them through `lib/api.ts`.
+   Create-document and generate-quiz run in the Fastify API (Storage + LLM). The browser calls them through `lib/api.ts`.
 
 3. **One Supabase client per runtime.**  
    Cookie/session handling differs between browser, RSC, and middleware. Those factories stay under `lib/supabase/` and are not mixed.
@@ -46,7 +46,7 @@ WRITE (Client Component)
   *Client.tsx
     → lib/api.ts
       → lib/supabase/client.ts  (access token)
-      → Edge Function (create-document | generate-quiz)
+      → Fastify API (`/functions/v1/create-document` | `/functions/v1/generate-quiz`)
         → service role + Storage + Together AI (server-side)
 
 AUTH GATE (every matched request)
@@ -91,7 +91,7 @@ Pattern (same idea as study-forge `admin/src/lib/data`):
 **What does *not* belong here (today):**
 
 - Mutations / inserts / deletes
-- Calling Edge Functions or Together AI
+- Calling the Fastify API or Together AI
 - React components or form state
 
 Authorization for reads is primarily **Postgres RLS** (the anon key + user JWT). These helpers do not re-implement ACL beyond “query as the current session.”
@@ -109,11 +109,11 @@ Marked `'use client'`. Used from Client Components such as `DocumentsPageClient`
 Each mutation helper:
 
 1. Reads the browser session access token
-2. Calls the Edge Function with `Authorization: Bearer …`
+2. Calls the Fastify API with `Authorization: Bearer …`
 3. Throws with the function’s `error` message (or a default) on non-OK responses
 4. Returns the typed payload from `@sf/shared-types`
 
-Business logic for HTML storage and quiz generation stays in `apps/backend/supabase/functions`, not in `lib/`.
+Business logic for HTML storage and quiz generation stays in `apps/api` and `libs/api-*`, not in `lib/`.
 
 ### `utils.ts`
 
@@ -154,7 +154,7 @@ import { generateQuiz } from '@/lib/api';
 **Avoid:**
 
 - Importing `@/lib/data/*` from a Client Component (`server-only` will fail the build)
-- Importing `@/lib/api` from a Server Component to call Edge Functions without a deliberate server path (today those helpers assume browser session)
+- Importing `@/lib/api` from a Server Component to call the Fastify API without a deliberate server path (today those helpers assume browser session)
 - Duplicating `mapDocument` / `mapQuiz` or raw `.from('documents')` queries inside `page.tsx`
 
 ## Deliberate asymmetry: reads vs writes
@@ -162,7 +162,7 @@ import { generateQuiz } from '@/lib/api';
 | Concern | Where it lives |
 |---------|----------------|
 | List / get documents & quizzes | `lib/data` → Supabase JS (user JWT, RLS) |
-| Create document, generate quiz | Edge Functions → service role + Storage + LLM |
+| Create document, generate quiz | Fastify API → service role + Storage + LLM |
 | Auth session refresh & route guards | `lib/supabase/middleware` |
 | Browser auth UI | pages + `lib/supabase/client` |
 
@@ -173,7 +173,7 @@ This matches the product split: **reads are simple RLS-backed queries**; **write
 | If you need to… | Put it in… |
 |-----------------|------------|
 | Load rows for an RSC page | New or existing file under `lib/data/` |
-| Call a new Edge Function from the UI | New export on `lib/api.ts` (or a sibling client module) |
+| Call a new API endpoint from the UI | New export on `lib/api.ts` (or a sibling client module) |
 | Touch cookies / session in a new runtime | Extend `lib/supabase/`, do not invent a fourth ad-hoc client |
 | Format display values | `lib/utils.ts` (or a focused helper next to it) |
 

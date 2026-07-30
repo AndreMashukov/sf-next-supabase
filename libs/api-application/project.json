@@ -1,0 +1,25 @@
+{
+  "name": "api-application",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/api-application/src",
+  "projectType": "library",
+  "tags": ["scope:api", "type:application"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/api-application",
+        "main": "libs/api-application/src/index.ts",
+        "tsConfig": "libs/api-application/tsconfig.lib.json"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --config libs/api-application/vitest.config.mts",
+        "cwd": "."
+      }
+    }
+  }
+}

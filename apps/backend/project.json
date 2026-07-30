@@ -33,18 +33,6 @@
         "cwd": "apps/backend"
       }
     },
-    "serve-functions": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "node ../../scripts/sync-validation-schemas.mjs",
-          "node ../../scripts/sync-document-contract.mjs",
-          "supabase functions serve --env-file ../../.env.local"
-        ],
-        "parallel": false,
-        "cwd": "apps/backend"
-      }
-    },
     "gen-types": {
       "executor": "nx:run-commands",
       "options": {
