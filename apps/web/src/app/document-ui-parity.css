@@ -14,10 +14,37 @@
   top: 0;
   z-index: 20;
   margin: -1.5rem -1rem 0;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1rem 0;
   border-bottom: 1px solid var(--border);
   background: rgb(18 16 24 / 0.92);
   backdrop-filter: blur(8px);
+}
+
+.document-viewer-header-inner {
+  padding-bottom: 0.5rem;
+}
+
+.document-reading-progress {
+  display: block;
+  width: 100%;
+  height: 2px;
+  margin: 0 -1rem;
+  width: calc(100% + 2rem);
+  border: none;
+  background: rgb(255 255 255 / 0.08);
+  overflow: hidden;
+}
+
+.document-reading-progress::-webkit-progress-bar {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.document-reading-progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+}
+
+.document-reading-progress::-moz-progress-bar {
+  background: linear-gradient(90deg, #8b5cf6, #a78bfa);
 }
 
 .document-viewer-back-row {

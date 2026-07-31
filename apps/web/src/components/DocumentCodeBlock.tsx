@@ -66,23 +66,27 @@ export function DocumentCodeBlock({
 
   return (
     <div className={cn('document-code-block', className)}>
-      <button
-        type="button"
-        className="document-code-copy"
-        onClick={handleCopy}
-        aria-label={copied ? 'Copied' : 'Copy code'}
-      >
-        {copied ? <CheckIcon /> : <CopyIcon />}
-      </button>
+      <div className="document-code-header">
+        <span className="document-code-lang">{resolvedLanguage}</span>
+        <button
+          type="button"
+          className="document-code-copy"
+          onClick={handleCopy}
+          aria-label={copied ? 'Copied' : 'Copy code'}
+        >
+          {copied ? <CheckIcon /> : <CopyIcon />}
+        </button>
+      </div>
       <SyntaxHighlighter
         language={resolvedLanguage}
         style={vscDarkPlus}
         customStyle={{
           margin: 0,
           padding: '0.875rem',
-          borderRadius: '0.625rem',
+          borderRadius: '0 0 0.625rem 0.625rem',
           background: 'rgb(16 13 22)',
           border: '1px solid var(--border)',
+          borderTop: 'none',
           fontSize: '0.875rem',
         }}
         codeTagProps={{

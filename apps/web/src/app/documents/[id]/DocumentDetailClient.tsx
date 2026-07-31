@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useRef, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Brain,
@@ -48,6 +48,7 @@ export function DocumentDetailClient({
 }) {
   const router = useRouter();
   const artifactsRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState(`${document.title} Quiz`);
@@ -59,6 +60,35 @@ export function DocumentDetailClient({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentDocument, setCurrentDocument] = useState(document);
   const [currentParentDirectory, setCurrentParentDirectory] = useState(parentDirectory);
+  const [readingProgress, setReadingProgress] = useState(0);
+
+  useEffect(() => {
+    function updateReadingProgress() {
+      const content = contentRef.current;
+      if (!content) {
+        return;
+      }
+
+      const rect = content.getBoundingClientRect();
+      const viewport = window.innerHeight;
+      const total = Math.max(rect.height - viewport, 1);
+      const scrolled = Math.min(Math.max(-rect.top, 0), total);
+      setReadingProgress(Math.round((scrolled / total) * 100));
+    }
+
+    updateReadingProgress();
+    window.addEventListener('scroll', updateReadingProgress, { passive: true, capture: true });
+    window.addEventListener('resize', updateReadingProgress);
+
+    const main = globalThis.document.querySelector('main');
+    main?.addEventListener('scroll', updateReadingProgress, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', updateReadingProgress, true);
+      window.removeEventListener('resize', updateReadingProgress);
+      main?.removeEventListener('scroll', updateReadingProgress);
+    };
+  }, [htmlContent]);
 
   function handleBack() {
     if (currentParentDirectory) {
@@ -109,31 +139,39 @@ export function DocumentDetailClient({
   return (
     <div className="document-viewer-page">
       <header className="document-viewer-header">
-        <div className="document-viewer-back-row">
-          <button type="button" className="document-viewer-back-button" onClick={handleBack}>
-            <ArrowLeft size={16} />
-            Back
-          </button>
-          <span className="document-viewer-back-separator">|</span>
-          <nav className="document-viewer-breadcrumb" aria-label="Breadcrumb">
-            {currentParentDirectory ? (
-              <>
-                <Link href="/documents">Directories</Link>
-                <span className="breadcrumb-separator">/</span>
-                <Link href={`/directories/${currentParentDirectory.id}`}>
-                  {currentParentDirectory.name}
-                </Link>
-                <span className="breadcrumb-separator">/</span>
-              </>
-            ) : (
-              <>
-                <Link href="/documents">Documents</Link>
-                <span className="breadcrumb-separator">/</span>
-              </>
-            )}
-            <span className="breadcrumb-current">{currentDocument.title}</span>
-          </nav>
+        <div className="document-viewer-header-inner">
+          <div className="document-viewer-back-row">
+            <button type="button" className="document-viewer-back-button" onClick={handleBack}>
+              <ArrowLeft size={16} />
+              Back
+            </button>
+            <span className="document-viewer-back-separator">|</span>
+            <nav className="document-viewer-breadcrumb" aria-label="Breadcrumb">
+              {currentParentDirectory ? (
+                <>
+                  <Link href="/documents">Directories</Link>
+                  <span className="breadcrumb-separator">/</span>
+                  <Link href={`/directories/${currentParentDirectory.id}`}>
+                    {currentParentDirectory.name}
+                  </Link>
+                  <span className="breadcrumb-separator">/</span>
+                </>
+              ) : (
+                <>
+                  <Link href="/documents">Documents</Link>
+                  <span className="breadcrumb-separator">/</span>
+                </>
+              )}
+              <span className="breadcrumb-current">{currentDocument.title}</span>
+            </nav>
+          </div>
         </div>
+        <progress
+          className="document-reading-progress"
+          max={100}
+          value={readingProgress}
+          aria-label="Reading progress"
+        />
       </header>
 
       <section className="document-viewer-title-card">
@@ -242,7 +280,7 @@ export function DocumentDetailClient({
         </div>
       </section>
 
-      <section className="document-viewer-content-card">
+      <section ref={contentRef} className="document-viewer-content-card">
         {htmlContent ? (
           <div className="document-viewer-content-inner">
             <DocumentHtmlContent html={htmlContent} className="document-preview" />

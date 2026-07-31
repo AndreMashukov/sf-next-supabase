@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
+import { CollapsibleDocSection } from '@/components/CollapsibleDocSection';
 import { DocumentCodeBlock } from '@/components/DocumentCodeBlock';
 import { MermaidDiagram } from '@/components/MermaidDiagram';
+import { splitCollapsibleSections } from '@/lib/document-html-enhance';
 import { cn } from '@/lib/utils';
 
 type HtmlSegment = { type: 'html'; html: string };
@@ -80,33 +82,27 @@ export function splitHtmlByCodeBlocks(html: string): Segment[] {
   return segments.length > 0 ? segments : [{ type: 'html', html }];
 }
 
-export function DocumentHtmlContent({
+function DocumentSegmentList({
   html,
-  className,
+  keyPrefix,
 }: {
   html: string;
-  className?: string;
+  keyPrefix: string;
 }) {
   const segments = useMemo(() => splitHtmlByCodeBlocks(html), [html]);
 
-  if (!html.trim()) {
-    return null;
-  }
-
   return (
-    <div className={cn('document-html-content', className)}>
+    <>
       {segments.map((segment, index) => {
+        const key = `${keyPrefix}-${index}`;
+
         if (segment.type === 'mermaid') {
-          return <MermaidDiagram key={`mermaid-${index}`} code={segment.code} />;
+          return <MermaidDiagram key={key} code={segment.code} />;
         }
 
         if (segment.type === 'code') {
           return (
-            <DocumentCodeBlock
-              key={`code-${index}`}
-              code={segment.code}
-              language={segment.language}
-            />
+            <DocumentCodeBlock key={key} code={segment.code} language={segment.language} />
           );
         }
 
@@ -115,11 +111,41 @@ export function DocumentHtmlContent({
         }
 
         return (
-          <div
-            key={`html-${index}`}
-            dangerouslySetInnerHTML={{ __html: segment.html }}
-          />
+          <div key={key} dangerouslySetInnerHTML={{ __html: segment.html }} />
         );
+      })}
+    </>
+  );
+}
+
+export function DocumentHtmlContent({
+  html,
+  className,
+}: {
+  html: string;
+  className?: string;
+}) {
+  const sections = useMemo(() => splitCollapsibleSections(html), [html]);
+
+  if (!html.trim()) {
+    return null;
+  }
+
+  return (
+    <div className={cn('document-html-content', className)}>
+      {sections.map((section, index) => {
+        const keyPrefix = `section-${index}`;
+        const body = <DocumentSegmentList html={section.html} keyPrefix={keyPrefix} />;
+
+        if (section.kind === 'collapse' && section.title) {
+          return (
+            <CollapsibleDocSection key={keyPrefix} title={section.title}>
+              {body}
+            </CollapsibleDocSection>
+          );
+        }
+
+        return <div key={keyPrefix}>{body}</div>;
       })}
     </div>
   );
