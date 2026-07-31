@@ -12,7 +12,9 @@ import {
   FileText,
   FolderInput,
   MoreVertical,
+  Trash2,
 } from 'lucide-react';
+import { DeleteDocumentsDialog } from '@/components/DeleteDocumentsDialog';
 import { DirectoryPickerDialog } from '@/components/DirectoryPickerDialog';
 import { DocumentHtmlContent } from '@/components/DocumentHtmlContent';
 import { DropdownMenu } from '@/components/DropdownMenu';
@@ -47,6 +49,7 @@ export function DocumentDetailClient({
   const [generateMenuOpen, setGenerateMenuOpen] = useState(false);
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
   const [showQuizForm, setShowQuizForm] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentDocument, setCurrentDocument] = useState(document);
   const [currentParentDirectory, setCurrentParentDirectory] = useState(parentDirectory);
 
@@ -202,6 +205,17 @@ export function DocumentDetailClient({
                   Open parent folder
                 </Link>
               ) : null}
+              <button
+                type="button"
+                className="folder-card-menu-item danger"
+                onClick={() => {
+                  setOverflowMenuOpen(false);
+                  setDeleteOpen(true);
+                }}
+              >
+                <Trash2 size={14} />
+                Delete document
+              </button>
             </DropdownMenu>
           </div>
         </div>
@@ -313,6 +327,21 @@ export function DocumentDetailClient({
           setCurrentDocument(updated);
           setCurrentParentDirectory(nextParent);
           router.refresh();
+        }}
+      />
+
+      <DeleteDocumentsDialog
+        documentIds={[currentDocument.id]}
+        documentTitle={currentDocument.title}
+        quizCount={quizzes.length}
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={() => {
+          if (currentParentDirectory) {
+            router.push(`/directories/${currentParentDirectory.id}`);
+            return;
+          }
+          router.push('/documents');
         }}
       />
     </div>

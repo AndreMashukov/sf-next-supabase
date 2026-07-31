@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import type { Quiz } from '@sf/shared-types';
 import { QuizQuestionCard } from '@/components/quiz/QuizQuestionCard';
 import { QuizScoreCard } from '@/components/quiz/QuizScoreCard';
+import { DeleteQuizzesDialog } from '@/components/DeleteQuizzesDialog';
 import {
   computeQuizProgress,
   computeQuizScore,
@@ -15,11 +17,13 @@ import {
 type QuizPhase = 'playing' | 'completed';
 
 export function QuizPageClient({ quiz }: { quiz: Quiz }) {
+  const router = useRouter();
   const [phase, setPhase] = useState<QuizPhase>('playing');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, QuizAnswerRecord>>({});
   const [startTime, setStartTime] = useState(() => Date.now());
   const [completedAt, setCompletedAt] = useState<number | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const currentQuestion = quiz.questions[currentIndex];
   const selectedAnswer = answers[currentIndex]?.selected ?? null;
@@ -58,44 +62,79 @@ export function QuizPageClient({ quiz }: { quiz: Quiz }) {
     setStartTime(Date.now());
   }
 
+  const deleteAction = (
+    <button
+      type="button"
+      className="button secondary compact-button danger"
+      onClick={() => setDeleteOpen(true)}
+    >
+      <Trash2 size={14} />
+      Delete quiz
+    </button>
+  );
+
   if (phase === 'completed') {
     const breakdown = quiz.questions.map((_question, index) =>
       answers[index] ?? { selected: -1, isCorrect: false },
     );
 
     return (
-      <QuizScoreCard
-        title={quiz.title}
-        score={score}
-        totalQuestions={quiz.questions.length}
-        timeTakenMs={(completedAt ?? Date.now()) - startTime}
-        answersBreakdown={breakdown}
-        onRetake={handleRetake}
-      />
+      <>
+        <div className="quiz-play-page">
+          <div className="quiz-play-actions">{deleteAction}</div>
+          <QuizScoreCard
+            title={quiz.title}
+            score={score}
+            totalQuestions={quiz.questions.length}
+            timeTakenMs={(completedAt ?? Date.now()) - startTime}
+            answersBreakdown={breakdown}
+            onRetake={handleRetake}
+          />
+        </div>
+        <DeleteQuizzesDialog
+          quizIds={[quiz.id]}
+          quizTitle={quiz.title}
+          open={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+          onDeleted={() => router.push(`/documents/${quiz.documentId}`)}
+        />
+      </>
     );
   }
 
   return (
-    <div className="quiz-play-page">
-      <h1 className="quiz-play-title">{quiz.title}</h1>
-      <QuizQuestionCard
-        question={currentQuestion}
-        questionIndex={currentIndex}
-        totalQuestions={quiz.questions.length}
-        progress={progress}
-        score={score}
-        answeredCount={answeredCount}
-        selectedAnswer={selectedAnswer}
-        showExplanation={showExplanation}
-        onAnswerSelect={selectAnswer}
-        onNextQuestion={handleNextQuestion}
-        isLastQuestion={currentIndex === quiz.questions.length - 1}
-        leadingAction={
-          <Link href={`/documents/${quiz.documentId}`} className="quiz-back-link icon-button" aria-label="Back to document">
-            <ArrowLeft size={16} />
-          </Link>
-        }
+    <>
+      <div className="quiz-play-page">
+        <div className="quiz-play-title-row">
+          <h1 className="quiz-play-title">{quiz.title}</h1>
+          {deleteAction}
+        </div>
+        <QuizQuestionCard
+          question={currentQuestion}
+          questionIndex={currentIndex}
+          totalQuestions={quiz.questions.length}
+          progress={progress}
+          score={score}
+          answeredCount={answeredCount}
+          selectedAnswer={selectedAnswer}
+          showExplanation={showExplanation}
+          onAnswerSelect={selectAnswer}
+          onNextQuestion={handleNextQuestion}
+          isLastQuestion={currentIndex === quiz.questions.length - 1}
+          leadingAction={
+            <Link href={`/documents/${quiz.documentId}`} className="quiz-back-link icon-button" aria-label="Back to document">
+              <ArrowLeft size={16} />
+            </Link>
+          }
+        />
+      </div>
+      <DeleteQuizzesDialog
+        quizIds={[quiz.id]}
+        quizTitle={quiz.title}
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={() => router.push(`/documents/${quiz.documentId}`)}
       />
-    </div>
+    </>
   );
 }

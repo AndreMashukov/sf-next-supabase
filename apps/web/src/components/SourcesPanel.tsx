@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ChevronDown,
   FileText,
@@ -13,6 +13,7 @@ import {
 import type { Document, Rule } from '@sf/shared-types';
 import { formatShortDate, getDocumentFallbackColor } from '@/lib/folder-constants';
 import { DirectoryPickerDialog } from '@/components/DirectoryPickerDialog';
+import { DeleteDocumentsDialog } from '@/components/DeleteDocumentsDialog';
 import { DropdownMenu } from '@/components/DropdownMenu';
 import type { DirectorySummary } from '@/lib/data/directory-summaries';
 
@@ -21,15 +22,19 @@ function SourceRow({
   allFolders,
   rules,
   selected,
+  linkedQuizCount,
   onSelectChange,
   onMoved,
+  onDeleteRequest,
 }: {
   document: Document;
   allFolders: DirectorySummary[];
   rules: Rule[];
   selected: boolean;
+  linkedQuizCount: number;
   onSelectChange: (selected: boolean) => void;
   onMoved?: (document: Document) => void;
+  onDeleteRequest: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
@@ -60,6 +65,7 @@ function SourceRow({
           </Link>
           <p className="source-row-meta muted">
             {document.wordCount} words · {formatShortDate(document.createdAt)}
+            {linkedQuizCount > 0 ? ` · ${linkedQuizCount} quiz${linkedQuizCount === 1 ? '' : 'zes'}` : ''}
           </p>
         </div>
         <button
@@ -128,6 +134,17 @@ function SourceRow({
             <FolderInput size={14} />
             Move
           </button>
+          <button
+            type="button"
+            className="folder-card-menu-item danger"
+            onClick={() => {
+              setMenuOpen(false);
+              onDeleteRequest();
+            }}
+          >
+            <Trash2 size={14} />
+            Delete
+          </button>
         </DropdownMenu>
       </article>
 
@@ -154,14 +171,30 @@ export function SourcesPanel({
   documents,
   allFolders,
   rules,
+  quizCountsByDocumentId = {},
   onDocumentMoved,
+  onDocumentsDeleted,
 }: {
   documents: Document[];
   allFolders: DirectorySummary[];
   rules: Rule[];
+  quizCountsByDocumentId?: Record<string, number>;
   onDocumentMoved?: (document: Document) => void;
+  onDocumentsDeleted?: (documentIds: string[]) => void;
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
+  const [pendingDeleteTitle, setPendingDeleteTitle] = useState<string | undefined>();
+
+  const pendingQuizCount = useMemo(
+    () =>
+      pendingDeleteIds.reduce(
+        (total, documentId) => total + (quizCountsByDocumentId[documentId] ?? 0),
+        0,
+      ),
+    [pendingDeleteIds, quizCountsByDocumentId],
+  );
 
   function toggleSelected(documentId: string, selected: boolean) {
     setSelectedIds((current) => {
@@ -175,13 +208,34 @@ export function SourcesPanel({
     });
   }
 
+  function openDeleteDialog(documentIds: string[], documentTitle?: string) {
+    setPendingDeleteIds(documentIds);
+    setPendingDeleteTitle(documentTitle);
+    setDeleteOpen(true);
+  }
+
+  function handleDeleted(documentIds: string[]) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      for (const id of documentIds) {
+        next.delete(id);
+      }
+      return next;
+    });
+    onDocumentsDeleted?.(documentIds);
+  }
+
   return (
     <section className="sources-panel">
       <div className="sources-panel-header">
         {selectedIds.size > 0 ? (
           <div className="sources-bulk-toolbar">
             <span>{selectedIds.size} selected</span>
-            <button type="button" className="button secondary compact-button" disabled>
+            <button
+              type="button"
+              className="button secondary compact-button danger"
+              onClick={() => openDeleteDialog([...selectedIds])}
+            >
               <Trash2 size={14} />
               Delete selected
             </button>
@@ -204,12 +258,23 @@ export function SourcesPanel({
               allFolders={allFolders}
               rules={rules}
               selected={selectedIds.has(document.id)}
+              linkedQuizCount={quizCountsByDocumentId[document.id] ?? 0}
               onSelectChange={(selected) => toggleSelected(document.id, selected)}
               onMoved={onDocumentMoved}
+              onDeleteRequest={() => openDeleteDialog([document.id], document.title)}
             />
           ))}
         </div>
       )}
+
+      <DeleteDocumentsDialog
+        documentIds={pendingDeleteIds}
+        documentTitle={pendingDeleteTitle}
+        quizCount={pendingQuizCount}
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onDeleted={handleDeleted}
+      />
     </section>
   );
 }

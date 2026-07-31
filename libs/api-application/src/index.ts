@@ -3,6 +3,8 @@ export { CreateDirectoryUseCase } from './create-directory.use-case';
 export { CreateDocumentUseCase } from './create-document.use-case';
 export { CreateRuleUseCase } from './create-rule.use-case';
 export { DeleteDirectoryUseCase } from './delete-directory.use-case';
+export { DeleteDocumentsUseCase } from './delete-documents.use-case';
+export { DeleteQuizzesUseCase } from './delete-quizzes.use-case';
 export { DeleteRuleUseCase } from './delete-rule.use-case';
 export { GenerateQuizUseCase } from './generate-quiz.use-case';
 export { MoveDirectoryUseCase } from './move-directory.use-case';

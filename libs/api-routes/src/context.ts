@@ -4,6 +4,8 @@ import {
   CreateDocumentUseCase,
   CreateRuleUseCase,
   DeleteDirectoryUseCase,
+  DeleteDocumentsUseCase,
+  DeleteQuizzesUseCase,
   DeleteRuleUseCase,
   DetachRuleFromDirectoryUseCase,
   GenerateQuizUseCase,
@@ -52,6 +54,8 @@ export interface ApiContext {
   updateDirectoryUseCase: UpdateDirectoryUseCase;
   moveDirectoryUseCase: MoveDirectoryUseCase;
   deleteDirectoryUseCase: DeleteDirectoryUseCase;
+  deleteDocumentsUseCase: DeleteDocumentsUseCase;
+  deleteQuizzesUseCase: DeleteQuizzesUseCase;
   moveDocumentUseCase: MoveDocumentUseCase;
   attachRuleToDirectoryUseCase: AttachRuleToDirectoryUseCase;
   detachRuleFromDirectoryUseCase: DetachRuleFromDirectoryUseCase;
@@ -115,6 +119,8 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
       documentRepository,
       storageService,
     ),
+    deleteDocumentsUseCase: new DeleteDocumentsUseCase(documentRepository, storageService),
+    deleteQuizzesUseCase: new DeleteQuizzesUseCase(quizRepository),
     moveDocumentUseCase: new MoveDocumentUseCase(documentRepository, directoryRepository),
     attachRuleToDirectoryUseCase: new AttachRuleToDirectoryUseCase(
       directoryRepository,

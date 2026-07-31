@@ -6,6 +6,8 @@ import {
   createDocumentSchema,
   createRuleSchema,
   deleteDirectorySchema,
+  deleteDocumentsSchema,
+  deleteQuizzesSchema,
   deleteRuleSchema,
   detachRuleFromDirectorySchema,
   generateQuizSchema,
@@ -70,6 +72,8 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
     '/functions/v1/update-directory',
     '/functions/v1/move-directory',
     '/functions/v1/delete-directory',
+    '/functions/v1/delete-documents',
+    '/functions/v1/delete-quizzes',
     '/functions/v1/move-document',
     '/functions/v1/attach-rule-to-directory',
     '/functions/v1/detach-rule-from-directory',
@@ -198,6 +202,28 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       const result = await context.deleteDirectoryUseCase.execute({
         userId,
         directoryId: body.directoryId,
+      });
+
+      return reply.send(result);
+    });
+
+    protectedApp.post('/functions/v1/delete-documents', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(deleteDocumentsSchema, request.body);
+      const result = await context.deleteDocumentsUseCase.execute({
+        userId,
+        documentIds: body.documentIds,
+      });
+
+      return reply.send(result);
+    });
+
+    protectedApp.post('/functions/v1/delete-quizzes', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(deleteQuizzesSchema, request.body);
+      const result = await context.deleteQuizzesUseCase.execute({
+        userId,
+        quizIds: body.quizIds,
       });
 
       return reply.send(result);

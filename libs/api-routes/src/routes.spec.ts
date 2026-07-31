@@ -49,6 +49,18 @@ function createMockContext(overrides: Partial<ApiContext> = {}): ApiContext {
         deletedDocuments: 0,
       }),
     },
+    deleteDocumentsUseCase: {
+      execute: vi.fn().mockResolvedValue({
+        success: true,
+        deletedDocuments: 1,
+      }),
+    },
+    deleteQuizzesUseCase: {
+      execute: vi.fn().mockResolvedValue({
+        success: true,
+        deletedQuizzes: 1,
+      }),
+    },
     moveDocumentUseCase: { execute: vi.fn() },
     attachRuleToDirectoryUseCase: { execute: vi.fn().mockResolvedValue({ success: true }) },
     detachRuleFromDirectoryUseCase: { execute: vi.fn().mockResolvedValue({ success: true }) },
@@ -274,6 +286,60 @@ describe('createApiServer', () => {
       userId: 'user-1',
       documentId: '33333333-3333-4333-8333-333333333333',
       directoryId: '11111111-1111-4111-8111-111111111111',
+    });
+    await app.close();
+  });
+
+  it('deletes documents for authenticated requests', async () => {
+    const context = createMockContext();
+    const app = await createApiServer(context);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/functions/v1/delete-documents',
+      headers: {
+        authorization: 'Bearer test-token',
+        'content-type': 'application/json',
+      },
+      payload: {
+        documentIds: ['33333333-3333-4333-8333-333333333333'],
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      success: true,
+      deletedDocuments: 1,
+    });
+    expect(context.deleteDocumentsUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      documentIds: ['33333333-3333-4333-8333-333333333333'],
+    });
+    await app.close();
+  });
+
+  it('deletes quizzes for authenticated requests', async () => {
+    const context = createMockContext();
+    const app = await createApiServer(context);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/functions/v1/delete-quizzes',
+      headers: {
+        authorization: 'Bearer test-token',
+        'content-type': 'application/json',
+      },
+      payload: {
+        quizIds: ['44444444-4444-4444-8444-444444444444'],
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      success: true,
+      deletedQuizzes: 1,
+    });
+    expect(context.deleteQuizzesUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      quizIds: ['44444444-4444-4444-8444-444444444444'],
     });
     await app.close();
   });

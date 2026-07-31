@@ -340,15 +340,18 @@
 .quiz-artifact-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   padding: 0.875rem 1rem;
   border: 1px solid var(--border);
   border-radius: 0.625rem;
   background: var(--background);
-  text-decoration: none;
   color: inherit;
   transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.quiz-artifact-row.selected {
+  border-color: rgb(139 92 246 / 0.45);
+  background: rgb(139 92 246 / 0.08);
 }
 
 .quiz-artifact-row:hover {
@@ -357,7 +360,40 @@
 }
 
 .quiz-artifact-main {
+  flex: 1;
   min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.quiz-artifact-chevron {
+  flex-shrink: 0;
+}
+
+.quiz-play-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.quiz-play-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.button.danger,
+.button.secondary.danger {
+  border-color: rgb(239 68 68 / 0.45);
+  color: rgb(252 165 165);
+}
+
+.button.danger:hover:not(:disabled),
+.button.secondary.danger:hover:not(:disabled) {
+  background: rgb(239 68 68 / 0.12);
+  border-color: rgb(239 68 68 / 0.65);
 }
 
 .quiz-artifact-title {

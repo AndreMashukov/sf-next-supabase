@@ -154,6 +154,20 @@ export const deleteRuleSchema = z.object({
   ruleId: uuidSchema,
 });
 
+const idArraySchema = z
+  .array(z.string().uuid('Invalid ID'))
+  .min(1, 'At least one ID is required')
+  .max(100)
+  .transform((ids) => ids.filter((id, index, arr) => arr.indexOf(id) === index));
+
+export const deleteDocumentsSchema = z.object({
+  documentIds: idArraySchema,
+});
+
+export const deleteQuizzesSchema = z.object({
+  quizIds: idArraySchema,
+});
+
 export const quizQuestionSchema = z.object({
   question: z.string().min(1),
   options: z.tuple([z.string(), z.string(), z.string(), z.string()]),
@@ -190,6 +204,10 @@ export type CreateRuleInput = z.output<typeof createRuleSchema>;
 export type UpdateRuleRequest = z.input<typeof updateRuleSchema>;
 export type UpdateRuleInput = z.output<typeof updateRuleSchema>;
 export type DeleteRuleRequest = z.input<typeof deleteRuleSchema>;
+export type DeleteDocumentsRequest = z.input<typeof deleteDocumentsSchema>;
+export type DeleteDocumentsInput = z.output<typeof deleteDocumentsSchema>;
+export type DeleteQuizzesRequest = z.input<typeof deleteQuizzesSchema>;
+export type DeleteQuizzesInput = z.output<typeof deleteQuizzesSchema>;
 export type QuizResponsePayload = z.output<typeof quizResponseSchema>;
 
 export function formatValidationError(error: ZodError): string {

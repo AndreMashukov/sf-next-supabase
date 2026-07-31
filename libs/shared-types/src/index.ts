@@ -70,6 +70,10 @@ export type {
   CreateRuleRequest,
   DeleteDirectoryInput,
   DeleteDirectoryRequest,
+  DeleteDocumentsInput,
+  DeleteDocumentsRequest,
+  DeleteQuizzesInput,
+  DeleteQuizzesRequest,
   DeleteRuleRequest,
   DetachRuleFromDirectoryInput,
   DetachRuleFromDirectoryRequest,
@@ -92,6 +96,8 @@ export {
   createDocumentSchema,
   createRuleSchema,
   deleteDirectorySchema,
+  deleteDocumentsSchema,
+  deleteQuizzesSchema,
   deleteRuleSchema,
   detachRuleFromDirectorySchema,
   formatValidationError,
@@ -142,6 +148,16 @@ export interface DeleteDirectoryResponse {
   success: boolean;
   deletedDirectories: number;
   deletedDocuments: number;
+}
+
+export interface DeleteDocumentsResponse {
+  success: boolean;
+  deletedDocuments: number;
+}
+
+export interface DeleteQuizzesResponse {
+  success: boolean;
+  deletedQuizzes: number;
 }
 
 export interface MoveDocumentResponse {

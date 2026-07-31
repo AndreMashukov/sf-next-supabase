@@ -6,6 +6,8 @@ import {
   createDocumentSchema,
   createRuleSchema,
   deleteDirectorySchema,
+  deleteDocumentsSchema,
+  deleteQuizzesSchema,
   deleteRuleSchema,
   detachRuleFromDirectorySchema,
   generateQuizSchema,
@@ -19,6 +21,8 @@ import {
   type CreateDocumentResponse,
   type CreateRuleResponse,
   type DeleteDirectoryResponse,
+  type DeleteDocumentsResponse,
+  type DeleteQuizzesResponse,
   type DeleteRuleResponse,
   type DetachRuleFromDirectoryResponse,
   type GenerateQuizResponse,
@@ -155,6 +159,26 @@ export async function moveDirectory(directoryId: string, parentId?: string) {
 export async function deleteDirectory(directoryId: string) {
   const body = parseRequest(deleteDirectorySchema, { directoryId });
   const payload = await postJson<DeleteDirectoryResponse>('delete-directory', body);
+  return payload;
+}
+
+export async function deleteDocument(documentId: string) {
+  return deleteDocuments([documentId]);
+}
+
+export async function deleteDocuments(documentIds: string[]) {
+  const body = parseRequest(deleteDocumentsSchema, { documentIds });
+  const payload = await postJson<DeleteDocumentsResponse>('delete-documents', body);
+  return payload;
+}
+
+export async function deleteQuiz(quizId: string) {
+  return deleteQuizzes([quizId]);
+}
+
+export async function deleteQuizzes(quizIds: string[]) {
+  const body = parseRequest(deleteQuizzesSchema, { quizIds });
+  const payload = await postJson<DeleteQuizzesResponse>('delete-quizzes', body);
   return payload;
 }
 

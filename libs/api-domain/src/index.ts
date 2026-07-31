@@ -121,6 +121,16 @@ export interface DeleteRuleInput {
   ruleId: string;
 }
 
+export interface DeleteDocumentsInput {
+  userId: string;
+  documentIds: string[];
+}
+
+export interface DeleteQuizzesInput {
+  userId: string;
+  quizIds: string[];
+}
+
 export interface RulePromptRecord {
   name: string;
   content: string;
@@ -139,6 +149,8 @@ export interface DocumentRepository {
   }): Promise<Document>;
 
   findByIdForUser(documentId: string, userId: string): Promise<Document | null>;
+
+  findByIdsForUser(userId: string, documentIds: string[]): Promise<Document[]>;
 
   updateDirectoryId(documentId: string, userId: string, directoryId: string | null): Promise<Document>;
 
@@ -207,6 +219,8 @@ export interface QuizRepository {
     title: string;
     questions: Quiz['questions'];
   }): Promise<Quiz>;
+
+  deleteByIds(userId: string, quizIds: string[]): Promise<number>;
 }
 
 export interface StorageService {

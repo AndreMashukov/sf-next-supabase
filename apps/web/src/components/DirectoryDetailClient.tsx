@@ -218,6 +218,7 @@ export function DirectoryDetailClient({
   const [folderRules, setFolderRules] = useState(attachedRuleIds);
   const [childFolderList, setChildFolderList] = useState(childFolders);
   const [documentList, setDocumentList] = useState(documents);
+  const [quizList, setQuizList] = useState(quizzes);
   const [createSubfolderOpen, setCreateSubfolderOpen] = useState(false);
   const [addSourceOpen, setAddSourceOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -226,6 +227,14 @@ export function DirectoryDetailClient({
 
   const TitleIcon = resolveDirectoryIcon(currentDirectory.icon);
   const titleColor = resolveDirectoryColor(currentDirectory.color);
+
+  const quizCountsByDocumentId = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const quiz of quizList) {
+      counts[quiz.documentId] = (counts[quiz.documentId] ?? 0) + 1;
+    }
+    return counts;
+  }, [quizList]);
 
   const setPanel = useCallback(
     (panel: DirectoryPanelType) => {
@@ -381,9 +390,19 @@ export function DirectoryDetailClient({
               documents={documentList}
               allFolders={allFolders}
               rules={rules}
+              quizCountsByDocumentId={quizCountsByDocumentId}
               onDocumentMoved={(document) =>
                 setDocumentList((current) => current.filter((item) => item.id !== document.id))
               }
+              onDocumentsDeleted={(documentIds) => {
+                setDocumentList((current) =>
+                  current.filter((item) => !documentIds.includes(item.id)),
+                );
+                setQuizList((current) =>
+                  current.filter((quiz) => !documentIds.includes(quiz.documentId)),
+                );
+                router.refresh();
+              }}
             />
           ) : null}
           {activePanel === 'rules' ? (
@@ -396,7 +415,14 @@ export function DirectoryDetailClient({
             />
           ) : null}
           {activePanel === 'quizzes' ? (
-            <QuizzesPanel quizzes={quizzes} documents={documentList} />
+            <QuizzesPanel
+              quizzes={quizList}
+              documents={documentList}
+              onQuizzesDeleted={(quizIds) => {
+                setQuizList((current) => current.filter((quiz) => !quizIds.includes(quiz.id)));
+                router.refresh();
+              }}
+            />
           ) : null}
           {activePanel === 'cards' ? <PlaceholderPanel title="Cards" /> : null}
           {activePanel === 'slides' ? <PlaceholderPanel title="Slides" /> : null}

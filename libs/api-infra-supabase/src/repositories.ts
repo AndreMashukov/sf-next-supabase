@@ -71,6 +71,24 @@ export class SupabaseDocumentRepository implements DocumentRepository {
     return mapDocumentRow(data as DocumentRecordRow);
   }
 
+  async findByIdsForUser(userId: string, documentIds: string[]) {
+    if (documentIds.length === 0) {
+      return [];
+    }
+
+    const { data, error } = await this.client
+      .from('documents')
+      .select('*')
+      .eq('user_id', userId)
+      .in('id', documentIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapDocumentRow(row as DocumentRecordRow));
+  }
+
   async updateDirectoryId(documentId: string, userId: string, directoryId: string | null) {
     const { data, error } = await this.client
       .from('documents')
@@ -260,6 +278,24 @@ export class SupabaseQuizRepository implements QuizRepository {
     }
 
     return mapQuizRow(data as QuizRecordRow);
+  }
+
+  async deleteByIds(userId: string, quizIds: string[]) {
+    if (quizIds.length === 0) {
+      return 0;
+    }
+
+    const { error, count } = await this.client
+      .from('quizzes')
+      .delete({ count: 'exact' })
+      .eq('user_id', userId)
+      .in('id', quizIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return count ?? 0;
   }
 }
 
