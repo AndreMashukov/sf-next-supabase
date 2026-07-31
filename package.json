@@ -71,6 +71,7 @@
     "@langchain/core": "^1.2.3",
     "@langchain/langgraph": "^1.4.8",
     "@langchain/openai": "^1.5.5",
+    "@radix-ui/react-select": "^2.3.4",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "2.49.8",
     "clsx": "^2.1.1",

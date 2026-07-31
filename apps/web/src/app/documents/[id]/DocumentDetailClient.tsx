@@ -18,6 +18,13 @@ import { DeleteDocumentsDialog } from '@/components/DeleteDocumentsDialog';
 import { DirectoryPickerDialog } from '@/components/DirectoryPickerDialog';
 import { DocumentHtmlContent } from '@/components/DocumentHtmlContent';
 import { DropdownMenu } from '@/components/DropdownMenu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/Select';
 import { formatValidationError, generateQuiz, generateQuizSchema, moveDocument } from '@/lib/api';
 import { formatShortDate } from '@/lib/folder-constants';
 import { formatDate } from '@/lib/utils';
@@ -271,17 +278,21 @@ export function DocumentDetailClient({
               </label>
               <label className="label">
                 Number of questions
-                <select
-                  className="input"
-                  value={questionCount}
-                  onChange={(event) => setQuestionCount(Number(event.target.value))}
+                <Select
+                  value={String(questionCount)}
+                  onValueChange={(value) => setQuestionCount(Number(value))}
                 >
-                  {QUESTION_COUNT_OPTIONS.map((count) => (
-                    <option key={count} value={count}>
-                      {count} questions
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger aria-label="Number of questions">
+                    <SelectValue placeholder="Select question count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {QUESTION_COUNT_OPTIONS.map((count) => (
+                      <SelectItem key={count} value={String(count)}>
+                        {count} questions
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
               {error ? <div className="error">{error}</div> : null}
               <button className="button" type="submit" disabled={loading}>

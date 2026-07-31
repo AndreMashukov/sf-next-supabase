@@ -4,6 +4,13 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatValidationError, generateQuiz, generateQuizSchema } from '@/lib/api';
 import type { Document } from '@sf/shared-types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/Select';
 
 const QUESTION_COUNT_OPTIONS = [3, 5, 7, 10] as const;
 
@@ -101,11 +108,9 @@ export function GenerateQuizDialog({
             <>
               <label className="label">
                 Source document
-                <select
-                  className="input"
+                <Select
                   value={documentId}
-                  onChange={(event) => {
-                    const nextDocumentId = event.target.value;
+                  onValueChange={(nextDocumentId) => {
                     setDocumentId(nextDocumentId);
                     const nextDocument = documents.find((document) => document.id === nextDocumentId);
                     if (nextDocument) {
@@ -113,12 +118,17 @@ export function GenerateQuizDialog({
                     }
                   }}
                 >
-                  {documents.map((document) => (
-                    <option key={document.id} value={document.id}>
-                      {document.title}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger aria-label="Source document">
+                    <SelectValue placeholder="Select a document" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {documents.map((document) => (
+                      <SelectItem key={document.id} value={document.id}>
+                        {document.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
 
               <label className="label">
@@ -133,17 +143,21 @@ export function GenerateQuizDialog({
 
               <label className="label">
                 Number of questions
-                <select
-                  className="input"
-                  value={questionCount}
-                  onChange={(event) => setQuestionCount(Number(event.target.value))}
+                <Select
+                  value={String(questionCount)}
+                  onValueChange={(value) => setQuestionCount(Number(value))}
                 >
-                  {QUESTION_COUNT_OPTIONS.map((count) => (
-                    <option key={count} value={count}>
-                      {count} questions
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger aria-label="Number of questions">
+                    <SelectValue placeholder="Select question count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {QUESTION_COUNT_OPTIONS.map((count) => (
+                      <SelectItem key={count} value={String(count)}>
+                        {count} questions
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
             </>
           )}
