@@ -17,7 +17,7 @@ Nx monorepo for organizing study content in directories, generating documents an
 - **Directories** — nested folders for sources, quizzes, and rules inheritance
 - **AI document & quiz generation** — Together AI (`MiniMaxAI/MiniMax-M3`), run as async jobs
 - **Supabase Realtime** — live generation job status updates in the UI (pending → completed/failed)
-- **Directory Agent** — folder-scoped chat that can search, create, update, move, and propose deletes
+- **Directory Agent** — creates and manages learning content (folder-scoped chat with search, CRUD tools, and delete confirmation)
 - **RAG + vector search** — pgvector embeddings (`agent_knowledge_chunks`) via Together (`intfloat/multilingual-e5-large-instruct`, 1024d)
 - **Rules** — reusable prompts attached to directories and applied during generation
 - **Quizzes** — MCQ flows with scoring, hints, and explanations
