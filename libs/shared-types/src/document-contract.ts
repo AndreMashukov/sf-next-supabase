@@ -66,11 +66,16 @@ export const SEALED_OUTPUT_CONTRACT_LINES = [
   '- Prefer <pre><code class="language-…"> for code samples and <ul>/<ol> for lists.',
   '- When a diagram helps explain the topic, include Mermaid diagrams as:',
   '  <pre><code class="language-mermaid">flowchart TD',
-  '    A --> B',
+  '    A["🖥️ Client"] --> B["⚙️ API"]',
+  '    style A fill:#1e3a5f,color:#ffffff',
+  '    style B fill:#dbeafe,color:#0f172a',
   '  </code></pre>',
   `- Use only supported Mermaid types: ${MERMAID_DIAGRAM_PREFIXES.slice(0, 5).join(', ')}, or stateDiagram.`,
   '- Keep diagrams compact; avoid bare /, \\, or @ inside square-bracket node labels.',
   '- NEVER use 4-space indentation for Mermaid — always use the language-mermaid pre/code form above.',
+  '- Color diagram nodes/subgraphs differently with style or classDef so roles and stages are visually distinct.',
+  '- When setting fill:, ALWAYS also set color: so label text contrasts with the background (dark fill → light text; light fill → dark text).',
+  '- Add relevant emojis to diagram element labels for clarity and engagement.',
 ] as const;
 
 export function buildSealedOutputContract(): string {
