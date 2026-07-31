@@ -131,6 +131,21 @@ export interface DeleteQuizzesInput {
   quizIds: string[];
 }
 
+export interface UpdateDocumentInput {
+  userId: string;
+  documentId: string;
+  title?: string;
+  description?: string;
+  html?: string;
+}
+
+export interface UpdateQuizInput {
+  userId: string;
+  quizId: string;
+  title?: string;
+  questions?: Quiz['questions'];
+}
+
 export interface RulePromptRecord {
   name: string;
   content: string;
@@ -153,6 +168,14 @@ export interface DocumentRepository {
   findByIdsForUser(userId: string, documentIds: string[]): Promise<Document[]>;
 
   updateDirectoryId(documentId: string, userId: string, directoryId: string | null): Promise<Document>;
+
+  update(input: {
+    userId: string;
+    documentId: string;
+    title?: string;
+    description?: string;
+    wordCount?: number;
+  }): Promise<Document>;
 
   listByDirectoryIds(userId: string, directoryIds: string[]): Promise<Document[]>;
 
@@ -218,6 +241,17 @@ export interface QuizRepository {
     documentId: string;
     title: string;
     questions: Quiz['questions'];
+  }): Promise<Quiz>;
+
+  findByIdForUser(quizId: string, userId: string): Promise<Quiz | null>;
+
+  listByDocumentIds(userId: string, documentIds: string[]): Promise<Quiz[]>;
+
+  update(input: {
+    userId: string;
+    quizId: string;
+    title?: string;
+    questions?: Quiz['questions'];
   }): Promise<Quiz>;
 
   deleteByIds(userId: string, quizIds: string[]): Promise<number>;
@@ -319,6 +353,57 @@ export interface GenerationJobRepository {
   markFailed(jobId: string, userId: string, errorMessage: string): Promise<GenerationJob>;
 
   deleteExpired(limit?: number): Promise<number>;
+}
+
+export type AgentChunkSourceType = 'directory' | 'document' | 'quiz';
+
+export interface AgentKnowledgeChunkInput {
+  userId: string;
+  directoryId: string | null;
+  documentId?: string;
+  quizId?: string;
+  sourceType: AgentChunkSourceType;
+  sourceTitle: string;
+  chunkIndex: number;
+  content: string;
+  contentHash: string;
+  metadata?: Record<string, unknown>;
+  embedding: number[];
+}
+
+export interface AgentKnowledgeMatch {
+  id: string;
+  sourceType: AgentChunkSourceType;
+  sourceTitle: string;
+  content: string;
+  metadata: Record<string, unknown>;
+  similarity: number;
+}
+
+export interface EmbeddingService {
+  embedTexts(texts: string[]): Promise<number[][]>;
+}
+
+export interface VectorIndexRepository {
+  replaceSourceChunks(input: {
+    userId: string;
+    sourceType: AgentChunkSourceType;
+    sourceId: string;
+    chunks: AgentKnowledgeChunkInput[];
+  }): Promise<void>;
+
+  deleteBySource(userId: string, sourceType: AgentChunkSourceType, sourceId: string): Promise<void>;
+
+  deleteByDocumentIds(userId: string, documentIds: string[]): Promise<void>;
+
+  deleteByDirectoryIds(userId: string, directoryIds: string[]): Promise<void>;
+
+  matchChunks(input: {
+    userId: string;
+    directoryIds: string[];
+    queryEmbedding: number[];
+    matchCount?: number;
+  }): Promise<AgentKnowledgeMatch[]>;
 }
 
 export function mapRuleRow(row: RuleRecordRow): Rule {

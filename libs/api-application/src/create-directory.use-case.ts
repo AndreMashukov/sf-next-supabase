@@ -8,9 +8,13 @@ import {
   assertSiblingNameAvailable,
   getParentDirectory,
 } from './directory.helpers';
+import type { KnowledgeIndexerService } from './knowledge-indexer.service';
 
 export class CreateDirectoryUseCase {
-  constructor(private readonly directoryRepository: DirectoryRepository) {}
+  constructor(
+    private readonly directoryRepository: DirectoryRepository,
+    private readonly knowledgeIndexer?: KnowledgeIndexerService,
+  ) {}
 
   async execute(input: CreateDirectoryInput) {
     const parent = await getParentDirectory(
@@ -26,7 +30,7 @@ export class CreateDirectoryUseCase {
       input.parentId,
     );
 
-    return this.directoryRepository.create({
+    const directory = await this.directoryRepository.create({
       userId: input.userId,
       name: input.name,
       parentId: input.parentId,
@@ -36,5 +40,11 @@ export class CreateDirectoryUseCase {
       color: input.color,
       icon: input.icon,
     });
+
+    if (this.knowledgeIndexer) {
+      await this.knowledgeIndexer.indexDirectory(directory);
+    }
+
+    return directory;
   }
 }

@@ -11,10 +11,13 @@ import {
   deleteRuleSchema,
   detachRuleFromDirectorySchema,
   generateQuizSchema,
+  agentMessageSchema,
   moveDirectorySchema,
   moveDocumentSchema,
   parseRequest,
   updateDirectorySchema,
+  updateDocumentSchema,
+  updateQuizSchema,
   updateRuleSchema,
 } from '@sf/shared-types';
 import type { ApiContext } from './context';
@@ -77,6 +80,9 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
     '/functions/v1/move-document',
     '/functions/v1/attach-rule-to-directory',
     '/functions/v1/detach-rule-from-directory',
+    '/functions/v1/agent-message',
+    '/functions/v1/update-document',
+    '/functions/v1/update-quiz',
   ] as const;
 
   for (const path of compatibilityPaths) {
@@ -263,6 +269,46 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       });
 
       return reply.send(result);
+    });
+
+    protectedApp.post('/functions/v1/agent-message', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(agentMessageSchema, request.body);
+      const result = await context.directoryAgentUseCase.execute({
+        userId,
+        directoryId: body.directoryId,
+        message: body.message,
+        threadId: body.threadId,
+      });
+
+      return reply.send(result);
+    });
+
+    protectedApp.post('/functions/v1/update-document', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(updateDocumentSchema, request.body);
+      const document = await context.updateDocumentUseCase.execute({
+        userId,
+        documentId: body.documentId,
+        title: body.title,
+        description: body.description,
+        html: body.html,
+      });
+
+      return reply.send({ document });
+    });
+
+    protectedApp.post('/functions/v1/update-quiz', async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(updateQuizSchema, request.body);
+      const quiz = await context.updateQuizUseCase.execute({
+        userId,
+        quizId: body.quizId,
+        title: body.title,
+        questions: body.questions,
+      });
+
+      return reply.send({ quiz });
     });
   });
 }

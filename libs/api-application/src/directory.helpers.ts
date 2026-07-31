@@ -3,9 +3,9 @@ import {
   buildDirectoryPath,
   MAX_DIRECTORY_DEPTH,
   NotFoundError,
-  type Directory,
   type DirectoryRepository,
 } from '@sf/api-domain';
+import type { Directory } from '@sf/shared-types';
 
 export async function getDirectoryOrThrow(
   directoryRepository: DirectoryRepository,

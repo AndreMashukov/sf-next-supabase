@@ -62,6 +62,25 @@ export interface Quiz {
 }
 
 export type {
+  AgentActionKind,
+  AgentActionResult,
+  AgentDeleteTarget,
+  AgentMessageInput,
+  AgentMessageRequest,
+  AgentMessageResponse,
+  AgentProposedDelete,
+} from './agent';
+
+export {
+  agentActionKindSchema,
+  agentActionResultSchema,
+  agentDeleteTargetSchema,
+  agentMessageResponseSchema,
+  agentMessageSchema,
+  agentProposedDeleteSchema,
+} from './agent';
+
+export type {
   AttachRuleToDirectoryInput,
   AttachRuleToDirectoryRequest,
   CreateDirectoryInput,
@@ -88,6 +107,10 @@ export type {
   QuizResponsePayload,
   UpdateDirectoryInput,
   UpdateDirectoryRequest,
+  UpdateDocumentInput,
+  UpdateDocumentRequest,
+  UpdateQuizInput,
+  UpdateQuizRequest,
   UpdateRuleInput,
   UpdateRuleRequest,
 } from './validation';
@@ -110,6 +133,8 @@ export {
   quizQuestionSchema,
   quizResponseSchema,
   updateDirectorySchema,
+  updateDocumentSchema,
+  updateQuizSchema,
   updateRuleSchema,
   countWords,
 } from './validation';
@@ -200,6 +225,21 @@ export interface ListRulesResponse {
 
 export interface ApiError {
   error: string;
+}
+
+export interface AgentMessageApiResponse {
+  reply: string;
+  threadId: string;
+  executedActions: import('./agent').AgentActionResult[];
+  proposedDeletes: import('./agent').AgentProposedDelete[];
+}
+
+export interface UpdateDocumentResponse {
+  document: Document;
+}
+
+export interface UpdateQuizResponse {
+  quiz: Quiz;
 }
 
 export type { Database } from './database.types';

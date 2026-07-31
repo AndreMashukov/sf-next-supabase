@@ -4,9 +4,13 @@ import {
   getDirectoryOrThrow,
   updateDirectorySubtreePaths,
 } from './directory.helpers';
+import type { KnowledgeIndexerService } from './knowledge-indexer.service';
 
 export class UpdateDirectoryUseCase {
-  constructor(private readonly directoryRepository: DirectoryRepository) {}
+  constructor(
+    private readonly directoryRepository: DirectoryRepository,
+    private readonly knowledgeIndexer?: KnowledgeIndexerService,
+  ) {}
 
   async execute(input: UpdateDirectoryInput) {
     const directory = await getDirectoryOrThrow(
@@ -48,6 +52,13 @@ export class UpdateDirectoryUseCase {
       });
     }
 
-    return getDirectoryOrThrow(this.directoryRepository, input.directoryId, input.userId);
+    return getDirectoryOrThrow(this.directoryRepository, input.directoryId, input.userId).then(
+      async (directory) => {
+        if (this.knowledgeIndexer) {
+          await this.knowledgeIndexer.indexDirectory(directory);
+        }
+        return directory;
+      },
+    );
   }
 }

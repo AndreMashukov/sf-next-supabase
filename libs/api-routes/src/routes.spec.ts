@@ -65,6 +65,21 @@ function createMockContext(overrides: Partial<ApiContext> = {}): ApiContext {
     moveDocumentUseCase: { execute: vi.fn() },
     attachRuleToDirectoryUseCase: { execute: vi.fn().mockResolvedValue({ success: true }) },
     detachRuleFromDirectoryUseCase: { execute: vi.fn().mockResolvedValue({ success: true }) },
+    updateDocumentUseCase: { execute: vi.fn() },
+    updateQuizUseCase: { execute: vi.fn() },
+    directoryAgentUseCase: {
+      execute: vi.fn().mockResolvedValue({
+        reply: 'Done',
+        threadId: 'thread-1',
+        executedActions: [],
+        proposedDeletes: [],
+      }),
+    },
+    knowledgeIndexer: {
+      indexDirectory: vi.fn(),
+      indexDocument: vi.fn(),
+      indexQuiz: vi.fn(),
+    },
     ...overrides,
   } as ApiContext;
 }
@@ -341,6 +356,38 @@ describe('createApiServer', () => {
     expect(context.deleteQuizzesUseCase.execute).toHaveBeenCalledWith({
       userId: 'user-1',
       quizIds: ['44444444-4444-4444-8444-444444444444'],
+    });
+    await app.close();
+  });
+
+  it('handles agent messages for authenticated requests', async () => {
+    const context = createMockContext();
+    const app = await createApiServer(context);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/functions/v1/agent-message',
+      headers: {
+        authorization: 'Bearer test-token',
+        'content-type': 'application/json',
+      },
+      payload: {
+        directoryId: '11111111-1111-4111-8111-111111111111',
+        message: 'Summarize this folder',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      reply: 'Done',
+      threadId: 'thread-1',
+      executedActions: [],
+      proposedDeletes: [],
+    });
+    expect(context.directoryAgentUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-1',
+      directoryId: '11111111-1111-4111-8111-111111111111',
+      message: 'Summarize this folder',
+      threadId: undefined,
     });
     await app.close();
   });

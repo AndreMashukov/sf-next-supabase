@@ -4,11 +4,13 @@ import {
   type DocumentRepository,
   type StorageService,
 } from '@sf/api-domain';
+import type { KnowledgeIndexerService } from './knowledge-indexer.service';
 
 export class DeleteDocumentsUseCase {
   constructor(
     private readonly documentRepository: DocumentRepository,
     private readonly storageService: StorageService,
+    private readonly knowledgeIndexer?: KnowledgeIndexerService,
   ) {}
 
   async execute(input: DeleteDocumentsInput) {
@@ -23,6 +25,13 @@ export class DeleteDocumentsUseCase {
 
     for (const document of documents) {
       await this.storageService.deleteObject(document.storagePath);
+    }
+
+    if (this.knowledgeIndexer) {
+      await this.knowledgeIndexer.deleteDocumentIndexes(
+        input.userId,
+        documents.map((document) => document.id),
+      );
     }
 
     const deletedDocuments = await this.documentRepository.deleteByIds(

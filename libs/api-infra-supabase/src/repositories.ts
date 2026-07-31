@@ -4,6 +4,9 @@ import {
   mapGenerationJobRow,
   mapQuizRow,
   mapRuleRow,
+  type AgentChunkSourceType,
+  type AgentKnowledgeChunkInput,
+  type AgentKnowledgeMatch,
   type CreateRuleInput,
   type DeleteRuleInput,
   type DirectoryRecordRow,
@@ -17,6 +20,7 @@ import {
   type RuleRecordRow,
   type RuleRepository,
   type UpdateRuleInput,
+  type VectorIndexRepository,
 } from '@sf/api-domain';
 import type { GenerationJobResult } from '@sf/shared-types';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -214,6 +218,38 @@ export class SupabaseDocumentRepository implements DocumentRepository {
     return mapDocumentRow(data as DocumentRecordRow);
   }
 
+  async update(input: {
+    userId: string;
+    documentId: string;
+    title?: string;
+    description?: string;
+    wordCount?: number;
+  }) {
+    const updates: {
+      title?: string;
+      description?: string;
+      word_count?: number;
+    } = {};
+
+    if (input.title !== undefined) updates.title = input.title;
+    if (input.description !== undefined) updates.description = input.description;
+    if (input.wordCount !== undefined) updates.word_count = input.wordCount;
+
+    const { data, error } = await this.client
+      .from('documents')
+      .update(updates)
+      .eq('id', input.documentId)
+      .eq('user_id', input.userId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Document not found');
+    }
+
+    return mapDocumentRow(data as DocumentRecordRow);
+  }
+
   async listByDirectoryIds(userId: string, directoryIds: string[]) {
     if (directoryIds.length === 0) {
       return [];
@@ -384,6 +420,72 @@ export class SupabaseQuizRepository implements QuizRepository {
 
     if (error || !data) {
       throw new Error(error?.message ?? 'Failed to save quiz');
+    }
+
+    return mapQuizRow(data as QuizRecordRow);
+  }
+
+  async findByIdForUser(quizId: string, userId: string) {
+    const { data, error } = await this.client
+      .from('quizzes')
+      .select('*')
+      .eq('id', quizId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return mapQuizRow(data as QuizRecordRow);
+  }
+
+  async listByDocumentIds(userId: string, documentIds: string[]) {
+    if (documentIds.length === 0) {
+      return [];
+    }
+
+    const { data, error } = await this.client
+      .from('quizzes')
+      .select('*')
+      .eq('user_id', userId)
+      .in('document_id', documentIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapQuizRow(row as QuizRecordRow));
+  }
+
+  async update(input: {
+    userId: string;
+    quizId: string;
+    title?: string;
+    questions?: QuizRecordRow['questions'];
+  }) {
+    const updates: {
+      title?: string;
+      questions?: QuizRecordRow['questions'];
+    } = {};
+
+    if (input.title !== undefined) updates.title = input.title;
+    if (input.questions !== undefined) updates.questions = input.questions;
+
+    const { data, error } = await this.client
+      .from('quizzes')
+      .update(updates)
+      .eq('id', input.quizId)
+      .eq('user_id', input.userId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Quiz not found');
     }
 
     return mapQuizRow(data as QuizRecordRow);
@@ -619,5 +721,128 @@ export class SupabaseDirectoryRepository implements DirectoryRepository {
     }
 
     return Boolean(count);
+  }
+}
+
+interface AgentKnowledgeChunkRow {
+  id: string;
+  source_type: string;
+  source_title: string;
+  content: string;
+  metadata: Record<string, unknown> | null;
+  similarity: number;
+}
+
+export class SupabaseVectorIndexRepository implements VectorIndexRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async replaceSourceChunks(input: {
+    userId: string;
+    sourceType: AgentChunkSourceType;
+    sourceId: string;
+    chunks: AgentKnowledgeChunkInput[];
+  }) {
+    await this.deleteBySource(input.userId, input.sourceType, input.sourceId);
+
+    if (input.chunks.length === 0) {
+      return;
+    }
+
+    const rows = input.chunks.map((chunk) => ({
+      user_id: chunk.userId,
+      directory_id: chunk.directoryId,
+      document_id: chunk.documentId ?? null,
+      quiz_id: chunk.quizId ?? null,
+      source_type: chunk.sourceType,
+      source_title: chunk.sourceTitle,
+      chunk_index: chunk.chunkIndex,
+      content: chunk.content,
+      content_hash: chunk.contentHash,
+      metadata: chunk.metadata ?? {},
+      embedding: chunk.embedding,
+    }));
+
+    const { error } = await this.client.from('agent_knowledge_chunks').insert(rows);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async deleteBySource(userId: string, sourceType: AgentChunkSourceType, sourceId: string) {
+    let query = this.client.from('agent_knowledge_chunks').delete().eq('user_id', userId);
+
+    if (sourceType === 'directory') {
+      query = query.eq('directory_id', sourceId).eq('source_type', 'directory');
+    } else if (sourceType === 'document') {
+      query = query.eq('document_id', sourceId);
+    } else {
+      query = query.eq('quiz_id', sourceId);
+    }
+
+    const { error } = await query;
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async deleteByDocumentIds(userId: string, documentIds: string[]) {
+    if (documentIds.length === 0) {
+      return;
+    }
+
+    const { error } = await this.client
+      .from('agent_knowledge_chunks')
+      .delete()
+      .eq('user_id', userId)
+      .in('document_id', documentIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async deleteByDirectoryIds(userId: string, directoryIds: string[]) {
+    if (directoryIds.length === 0) {
+      return;
+    }
+
+    const { error } = await this.client
+      .from('agent_knowledge_chunks')
+      .delete()
+      .eq('user_id', userId)
+      .in('directory_id', directoryIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async matchChunks(input: {
+    userId: string;
+    directoryIds: string[];
+    queryEmbedding: number[];
+    matchCount?: number;
+  }): Promise<AgentKnowledgeMatch[]> {
+    const { data, error } = await this.client.rpc('match_agent_chunks', {
+      p_user_id: input.userId,
+      p_directory_ids: input.directoryIds,
+      p_query_embedding: input.queryEmbedding,
+      p_match_count: input.matchCount ?? 8,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return ((data ?? []) as AgentKnowledgeChunkRow[]).map((row) => ({
+      id: row.id,
+      sourceType: row.source_type as AgentChunkSourceType,
+      sourceTitle: row.source_title,
+      content: row.content,
+      metadata: row.metadata ?? {},
+      similarity: row.similarity,
+    }));
   }
 }

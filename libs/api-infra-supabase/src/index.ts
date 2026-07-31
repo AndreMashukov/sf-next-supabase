@@ -5,6 +5,7 @@ export {
   SupabaseGenerationJobRepository,
   SupabaseQuizRepository,
   SupabaseRuleRepository,
+  SupabaseVectorIndexRepository,
 } from './repositories';
 export {
   createAuthClient,

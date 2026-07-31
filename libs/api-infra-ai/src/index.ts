@@ -12,3 +12,10 @@ export {
   TogetherAiClient,
   type TogetherAiConfig,
 } from './together-ai.client';
+export {
+  createTogetherEmbeddingConfigFromEnv,
+  TogetherEmbeddingService,
+  TOGETHER_EMBEDDING_DIMENSIONS,
+  TOGETHER_EMBEDDING_MODEL,
+  type TogetherEmbeddingConfig,
+} from './together-embedding.service';

@@ -7,6 +7,7 @@ import type {
   StorageService,
 } from '@sf/api-domain';
 import type { GenerationJob, GenerationJobResult } from '@sf/shared-types';
+import type { KnowledgeIndexerService } from './knowledge-indexer.service';
 
 export class GenerateQuizUseCase {
   constructor(
@@ -15,6 +16,7 @@ export class GenerateQuizUseCase {
     private readonly storageService: StorageService,
     private readonly quizGenerator: QuizGeneratorService,
     private readonly generationJobRepository: GenerationJobRepository,
+    private readonly knowledgeIndexer?: KnowledgeIndexerService,
   ) {}
 
   async start(input: {
@@ -98,6 +100,11 @@ export class GenerateQuizUseCase {
       documentId: input.documentId,
       title: input.title ?? generated.title,
       questions: generated.questions,
+    }).then(async (quiz) => {
+      if (this.knowledgeIndexer) {
+        await this.knowledgeIndexer.indexQuiz(quiz, document.directoryId);
+      }
+      return quiz;
     });
   }
 }

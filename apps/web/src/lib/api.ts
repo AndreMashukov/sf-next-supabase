@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  agentMessageSchema,
   attachRuleToDirectorySchema,
   createDirectorySchema,
   createDocumentSchema,
@@ -17,6 +18,7 @@ import {
   updateDirectorySchema,
   updateRuleSchema,
   type AttachRuleToDirectoryResponse,
+  type AgentMessageApiResponse,
   type CreateDirectoryResponse,
   type CreateDocumentResponse,
   type CreateRuleResponse,
@@ -204,6 +206,15 @@ export async function detachRuleFromDirectory(directoryId: string, ruleId: strin
   const body = parseRequest(detachRuleFromDirectorySchema, { directoryId, ruleId });
   const payload = await postJson<DetachRuleFromDirectoryResponse>('detach-rule-from-directory', body);
   return payload.success;
+}
+
+export async function sendAgentMessage(input: {
+  directoryId: string;
+  message: string;
+  threadId?: string;
+}) {
+  const body = parseRequest(agentMessageSchema, input);
+  return postJson<AgentMessageApiResponse>('agent-message', body);
 }
 
 export async function signOut() {

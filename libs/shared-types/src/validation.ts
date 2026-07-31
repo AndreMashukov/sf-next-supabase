@@ -176,6 +176,41 @@ export const quizQuestionSchema = z.object({
   hint: z.string().min(1).optional(),
 });
 
+export const updateDocumentSchema = z
+  .object({
+    documentId: z.string().uuid('Invalid document ID'),
+    title: z.string().trim().min(1).max(200).optional(),
+    description: z.string().trim().optional(),
+    html: z.string().trim().min(1).max(500_000).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.title === undefined && value.description === undefined && value.html === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'No fields to update',
+        path: [],
+      });
+    }
+  });
+
+export const updateQuizSchema = z
+  .object({
+    quizId: z.string().uuid('Invalid quiz ID'),
+    title: z.string().trim().min(1).max(200).optional(),
+    questions: z.array(quizQuestionSchema).min(1).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.title === undefined && value.questions === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'No fields to update',
+        path: [],
+      });
+    }
+  });
+
+export { agentMessageSchema } from './agent';
+
 export const quizResponseSchema = z.object({
   title: z.string().min(1),
   questions: z.array(quizQuestionSchema).min(1),
@@ -208,6 +243,10 @@ export type DeleteDocumentsRequest = z.input<typeof deleteDocumentsSchema>;
 export type DeleteDocumentsInput = z.output<typeof deleteDocumentsSchema>;
 export type DeleteQuizzesRequest = z.input<typeof deleteQuizzesSchema>;
 export type DeleteQuizzesInput = z.output<typeof deleteQuizzesSchema>;
+export type UpdateDocumentRequest = z.input<typeof updateDocumentSchema>;
+export type UpdateDocumentInput = z.output<typeof updateDocumentSchema>;
+export type UpdateQuizRequest = z.input<typeof updateQuizSchema>;
+export type UpdateQuizInput = z.output<typeof updateQuizSchema>;
 export type QuizResponsePayload = z.output<typeof quizResponseSchema>;
 
 export function formatValidationError(error: ZodError): string {

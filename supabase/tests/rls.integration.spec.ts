@@ -62,4 +62,19 @@ describe.skipIf(!shouldRun)('Supabase RLS integration', () => {
     expect(error).toBeNull();
     expect(data).toEqual([]);
   });
+
+  it('prevents anon clients from reading agent knowledge chunks without auth', async () => {
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    expect(anonKey).toBeTruthy();
+
+    if (!supabaseUrl || !anonKey) {
+      throw new Error('Missing Supabase test configuration');
+    }
+
+    const client = createClient(supabaseUrl, anonKey);
+    const { data, error } = await client.from('agent_knowledge_chunks').select('*');
+
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
 });

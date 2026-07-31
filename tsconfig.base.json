@@ -25,6 +25,7 @@
       "@sf/api-infra-storage": ["libs/api-infra-storage/src/index.ts"],
       "@sf/api-infra-ai": ["libs/api-infra-ai/src/index.ts"],
       "@sf/api-routes": ["libs/api-routes/src/index.ts"],
+      "@sf/directory-agent": ["libs/directory-agent/src/index.ts"],
       "shared-types": ["./libs/shared-types/src/index.ts"],
       "validation": ["./libs/validation/src/index.ts"],
       "gcs": ["./libs/gcs/src/index.ts"]

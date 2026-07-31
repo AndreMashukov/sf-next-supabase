@@ -13,6 +13,13 @@ import { buildDocumentStoragePath } from '@sf/gcs';
 import { countWords } from '@sf/shared-types';
 import { getDirectoryOrThrow } from './directory.helpers';
 import { normalizeGeneratedHtml, wrapHtmlDocument } from './html';
+import type { KnowledgeIndexerService } from './knowledge-indexer.service';
+import type { GenerateQuizUseCase } from './generate-quiz.use-case';
+
+export interface CreateDocumentFollowUpQuiz {
+  title?: string;
+  questionCount?: number;
+}
 
 export class CreateDocumentUseCase {
   constructor(
@@ -22,6 +29,8 @@ export class CreateDocumentUseCase {
     private readonly storageService: StorageService,
     private readonly documentGenerator: DocumentGeneratorService,
     private readonly generationJobRepository: GenerationJobRepository,
+    private readonly knowledgeIndexer?: KnowledgeIndexerService,
+    private readonly generateQuizUseCase?: GenerateQuizUseCase,
   ) {}
 
   async start(input: {
@@ -30,6 +39,7 @@ export class CreateDocumentUseCase {
     text: string;
     ruleIds: string[];
     directoryId?: string;
+    followUpQuiz?: CreateDocumentFollowUpQuiz;
   }): Promise<GenerationJob> {
     await this.generationJobRepository.deleteExpired();
 
@@ -77,6 +87,7 @@ export class CreateDocumentUseCase {
       text: string;
       ruleIds: string[];
       directoryId?: string;
+      followUpQuiz?: CreateDocumentFollowUpQuiz;
     },
     effectiveRuleIds: string[],
   ): Promise<void> {
@@ -87,6 +98,15 @@ export class CreateDocumentUseCase {
         artifacts: [{ type: 'document', id: document.id }],
       };
       await this.generationJobRepository.markCompleted(jobId, input.userId, result);
+
+      if (input.followUpQuiz && this.generateQuizUseCase) {
+        void this.generateQuizUseCase.start({
+          userId: input.userId,
+          documentId: document.id,
+          title: input.followUpQuiz.title,
+          questionCount: input.followUpQuiz.questionCount ?? 5,
+        });
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Document generation failed';
       await this.generationJobRepository.markFailed(jobId, input.userId, message);
@@ -128,7 +148,7 @@ export class CreateDocumentUseCase {
     await this.storageService.uploadHtml(storagePath, html);
 
     try {
-      return await this.documentRepository.create({
+      const document = await this.documentRepository.create({
         id: documentId,
         userId: input.userId,
         title: input.title,
@@ -138,6 +158,12 @@ export class CreateDocumentUseCase {
         directoryId: input.directoryId,
         appliedRuleIds: effectiveRuleIds,
       });
+
+      if (this.knowledgeIndexer) {
+        await this.knowledgeIndexer.indexDocument(document, html);
+      }
+
+      return document;
     } catch (error) {
       await this.storageService.deleteObject(storagePath);
       throw error;
