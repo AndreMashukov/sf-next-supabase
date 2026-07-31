@@ -1,8 +1,7 @@
 'use client';
 
 import { CreateDocumentForm } from '@/app/documents/DocumentsPageClient';
-import type { Rule } from '@sf/shared-types';
-import type { Document } from '@sf/shared-types';
+import type { GenerationJob, Rule } from '@sf/shared-types';
 
 export function AddSourceModal({
   open,
@@ -11,7 +10,7 @@ export function AddSourceModal({
   rules,
   inheritedRules,
   directRules,
-  onCreated,
+  onJobStarted,
 }: {
   open: boolean;
   onClose: () => void;
@@ -19,7 +18,7 @@ export function AddSourceModal({
   rules: Rule[];
   inheritedRules: Rule[];
   directRules: Rule[];
-  onCreated: (document: Document) => void;
+  onJobStarted: (job: GenerationJob) => void;
 }) {
   if (!open) {
     return null;
@@ -45,8 +44,8 @@ export function AddSourceModal({
           directoryId={directoryId}
           inheritedRules={inheritedRules}
           directRules={directRules}
-          onCreated={(document) => {
-            onCreated(document);
+          onJobStarted={(job) => {
+            onJobStarted(job);
             onClose();
           }}
         />

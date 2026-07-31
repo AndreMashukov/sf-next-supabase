@@ -32,6 +32,7 @@ import {
   SupabaseAuthService,
   SupabaseDirectoryRepository,
   SupabaseDocumentRepository,
+  SupabaseGenerationJobRepository,
   SupabaseQuizRepository,
   SupabaseRuleRepository,
   type SupabaseConfig,
@@ -82,6 +83,7 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
   const ruleRepository = new SupabaseRuleRepository(serviceClient);
   const quizRepository = new SupabaseQuizRepository(serviceClient);
   const directoryRepository = new SupabaseDirectoryRepository(serviceClient);
+  const generationJobRepository = new SupabaseGenerationJobRepository(serviceClient);
   const storageService = new S3StorageService(createStorageConfigFromEnv(env));
 
   const togetherAi = new TogetherAiClient(createTogetherAiConfigFromEnv(env));
@@ -101,12 +103,14 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
       directoryRepository,
       storageService,
       documentGenerator,
+      generationJobRepository,
     ),
     generateQuizUseCase: new GenerateQuizUseCase(
       documentRepository,
       quizRepository,
       storageService,
       quizGenerator,
+      generationJobRepository,
     ),
     createRuleUseCase: new CreateRuleUseCase(ruleRepository),
     updateRuleUseCase: new UpdateRuleUseCase(ruleRepository),

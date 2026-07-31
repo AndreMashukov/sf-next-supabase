@@ -1,9 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { formatValidationError, generateQuiz, generateQuizSchema } from '@/lib/api';
-import type { Document } from '@sf/shared-types';
+import type { Document, GenerationJob } from '@sf/shared-types';
 import {
   Select,
   SelectContent,
@@ -19,15 +18,14 @@ export function GenerateQuizDialog({
   onClose,
   documents,
   defaultDocumentId,
-  onGenerated,
+  onJobStarted,
 }: {
   open: boolean;
   onClose: () => void;
   documents: Document[];
   defaultDocumentId?: string;
-  onGenerated?: () => void;
+  onJobStarted?: (job: GenerationJob) => void;
 }) {
-  const router = useRouter();
   const [documentId, setDocumentId] = useState(defaultDocumentId ?? documents[0]?.id ?? '');
   const [title, setTitle] = useState('');
   const [questionCount, setQuestionCount] = useState<number>(5);
@@ -69,11 +67,9 @@ export function GenerateQuizDialog({
     }
 
     try {
-      const quiz = await generateQuiz(documentId, title, questionCount);
-      onGenerated?.();
+      const job = await generateQuiz(documentId, title, questionCount);
+      onJobStarted?.(job);
       onClose();
-      router.push(`/quizzes/${quiz.id}`);
-      router.refresh();
     } catch (generateError) {
       setError(
         generateError instanceof Error ? generateError.message : 'Failed to generate quiz',

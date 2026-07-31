@@ -1,6 +1,7 @@
 import {
   mapDirectoryRow,
   mapDocumentRow,
+  mapGenerationJobRow,
   mapQuizRow,
   mapRuleRow,
   type CreateRuleInput,
@@ -9,13 +10,121 @@ import {
   type DirectoryRepository,
   type DocumentRecordRow,
   type DocumentRepository,
+  type GenerationJobRecordRow,
+  type GenerationJobRepository,
   type QuizRecordRow,
   type QuizRepository,
   type RuleRecordRow,
   type RuleRepository,
   type UpdateRuleInput,
 } from '@sf/api-domain';
+import type { GenerationJobResult } from '@sf/shared-types';
 import type { SupabaseClient } from '@supabase/supabase-js';
+
+const COMPLETED_JOB_TTL_HOURS = 24;
+const FAILED_JOB_TTL_DAYS = 7;
+const DEFAULT_EXPIRED_DELETE_LIMIT = 100;
+
+function buildCompletedExpiresAt(): string {
+  const expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + COMPLETED_JOB_TTL_HOURS);
+  return expiresAt.toISOString();
+}
+
+function buildFailedExpiresAt(): string {
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + FAILED_JOB_TTL_DAYS);
+  return expiresAt.toISOString();
+}
+
+export class SupabaseGenerationJobRepository implements GenerationJobRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async createPending(input: {
+    userId: string;
+    kind: 'document' | 'quiz';
+    input: Record<string, unknown>;
+  }) {
+    const { data, error } = await this.client
+      .from('generation_jobs')
+      .insert({
+        user_id: input.userId,
+        kind: input.kind,
+        status: 'pending',
+        input: input.input,
+      })
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Failed to create generation job');
+    }
+
+    return mapGenerationJobRow(data as GenerationJobRecordRow);
+  }
+
+  async markCompleted(jobId: string, userId: string, result: GenerationJobResult) {
+    const now = new Date().toISOString();
+    const { data, error } = await this.client
+      .from('generation_jobs')
+      .update({
+        status: 'completed',
+        result,
+        error_message: null,
+        completed_at: now,
+        expires_at: buildCompletedExpiresAt(),
+      })
+      .eq('id', jobId)
+      .eq('user_id', userId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Failed to mark generation job completed');
+    }
+
+    return mapGenerationJobRow(data as GenerationJobRecordRow);
+  }
+
+  async markFailed(jobId: string, userId: string, errorMessage: string) {
+    const now = new Date().toISOString();
+    const { data, error } = await this.client
+      .from('generation_jobs')
+      .update({
+        status: 'failed',
+        error_message: errorMessage,
+        completed_at: now,
+        expires_at: buildFailedExpiresAt(),
+      })
+      .eq('id', jobId)
+      .eq('user_id', userId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Failed to mark generation job failed');
+    }
+
+    return mapGenerationJobRow(data as GenerationJobRecordRow);
+  }
+
+  async deleteExpired(limit = DEFAULT_EXPIRED_DELETE_LIMIT) {
+    const { data, error } = await this.client
+      .from('generation_jobs')
+      .delete()
+      .in('status', ['completed', 'failed'])
+      .not('expires_at', 'is', null)
+      .lte('expires_at', new Date().toISOString())
+      .select('id')
+      .limit(limit);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data?.length ?? 0;
+  }
+}
 
 export class SupabaseDocumentRepository implements DocumentRepository {
   constructor(private readonly client: SupabaseClient) {}

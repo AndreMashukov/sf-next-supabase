@@ -10,8 +10,9 @@ import {
   MoreVertical,
   Trash2,
 } from 'lucide-react';
-import type { Document, Rule } from '@sf/shared-types';
+import type { Document, GenerationJob, Rule } from '@sf/shared-types';
 import { formatShortDate, getDocumentFallbackColor } from '@/lib/folder-constants';
+import { getPendingJobLabel } from '@/lib/generation-jobs';
 import { DirectoryPickerDialog } from '@/components/DirectoryPickerDialog';
 import { DeleteDocumentsDialog } from '@/components/DeleteDocumentsDialog';
 import { DropdownMenu } from '@/components/DropdownMenu';
@@ -169,6 +170,7 @@ function SourceRow({
 
 export function SourcesPanel({
   documents,
+  pendingDocumentJobs = [],
   allFolders,
   rules,
   quizCountsByDocumentId = {},
@@ -176,6 +178,7 @@ export function SourcesPanel({
   onDocumentsDeleted,
 }: {
   documents: Document[];
+  pendingDocumentJobs?: GenerationJob[];
   allFolders: DirectorySummary[];
   rules: Rule[];
   quizCountsByDocumentId?: Record<string, number>;
@@ -241,16 +244,29 @@ export function SourcesPanel({
             </button>
           </div>
         ) : (
-          <h2>Sources ({documents.length})</h2>
+          <h2>Sources ({documents.length + pendingDocumentJobs.length})</h2>
         )}
       </div>
 
-      {documents.length === 0 ? (
+      {documents.length === 0 && pendingDocumentJobs.length === 0 ? (
         <p className="sources-empty muted">
           No documents yet. Add a source to get started.
         </p>
       ) : (
         <div className="sources-list">
+          {pendingDocumentJobs.map((job) => (
+            <article
+              key={job.id}
+              className="source-row pending-generation-row"
+              style={{ borderLeftColor: '#94a3b8' }}
+            >
+              <FileText size={18} className="source-row-doc-icon" />
+              <div className="source-row-main">
+                <span className="source-row-title">{getPendingJobLabel(job)}</span>
+                <p className="source-row-meta muted">Generating...</p>
+              </div>
+            </article>
+          ))}
           {documents.map((document) => (
             <SourceRow
               key={document.id}

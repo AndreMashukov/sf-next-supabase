@@ -8,20 +8,21 @@ function createMockContext(overrides: Partial<ApiContext> = {}): ApiContext {
       getUserIdFromBearerToken: vi.fn().mockResolvedValue('user-1'),
     },
     createDocumentUseCase: {
-      execute: vi.fn().mockResolvedValue({
-        id: 'doc-1',
+      start: vi.fn().mockResolvedValue({
+        id: 'job-1',
         userId: 'user-1',
-        title: 'Title',
-        description: 'Prompt',
-        wordCount: 10,
-        storagePath: 'users/user-1/documents/doc-1/content.html',
-        directoryId: null,
-        appliedRuleIds: [],
+        kind: 'document',
+        status: 'pending',
+        input: { title: 'Title', text: 'Prompt' },
+        result: {},
+        errorMessage: null,
         createdAt: '2026-01-01T00:00:00.000Z',
         updatedAt: '2026-01-01T00:00:00.000Z',
+        completedAt: null,
+        expiresAt: null,
       }),
     },
-    generateQuizUseCase: { execute: vi.fn() },
+    generateQuizUseCase: { start: vi.fn() },
     createRuleUseCase: { execute: vi.fn() },
     updateRuleUseCase: { execute: vi.fn() },
     deleteRuleUseCase: { execute: vi.fn() },
@@ -116,7 +117,7 @@ describe('createApiServer', () => {
     await app.close();
   });
 
-  it('creates a document for authenticated requests', async () => {
+  it('creates a document generation job for authenticated requests', async () => {
     const context = createMockContext();
     const app = await createApiServer(context);
     const response = await app.inject({
@@ -134,9 +135,9 @@ describe('createApiServer', () => {
       },
     });
 
-    expect(response.statusCode).toBe(201);
-    expect(response.json().document.id).toBe('doc-1');
-    expect(context.createDocumentUseCase.execute).toHaveBeenCalledWith({
+    expect(response.statusCode).toBe(202);
+    expect(response.json().job.id).toBe('job-1');
+    expect(context.createDocumentUseCase.start).toHaveBeenCalledWith({
       userId: 'user-1',
       title: 'Title',
       text: 'Prompt',

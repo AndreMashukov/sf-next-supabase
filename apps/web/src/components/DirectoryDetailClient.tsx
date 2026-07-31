@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   FolderPlus,
@@ -28,6 +28,7 @@ import type { QuizWithDocumentTitle } from '@/lib/data/quizzes';
 import { resolveDirectoryColor, resolveDirectoryIcon } from '@/lib/folder-constants';
 import { getDescendantDirectoryIds } from '@/lib/directory-utils';
 import { moveDirectory } from '@/lib/api';
+import { useGenerationJobsRealtime } from '@/lib/hooks/useGenerationJobsRealtime';
 
 const VALID_PANELS = new Set<string>([
   'sources',
@@ -224,6 +225,41 @@ export function DirectoryDetailClient({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+
+  const documentIds = useMemo(() => documentList.map((document) => document.id), [documentList]);
+
+  const { scopedPendingJobs, registerJob } = useGenerationJobsRealtime({
+    directoryId: currentDirectory.id,
+    documentIds,
+    onCompleted: (job) => {
+      setGenerationError(null);
+      if (job.result.primaryArtifact?.type === 'quiz') {
+        router.push(`/quizzes/${job.result.primaryArtifact.id}`);
+      }
+    },
+    onFailed: (job) => {
+      setGenerationError(job.errorMessage ?? 'Generation failed');
+    },
+  });
+
+  const pendingDocumentJobs = useMemo(
+    () => scopedPendingJobs.filter((job) => job.kind === 'document'),
+    [scopedPendingJobs],
+  );
+
+  const pendingQuizJobs = useMemo(
+    () => scopedPendingJobs.filter((job) => job.kind === 'quiz'),
+    [scopedPendingJobs],
+  );
+
+  useEffect(() => {
+    setDocumentList(documents);
+  }, [documents]);
+
+  useEffect(() => {
+    setQuizList(quizzes);
+  }, [quizzes]);
 
   const TitleIcon = resolveDirectoryIcon(currentDirectory.icon);
   const titleColor = resolveDirectoryColor(currentDirectory.color);
@@ -382,12 +418,15 @@ export function DirectoryDetailClient({
         ) : null}
       </div>
 
+      {generationError ? <div className="error directory-generation-error">{generationError}</div> : null}
+
       <div className="directory-detail-body">
         <DirectoryIconSidebar activePanel={activePanel} onPanelChange={setPanel} />
         <div className="directory-detail-panel">
           {activePanel === 'sources' ? (
             <SourcesPanel
               documents={documentList}
+              pendingDocumentJobs={pendingDocumentJobs}
               allFolders={allFolders}
               rules={rules}
               quizCountsByDocumentId={quizCountsByDocumentId}
@@ -418,6 +457,8 @@ export function DirectoryDetailClient({
             <QuizzesPanel
               quizzes={quizList}
               documents={documentList}
+              pendingQuizJobs={pendingQuizJobs}
+              onJobStarted={registerJob}
               onQuizzesDeleted={(quizIds) => {
                 setQuizList((current) => current.filter((quiz) => !quizIds.includes(quiz.id)));
                 router.refresh();
@@ -447,7 +488,9 @@ export function DirectoryDetailClient({
         rules={rules}
         inheritedRules={inheritedRules}
         directRules={directRules}
-        onCreated={(document) => setDocumentList((current) => [document, ...current])}
+        onJobStarted={(job) => {
+          registerJob(job);
+        }}
       />
 
       <EditDirectoryDialog

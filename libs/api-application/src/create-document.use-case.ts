@@ -4,9 +4,11 @@ import {
   type DirectoryRepository,
   type DocumentGeneratorService,
   type DocumentRepository,
+  type GenerationJobRepository,
   type RuleRepository,
   type StorageService,
 } from '@sf/api-domain';
+import type { GenerationJob, GenerationJobResult } from '@sf/shared-types';
 import { buildDocumentStoragePath } from '@sf/gcs';
 import { countWords } from '@sf/shared-types';
 import { getDirectoryOrThrow } from './directory.helpers';
@@ -19,15 +21,18 @@ export class CreateDocumentUseCase {
     private readonly directoryRepository: DirectoryRepository,
     private readonly storageService: StorageService,
     private readonly documentGenerator: DocumentGeneratorService,
+    private readonly generationJobRepository: GenerationJobRepository,
   ) {}
 
-  async execute(input: {
+  async start(input: {
     userId: string;
     title: string;
     text: string;
     ruleIds: string[];
     directoryId?: string;
-  }) {
+  }): Promise<GenerationJob> {
+    await this.generationJobRepository.deleteExpired();
+
     if (input.directoryId) {
       await getDirectoryOrThrow(this.directoryRepository, input.directoryId, input.userId);
     }
@@ -43,6 +48,61 @@ export class CreateDocumentUseCase {
       input.ruleIds,
     );
 
+    const rules = await this.ruleRepository.fetchByIds(input.userId, effectiveRuleIds);
+    if (rules.length !== effectiveRuleIds.length) {
+      throw new Error('One or more selected rules were not found');
+    }
+
+    const job = await this.generationJobRepository.createPending({
+      userId: input.userId,
+      kind: 'document',
+      input: {
+        title: input.title,
+        text: input.text,
+        ruleIds: input.ruleIds,
+        directoryId: input.directoryId,
+      },
+    });
+
+    void this.runInBackground(job.id, input, effectiveRuleIds);
+
+    return job;
+  }
+
+  private async runInBackground(
+    jobId: string,
+    input: {
+      userId: string;
+      title: string;
+      text: string;
+      ruleIds: string[];
+      directoryId?: string;
+    },
+    effectiveRuleIds: string[],
+  ): Promise<void> {
+    try {
+      const document = await this.generateDocument(input, effectiveRuleIds);
+      const result: GenerationJobResult = {
+        primaryArtifact: { type: 'document', id: document.id },
+        artifacts: [{ type: 'document', id: document.id }],
+      };
+      await this.generationJobRepository.markCompleted(jobId, input.userId, result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Document generation failed';
+      await this.generationJobRepository.markFailed(jobId, input.userId, message);
+    }
+  }
+
+  private async generateDocument(
+    input: {
+      userId: string;
+      title: string;
+      text: string;
+      ruleIds: string[];
+      directoryId?: string;
+    },
+    effectiveRuleIds: string[],
+  ) {
     const documentId = randomUUID();
     const storagePath = buildDocumentStoragePath(input.userId, documentId);
 

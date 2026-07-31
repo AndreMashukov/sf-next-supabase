@@ -1,3 +1,5 @@
+import type { GenerationJob } from './generation-job';
+
 export interface Document {
   id: string;
   userId: string;
@@ -112,12 +114,32 @@ export {
   countWords,
 } from './validation';
 
+export type {
+  GenerationArtifactRef,
+  GenerationJob,
+  GenerationJobInput,
+  GenerationJobKind,
+  GenerationJobResult,
+  GenerationJobStatus,
+  CreateDocumentGenerationResponse,
+  GenerateQuizGenerationResponse,
+} from './generation-job';
+
+export {
+  generationArtifactRefSchema,
+  generationJobInputSchema,
+  generationJobKindSchema,
+  generationJobResultSchema,
+  generationJobSchema,
+  generationJobStatusSchema,
+} from './generation-job';
+
 export interface CreateDocumentResponse {
-  document: Document;
+  job: GenerationJob;
 }
 
 export interface GenerateQuizResponse {
-  quiz: Quiz;
+  job: GenerationJob;
 }
 
 export interface CreateRuleResponse {

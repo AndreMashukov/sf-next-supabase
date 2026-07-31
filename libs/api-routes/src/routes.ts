@@ -90,7 +90,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
     protectedApp.post('/functions/v1/create-document', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(createDocumentSchema, request.body);
-      const document = await context.createDocumentUseCase.execute({
+      const job = await context.createDocumentUseCase.start({
         userId,
         title: body.title,
         text: body.text,
@@ -98,20 +98,20 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
         directoryId: body.directoryId,
       });
 
-      return reply.status(201).send({ document });
+      return reply.status(202).send({ job });
     });
 
     protectedApp.post('/functions/v1/generate-quiz', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(generateQuizSchema, request.body);
-      const quiz = await context.generateQuizUseCase.execute({
+      const job = await context.generateQuizUseCase.start({
         userId,
         documentId: body.documentId,
         title: body.title,
         questionCount: body.questionCount,
       });
 
-      return reply.status(201).send({ quiz });
+      return reply.status(202).send({ job });
     });
 
     protectedApp.post('/functions/v1/create-rule', async (request, reply) => {

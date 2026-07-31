@@ -1,5 +1,26 @@
-import { CreateDocumentUseCase } from '@sf/api-application';
+import { CreateDocumentUseCase } from './create-document.use-case';
 import { describe, expect, it, vi } from 'vitest';
+
+function createGenerationJobRepository() {
+  return {
+    createPending: vi.fn().mockImplementation(async (input) => ({
+      id: 'job-1',
+      userId: input.userId,
+      kind: input.kind,
+      status: 'pending',
+      input: input.input,
+      result: {},
+      errorMessage: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      completedAt: null,
+      expiresAt: null,
+    })),
+    markCompleted: vi.fn().mockResolvedValue(undefined),
+    markFailed: vi.fn().mockResolvedValue(undefined),
+    deleteExpired: vi.fn().mockResolvedValue(0),
+  };
+}
 
 describe('CreateDocumentUseCase', () => {
   it('cleans up uploaded storage when database insert fails', async () => {
@@ -22,6 +43,7 @@ describe('CreateDocumentUseCase', () => {
       isAgentEnabled: vi.fn().mockReturnValue(false),
       generate: vi.fn().mockResolvedValue('<p>Generated</p>'),
     };
+    const generationJobRepository = createGenerationJobRepository();
 
     const useCase = new CreateDocumentUseCase(
       documentRepository,
@@ -29,16 +51,19 @@ describe('CreateDocumentUseCase', () => {
       directoryRepository,
       storageService,
       documentGenerator,
+      generationJobRepository,
     );
 
-    await expect(
-      useCase.execute({
-        userId: 'user-1',
-        title: 'Title',
-        text: 'Prompt',
-        ruleIds: [],
-      }),
-    ).rejects.toThrow('Failed to create document record');
+    await useCase.start({
+      userId: 'user-1',
+      title: 'Title',
+      text: 'Prompt',
+      ruleIds: [],
+    });
+
+    await vi.waitFor(() => {
+      expect(generationJobRepository.markFailed).toHaveBeenCalled();
+    });
 
     expect(storageService.uploadHtml).toHaveBeenCalled();
     expect(storageService.deleteObject).toHaveBeenCalled();
@@ -118,6 +143,7 @@ describe('CreateDocumentUseCase', () => {
       isAgentEnabled: vi.fn().mockReturnValue(false),
       generate: vi.fn().mockResolvedValue('<p>Generated</p>'),
     };
+    const generationJobRepository = createGenerationJobRepository();
 
     const useCase = new CreateDocumentUseCase(
       documentRepository,
@@ -125,14 +151,19 @@ describe('CreateDocumentUseCase', () => {
       directoryRepository,
       storageService,
       documentGenerator,
+      generationJobRepository,
     );
 
-    await useCase.execute({
+    await useCase.start({
       userId: 'user-1',
       title: 'Title',
       text: 'Prompt',
       ruleIds: ['rule-explicit'],
       directoryId: 'dir-child',
+    });
+
+    await vi.waitFor(() => {
+      expect(generationJobRepository.markCompleted).toHaveBeenCalled();
     });
 
     expect(ruleRepository.fetchByIds).toHaveBeenCalledWith('user-1', [

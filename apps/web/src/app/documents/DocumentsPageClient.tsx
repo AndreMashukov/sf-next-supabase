@@ -23,7 +23,7 @@ import { CreateDirectoryDialog } from '@/components/CreateDirectoryDialog';
 import { UnfiledCleanupBanner } from '@/components/UnfiledCleanupBanner';
 import type { DirectoryDeleteImpact, DirectorySummary } from '@/lib/data/directory-summaries';
 import { partitionDirectAndInheritedRules } from '@/lib/directory-rules';
-import type { Directory, Document, Rule } from '@sf/shared-types';
+import type { Directory, Document, GenerationJob, Rule } from '@sf/shared-types';
 
 function Breadcrumbs({
   ancestors,
@@ -120,13 +120,13 @@ export function CreateDocumentForm({
   directoryId,
   inheritedRules,
   directRules,
-  onCreated,
+  onJobStarted,
 }: {
   rules: Rule[];
   directoryId: string;
   inheritedRules: Rule[];
   directRules: Rule[];
-  onCreated: (document: Document) => void;
+  onJobStarted: (job: GenerationJob) => void;
 }) {
   const defaultRuleIds = useMemo(
     () => rules.filter((rule) => rule.isDefault).map((rule) => rule.id),
@@ -157,11 +157,11 @@ export function CreateDocumentForm({
     }
 
     try {
-      const document = await createDocument(title, text, selectedRuleIds, directoryId);
+      const job = await createDocument(title, text, selectedRuleIds, directoryId);
       setTitle('');
       setText('');
       setSelectedRuleIds(defaultRuleIds);
-      onCreated(document);
+      onJobStarted(job);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to create document');
     } finally {

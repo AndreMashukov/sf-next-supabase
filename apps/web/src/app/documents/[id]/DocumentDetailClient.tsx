@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Brain,
@@ -30,6 +30,8 @@ import { formatShortDate } from '@/lib/folder-constants';
 import { formatDate } from '@/lib/utils';
 import type { DirectorySummary } from '@/lib/data/directory-summaries';
 import type { Document, Quiz } from '@sf/shared-types';
+import { useGenerationJobsRealtime } from '@/lib/hooks/useGenerationJobsRealtime';
+import { getPendingJobLabel } from '@/lib/generation-jobs';
 
 const QUESTION_COUNT_OPTIONS = [3, 5, 7, 10] as const;
 
@@ -61,6 +63,24 @@ export function DocumentDetailClient({
   const [currentDocument, setCurrentDocument] = useState(document);
   const [currentParentDirectory, setCurrentParentDirectory] = useState(parentDirectory);
   const [readingProgress, setReadingProgress] = useState(0);
+
+  const { scopedPendingJobs, registerJob } = useGenerationJobsRealtime({
+    documentId: currentDocument.id,
+    onCompleted: (job) => {
+      setError(null);
+      if (job.result.primaryArtifact?.type === 'quiz') {
+        router.push(`/quizzes/${job.result.primaryArtifact.id}`);
+      }
+    },
+    onFailed: (job) => {
+      setError(job.errorMessage ?? 'Failed to generate quiz');
+    },
+  });
+
+  const pendingQuizJobs = useMemo(
+    () => scopedPendingJobs.filter((job) => job.kind === 'quiz'),
+    [scopedPendingJobs],
+  );
 
   useEffect(() => {
     function updateReadingProgress() {
@@ -124,9 +144,9 @@ export function DocumentDetailClient({
     }
 
     try {
-      const quiz = await generateQuiz(currentDocument.id, quizTitle, questionCount);
-      router.push(`/quizzes/${quiz.id}`);
-      router.refresh();
+      const job = await generateQuiz(currentDocument.id, quizTitle, questionCount);
+      registerJob(job);
+      setShowQuizForm(false);
     } catch (generateError) {
       setError(
         generateError instanceof Error ? generateError.message : 'Failed to generate quiz',
@@ -340,10 +360,22 @@ export function DocumentDetailClient({
           </div>
         )}
 
-        {quizzes.length > 0 ? (
+        {quizzes.length > 0 || pendingQuizJobs.length > 0 ? (
           <div>
-            <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>Quizzes ({quizzes.length})</h3>
+            <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem' }}>
+              Quizzes ({quizzes.length + pendingQuizJobs.length})
+            </h3>
             <div className="document-quiz-list">
+              {pendingQuizJobs.map((job) => (
+                <div key={job.id} className="document-quiz-row pending-generation-row">
+                  <div>
+                    <strong>{getPendingJobLabel(job)}</strong>
+                    <p className="muted" style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem' }}>
+                      Generating...
+                    </p>
+                  </div>
+                </div>
+              ))}
               {quizzes.map((quiz) => (
                 <Link key={quiz.id} href={`/quizzes/${quiz.id}`} className="document-quiz-row">
                   <div>

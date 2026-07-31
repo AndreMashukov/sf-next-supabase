@@ -88,13 +88,19 @@ export async function createDocument(
 ) {
   const body = parseRequest(createDocumentSchema, { title, text, ruleIds, directoryId });
   const payload = await postJson<CreateDocumentResponse>('create-document', body);
-  return payload.document;
+  if (!payload.job?.id || !payload.job.status) {
+    throw new Error('API did not return a generation job. Restart the API server.');
+  }
+  return payload.job;
 }
 
 export async function generateQuiz(documentId: string, title?: string, questionCount = 5) {
   const body = parseRequest(generateQuizSchema, { documentId, title, questionCount });
   const payload = await postJson<GenerateQuizResponse>('generate-quiz', body);
-  return payload.quiz;
+  if (!payload.job?.id || !payload.job.status) {
+    throw new Error('API did not return a generation job. Restart the API server.');
+  }
+  return payload.job;
 }
 
 export async function createRule(input: {

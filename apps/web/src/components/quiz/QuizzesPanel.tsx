@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Brain, ChevronRight, MoreVertical, Trash2 } from 'lucide-react';
-import type { Document } from '@sf/shared-types';
+import type { Document, GenerationJob } from '@sf/shared-types';
 import type { QuizWithDocumentTitle } from '@/lib/data/quizzes';
 import { formatShortDate } from '@/lib/folder-constants';
+import { getPendingJobLabel } from '@/lib/generation-jobs';
 import { DeleteQuizzesDialog } from '@/components/DeleteQuizzesDialog';
 import { DropdownMenu } from '@/components/DropdownMenu';
 import { GenerateQuizDialog } from './GenerateQuizDialog';
@@ -84,10 +85,14 @@ function QuizRow({
 export function QuizzesPanel({
   quizzes,
   documents,
+  pendingQuizJobs = [],
+  onJobStarted,
   onQuizzesDeleted,
 }: {
   quizzes: QuizWithDocumentTitle[];
   documents: Document[];
+  pendingQuizJobs?: GenerationJob[];
+  onJobStarted?: (job: GenerationJob) => void;
   onQuizzesDeleted?: (quizIds: string[]) => void;
 }) {
   const [generateOpen, setGenerateOpen] = useState(false);
@@ -155,7 +160,7 @@ export function QuizzesPanel({
               size={18}
               style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '0.375rem' }}
             />
-            Quizzes ({quizzes.length})
+            Quizzes ({quizzes.length + pendingQuizJobs.length})
           </h2>
         )}
         <button
@@ -170,10 +175,19 @@ export function QuizzesPanel({
 
       {documents.length === 0 ? (
         <p className="quizzes-empty muted">Add a source document before creating quizzes.</p>
-      ) : quizzes.length === 0 ? (
+      ) : quizzes.length === 0 && pendingQuizJobs.length === 0 ? (
         <p className="quizzes-empty muted">No quizzes in this directory yet.</p>
       ) : (
         <div className="quizzes-list">
+          {pendingQuizJobs.map((job) => (
+            <article key={job.id} className="quiz-artifact-row pending-generation-row">
+              <Brain size={18} className="muted" />
+              <div className="quiz-artifact-main">
+                <span className="quiz-artifact-title">{getPendingJobLabel(job)}</span>
+                <p className="quiz-artifact-meta muted">Generating...</p>
+              </div>
+            </article>
+          ))}
           {quizzes.map((quiz) => (
             <QuizRow
               key={quiz.id}
@@ -190,7 +204,10 @@ export function QuizzesPanel({
         open={generateOpen}
         onClose={() => setGenerateOpen(false)}
         documents={documents}
-        onGenerated={() => setGenerateOpen(false)}
+        onJobStarted={(job) => {
+          onJobStarted?.(job);
+          setGenerateOpen(false);
+        }}
       />
 
       <DeleteQuizzesDialog

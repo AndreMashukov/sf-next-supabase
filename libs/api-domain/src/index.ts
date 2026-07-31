@@ -1,4 +1,4 @@
-import type { Directory, Document, DirectoryTreeNode, Quiz, Rule } from '@sf/shared-types';
+import type { Directory, Document, DirectoryTreeNode, GenerationJob, GenerationJobResult, Quiz, Rule } from '@sf/shared-types';
 
 export const MAX_DIRECTORY_DEPTH = 10;
 
@@ -293,6 +293,34 @@ export interface QuizRecordRow {
   updated_at: string;
 }
 
+export interface GenerationJobRecordRow {
+  id: string;
+  user_id: string;
+  kind: string;
+  status: string;
+  input: Record<string, unknown>;
+  result: Record<string, unknown>;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  expires_at: string | null;
+}
+
+export interface GenerationJobRepository {
+  createPending(input: {
+    userId: string;
+    kind: 'document' | 'quiz';
+    input: Record<string, unknown>;
+  }): Promise<GenerationJob>;
+
+  markCompleted(jobId: string, userId: string, result: GenerationJobResult): Promise<GenerationJob>;
+
+  markFailed(jobId: string, userId: string, errorMessage: string): Promise<GenerationJob>;
+
+  deleteExpired(limit?: number): Promise<number>;
+}
+
 export function mapRuleRow(row: RuleRecordRow): Rule {
   return {
     id: row.id,
@@ -433,6 +461,69 @@ export function mapQuizRow(row: QuizRecordRow): Quiz {
     questions: row.questions,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function parseGenerationJobResult(value: Record<string, unknown>): GenerationJobResult {
+  const primaryArtifact = value['primaryArtifact'];
+  const artifacts = value['artifacts'];
+
+  return {
+    primaryArtifact:
+      primaryArtifact &&
+      typeof primaryArtifact === 'object' &&
+      primaryArtifact !== null &&
+      'type' in primaryArtifact &&
+      'id' in primaryArtifact
+        ? {
+            type: String((primaryArtifact as { type: string }).type) as 'document' | 'quiz',
+            id: String((primaryArtifact as { id: string }).id),
+          }
+        : undefined,
+    artifacts: Array.isArray(artifacts)
+      ? artifacts
+          .filter(
+            (item): item is { type: string; id: string } =>
+              typeof item === 'object' &&
+              item !== null &&
+              'type' in item &&
+              'id' in item,
+          )
+          .map((item) => ({
+            type: String(item.type) as 'document' | 'quiz',
+            id: String(item.id),
+          }))
+      : undefined,
+  };
+}
+
+function parseGenerationJobInput(value: Record<string, unknown>): GenerationJob['input'] {
+  return {
+    title: typeof value['title'] === 'string' ? value['title'] : undefined,
+    text: typeof value['text'] === 'string' ? value['text'] : undefined,
+    ruleIds: Array.isArray(value['ruleIds'])
+      ? value['ruleIds'].filter((id): id is string => typeof id === 'string')
+      : undefined,
+    directoryId: typeof value['directoryId'] === 'string' ? value['directoryId'] : undefined,
+    documentId: typeof value['documentId'] === 'string' ? value['documentId'] : undefined,
+    questionCount:
+      typeof value['questionCount'] === 'number' ? value['questionCount'] : undefined,
+  };
+}
+
+export function mapGenerationJobRow(row: GenerationJobRecordRow): GenerationJob {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    kind: row.kind as GenerationJob['kind'],
+    status: row.status as GenerationJob['status'],
+    input: parseGenerationJobInput(row.input),
+    result: parseGenerationJobResult(row.result),
+    errorMessage: row.error_message,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    completedAt: row.completed_at,
+    expiresAt: row.expires_at,
   };
 }
 
