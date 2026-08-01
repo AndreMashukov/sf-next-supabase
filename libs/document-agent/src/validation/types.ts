@@ -5,6 +5,7 @@ export type ValidationCategory =
   | 'security'
   | 'format'
   | 'mermaid'
+  | 'plotly'
   | 'rules'
   | 'empty';
 

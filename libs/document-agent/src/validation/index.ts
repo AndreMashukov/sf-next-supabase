@@ -5,6 +5,7 @@ import {
 } from './types';
 import { validateHtmlStructure } from './html-validator';
 import { validateMermaidBlocks } from './mermaid-validator';
+import { validatePlotlyBlocks } from './plotly-validator';
 import {
   validateAllowedTags,
   validateNonEmpty,
@@ -20,6 +21,7 @@ export async function validateDocumentHtml(
     ...validateSecurity(htmlFragment),
     ...validateAllowedTags(htmlFragment),
     ...validateMermaidBlocks(htmlFragment),
+    ...validatePlotlyBlocks(htmlFragment),
     ...(await validateHtmlStructure(htmlFragment)),
   ];
 
@@ -30,5 +32,6 @@ export * from './types';
 export * from './html-validator';
 export * from './security-validator';
 export * from './mermaid-validator';
+export * from './plotly-validator';
 export * from './rules-critic';
 export * from './risk';

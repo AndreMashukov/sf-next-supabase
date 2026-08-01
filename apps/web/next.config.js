@@ -8,7 +8,15 @@ const { composePlugins, withNx } = require('@nx/next');
  **/
 const nextConfig = {
   nx: {},
-  transpilePackages: ['@sf/shared-types'],
+  transpilePackages: ['@sf/shared-types', 'plotly.js', 'react-plotly.js'],
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'plotly.js/dist/plotly': 'plotly.js/dist/plotly.min.js',
+    };
+    config.externals = [...(config.externals || []), { canvas: 'canvas' }];
+    return config;
+  },
 };
 
 const plugins = [

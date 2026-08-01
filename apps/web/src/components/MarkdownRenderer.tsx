@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import { DocumentCodeBlock } from '@/components/DocumentCodeBlock';
 import { MermaidDiagram } from '@/components/MermaidDiagram';
+import { PlotlyGraph } from '@/components/PlotlyGraph';
 import { cn } from '@/lib/utils';
 
 function isBlockCode(
@@ -59,6 +60,10 @@ const markdownComponents: Components = {
         return <MermaidDiagram code={children.trim()} />;
       }
 
+      if (language === 'plotly' || language === 'graph') {
+        return <PlotlyGraph code={children.trim()} />;
+      }
+
       return <DocumentCodeBlock code={children.trim()} language={language} />;
     }
 
@@ -67,6 +72,11 @@ const markdownComponents: Components = {
 
     if (trimmed.startsWith('mermaid\n')) {
       return <MermaidDiagram code={trimmed.slice('mermaid\n'.length).trim()} />;
+    }
+
+    if (trimmed.startsWith('plotly\n') || trimmed.startsWith('graph\n')) {
+      const prefix = trimmed.startsWith('plotly\n') ? 'plotly\n' : 'graph\n';
+      return <PlotlyGraph code={trimmed.slice(prefix.length).trim()} />;
     }
 
     return <code className="chat-md-code">{children}</code>;

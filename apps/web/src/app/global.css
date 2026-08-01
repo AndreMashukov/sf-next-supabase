@@ -1392,7 +1392,72 @@ textarea {
   border-radius: 0.375rem;
   background: rgb(16 13 22);
   color: var(--muted-foreground);
+}
+
+.document-plotly {
+  margin: 0 0 1.15rem;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 0.625rem;
+  background: rgb(18 18 18);
+}
+
+.document-plotly:last-child {
+  margin-bottom: 0;
+}
+
+.document-plotly-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.document-plotly-toolbar-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  letter-spacing: 0.02em;
+}
+
+.document-plotly-stage {
+  overflow-x: auto;
+  padding: 0.5rem 0.25rem 0.25rem;
+  min-height: 360px;
+}
+
+.document-plotly-loading {
+  padding: 1rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  min-height: 360px;
+}
+
+.document-plotly-error {
+  padding: 1rem;
+  color: var(--destructive);
+}
+
+.document-plotly-error p {
+  margin: 0 0 0.5rem;
+}
+
+.document-plotly-error-detail {
+  color: var(--muted-foreground) !important;
+  font-size: 0.875rem;
+}
+
+.document-plotly-error pre {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  background: rgb(16 13 22);
+  color: var(--muted-foreground);
+  overflow-x: auto;
   white-space: pre-wrap;
+  word-break: break-word;
   font-size: 0.8rem;
 }
 

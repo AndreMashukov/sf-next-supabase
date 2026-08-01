@@ -52,6 +52,16 @@ export const MERMAID_DIAGRAM_PREFIXES = [
   'stateDiagram-v2',
 ] as const;
 
+export const PLOTLY_ALLOWED_TRACE_TYPES = [
+  'scatter',
+  'scatter3d',
+  'surface',
+  'contour',
+  'bar',
+  'heatmap',
+  'mesh3d',
+] as const;
+
 export const DOCUMENT_AGENT_MAX_REPAIR_RETRIES = 2;
 
 export const SEALED_OUTPUT_CONTRACT_LINES = [
@@ -80,6 +90,12 @@ export const SEALED_OUTPUT_CONTRACT_LINES = [
   '- Inline math: wrap in $...$ or \\(...\\). Display math: wrap in $$...$$ or \\[...\\].',
   '- Use single backslashes in TeX commands (e.g. \\frac{a}{b}, \\alpha, \\sum).',
   '- Do NOT include KaTeX/MathJax CDN scripts, stylesheets, or <script> tags — the viewer renders math.',
+  '- When a 2D/3D graph helps explain the topic, include Plotly figures as:',
+  '  <pre><code class="language-plotly">{"data":[{"type":"scatter","mode":"lines","x":[0,1],"y":[0,1]}],"layout":{"title":"Example"}}</code></pre>',
+  `- Allowed Plotly trace types: ${PLOTLY_ALLOWED_TRACE_TYPES.join(', ')}.`,
+  '- Plotly JSON must be a single object with a non-empty data array; layout/config are optional.',
+  '- Prefer compact numeric arrays (do not dump thousands of points). For circles/curves sample ~32–64 points.',
+  '- Do NOT include Plotly CDN scripts or stylesheets — the viewer renders graphs.',
 ] as const;
 
 export function buildSealedOutputContract(): string {

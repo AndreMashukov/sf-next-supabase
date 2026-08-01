@@ -5,13 +5,15 @@ import { CollapsibleDocSection } from '@/components/CollapsibleDocSection';
 import { DocumentCodeBlock } from '@/components/DocumentCodeBlock';
 import { HtmlWithMath } from '@/components/HtmlWithMath';
 import { MermaidDiagram } from '@/components/MermaidDiagram';
+import { PlotlyGraph } from '@/components/PlotlyGraph';
 import { splitCollapsibleSections } from '@/lib/document-html-enhance';
 import { cn } from '@/lib/utils';
 
 type HtmlSegment = { type: 'html'; html: string };
 type CodeSegment = { type: 'code'; code: string; language: string };
 type MermaidSegment = { type: 'mermaid'; code: string };
-type Segment = HtmlSegment | CodeSegment | MermaidSegment;
+type PlotlySegment = { type: 'plotly'; code: string };
+type Segment = HtmlSegment | CodeSegment | MermaidSegment | PlotlySegment;
 
 const PRE_CODE_RE =
   /<pre\b[^>]*>\s*<code\b([^>]*)>([\s\S]*?)<\/code>\s*<\/pre>/gi;
@@ -69,6 +71,8 @@ export function splitHtmlByCodeBlocks(html: string): Segment[] {
 
     if (language === 'mermaid') {
       segments.push({ type: 'mermaid', code });
+    } else if (language === 'plotly' || language === 'graph') {
+      segments.push({ type: 'plotly', code });
     } else {
       segments.push({ type: 'code', language, code });
     }
@@ -99,6 +103,10 @@ function DocumentSegmentList({
 
         if (segment.type === 'mermaid') {
           return <MermaidDiagram key={key} code={segment.code} />;
+        }
+
+        if (segment.type === 'plotly') {
+          return <PlotlyGraph key={key} code={segment.code} />;
         }
 
         if (segment.type === 'code') {
