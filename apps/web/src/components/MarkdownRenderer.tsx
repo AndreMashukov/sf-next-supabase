@@ -2,7 +2,9 @@
 
 import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
+import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import { DocumentCodeBlock } from '@/components/DocumentCodeBlock';
 import { MermaidDiagram } from '@/components/MermaidDiagram';
 import { cn } from '@/lib/utils';
@@ -80,7 +82,11 @@ export function MarkdownRenderer({
 }) {
   return (
     <div className={cn('chat-markdown', className)}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={markdownComponents}
+      >
         {content}
       </ReactMarkdown>
     </div>

@@ -76,6 +76,10 @@ export const SEALED_OUTPUT_CONTRACT_LINES = [
   '- Color diagram nodes/subgraphs differently with style or classDef so roles and stages are visually distinct.',
   '- When setting fill:, ALWAYS also set color: so label text contrasts with the background (dark fill → light text; light fill → dark text).',
   '- Add relevant emojis to diagram element labels for clarity and engagement.',
+  '- For mathematical formulas, write LaTeX in normal HTML text (not fenced code blocks).',
+  '- Inline math: wrap in $...$ or \\(...\\). Display math: wrap in $$...$$ or \\[...\\].',
+  '- Use single backslashes in TeX commands (e.g. \\frac{a}{b}, \\alpha, \\sum).',
+  '- Do NOT include KaTeX/MathJax CDN scripts, stylesheets, or <script> tags — the viewer renders math.',
 ] as const;
 
 export function buildSealedOutputContract(): string {

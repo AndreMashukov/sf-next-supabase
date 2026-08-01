@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { CollapsibleDocSection } from '@/components/CollapsibleDocSection';
 import { DocumentCodeBlock } from '@/components/DocumentCodeBlock';
+import { HtmlWithMath } from '@/components/HtmlWithMath';
 import { MermaidDiagram } from '@/components/MermaidDiagram';
 import { splitCollapsibleSections } from '@/lib/document-html-enhance';
 import { cn } from '@/lib/utils';
@@ -110,15 +111,13 @@ function DocumentSegmentList({
           return null;
         }
 
-        return (
-          <div key={key} dangerouslySetInnerHTML={{ __html: segment.html }} />
-        );
+        return <HtmlWithMath key={key} html={segment.html} />;
       })}
     </>
   );
 }
 
-export function DocumentHtmlContent({
+export const DocumentHtmlContent = memo(function DocumentHtmlContent({
   html,
   className,
 }: {
@@ -149,4 +148,4 @@ export function DocumentHtmlContent({
       })}
     </div>
   );
-}
+});

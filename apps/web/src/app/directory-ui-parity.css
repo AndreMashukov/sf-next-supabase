@@ -720,6 +720,17 @@
   overflow-wrap: anywhere;
 }
 
+.chat-markdown .katex {
+  color: inherit;
+  font-size: 1.05em;
+}
+
+.chat-markdown .katex-display {
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .chat-markdown > :first-child {
   margin-top: 0;
 }

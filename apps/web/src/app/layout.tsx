@@ -1,3 +1,4 @@
+import 'katex/dist/katex.min.css';
 import './global.css';
 import './directory-ui-parity.css';
 import './quiz-ui-parity.css';
