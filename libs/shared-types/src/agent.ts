@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
+export const agentScopeSchema = z.enum(['workspace', 'directory']);
+
 export const agentMessageSchema = z.object({
-  directoryId: z.string().uuid('Invalid directory ID'),
+  scope: agentScopeSchema.default('workspace'),
+  directoryId: z.string().uuid('Invalid directory ID').optional(),
   message: z.string().trim().min(1, 'Message is required').max(10_000),
   threadId: z.string().uuid('Invalid thread ID').optional(),
 });
@@ -15,10 +18,14 @@ export const agentActionKindSchema = z.enum([
   'move_document',
   'generate_quiz',
   'update_quiz',
+  'create_rule',
+  'update_rule',
+  'attach_rule',
+  'detach_rule',
   'search_knowledge',
 ]);
 
-export const agentDeleteTargetSchema = z.enum(['directory', 'document', 'quiz']);
+export const agentDeleteTargetSchema = z.enum(['directory', 'document', 'quiz', 'rule']);
 
 export const agentActionResultSchema = z.object({
   kind: agentActionKindSchema,
@@ -42,6 +49,7 @@ export const agentMessageResponseSchema = z.object({
   proposedDeletes: z.array(agentProposedDeleteSchema),
 });
 
+export type AgentScope = z.output<typeof agentScopeSchema>;
 export type AgentMessageRequest = z.input<typeof agentMessageSchema>;
 export type AgentMessageInput = z.output<typeof agentMessageSchema>;
 export type AgentActionKind = z.output<typeof agentActionKindSchema>;

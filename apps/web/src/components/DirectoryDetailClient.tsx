@@ -474,7 +474,11 @@ export function DirectoryDetailClient({
           {activePanel === 'worlds' ? <PlaceholderPanel title="Worlds" /> : null}
           {activePanel === 'chat' ? <PlaceholderPanel title="Chat" /> : null}
           {activePanel === 'agent' ? (
-            <AgentPanel directoryId={currentDirectory.id} onMutated={() => router.refresh()} />
+            <AgentPanel
+              scope="directory"
+              directoryId={currentDirectory.id}
+              onMutated={() => router.refresh()}
+            />
           ) : null}
         </div>
       </div>

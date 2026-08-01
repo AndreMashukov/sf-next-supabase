@@ -1,12 +1,19 @@
 import {
+  mapAgentConversationMemoryRow,
+  mapAgentThreadRow,
   mapDirectoryRow,
   mapDocumentRow,
   mapGenerationJobRow,
   mapQuizRow,
   mapRuleRow,
   type AgentChunkSourceType,
+  type AgentConversationMemoryRecordRow,
   type AgentKnowledgeChunkInput,
   type AgentKnowledgeMatch,
+  type AgentMemoryMatch,
+  type AgentMemoryRepository,
+  type AgentThreadRecordRow,
+  type AgentThreadRepository,
   type CreateRuleInput,
   type DeleteRuleInput,
   type DirectoryRecordRow,
@@ -268,6 +275,20 @@ export class SupabaseDocumentRepository implements DocumentRepository {
     return (data ?? []).map((row) => mapDocumentRow(row as DocumentRecordRow));
   }
 
+  async listForUser(userId: string) {
+    const { data, error } = await this.client
+      .from('documents')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapDocumentRow(row as DocumentRecordRow));
+  }
+
   async deleteByIds(userId: string, documentIds: string[]) {
     if (documentIds.length === 0) {
       return 0;
@@ -334,6 +355,40 @@ export class SupabaseRuleRepository implements RuleRepository {
       .map((id) => byId.get(id))
       .filter((row): row is { id: string; name: string; content: string } => Boolean(row))
       .map((row) => ({ name: row.name, content: row.content }));
+  }
+
+  async findByIdForUser(ruleId: string, userId: string) {
+    const { data, error } = await this.client
+      .from('rules')
+      .select('*')
+      .eq('id', ruleId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return mapRuleRow(data as RuleRecordRow);
+  }
+
+  async listForUser(userId: string) {
+    const { data, error } = await this.client
+      .from('rules')
+      .select('*')
+      .eq('user_id', userId)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapRuleRow(row as RuleRecordRow));
   }
 
   async create(input: CreateRuleInput) {
@@ -454,6 +509,20 @@ export class SupabaseQuizRepository implements QuizRepository {
       .select('*')
       .eq('user_id', userId)
       .in('document_id', documentIds);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapQuizRow(row as QuizRecordRow));
+  }
+
+  async listForUser(userId: string) {
+    const { data, error } = await this.client
+      .from('quizzes')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
     if (error) {
       throw new Error(error.message);
@@ -841,6 +910,155 @@ export class SupabaseVectorIndexRepository implements VectorIndexRepository {
       sourceType: row.source_type as AgentChunkSourceType,
       sourceTitle: row.source_title,
       content: row.content,
+      metadata: row.metadata ?? {},
+      similarity: row.similarity,
+    }));
+  }
+}
+
+interface AgentMemoryMatchRow {
+  id: string;
+  thread_id: string | null;
+  memory_type: string;
+  content: string;
+  priority: number;
+  metadata: Record<string, unknown> | null;
+  similarity: number;
+}
+
+export class SupabaseAgentThreadRepository implements AgentThreadRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async findByIdForUser(threadId: string, userId: string) {
+    const { data, error } = await this.client
+      .from('agent_threads')
+      .select('*')
+      .eq('id', threadId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return mapAgentThreadRow(data as AgentThreadRecordRow);
+  }
+
+  async create(input: {
+    userId: string;
+    scope: 'workspace' | 'directory';
+    directoryId?: string | null;
+    title?: string;
+  }) {
+    const { data, error } = await this.client
+      .from('agent_threads')
+      .insert({
+        user_id: input.userId,
+        scope: input.scope,
+        directory_id: input.directoryId ?? null,
+        title: input.title ?? '',
+      })
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Failed to create agent thread');
+    }
+
+    return mapAgentThreadRow(data as AgentThreadRecordRow);
+  }
+
+  async touch(threadId: string, userId: string, input?: { title?: string }) {
+    const updates: { last_message_at: string; title?: string } = {
+      last_message_at: new Date().toISOString(),
+    };
+
+    if (input?.title !== undefined) {
+      updates.title = input.title;
+    }
+
+    const { data, error } = await this.client
+      .from('agent_threads')
+      .update(updates)
+      .eq('id', threadId)
+      .eq('user_id', userId)
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Agent thread not found');
+    }
+
+    return mapAgentThreadRow(data as AgentThreadRecordRow);
+  }
+}
+
+export class SupabaseAgentMemoryRepository implements AgentMemoryRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async create(input: {
+    userId: string;
+    threadId?: string | null;
+    scope: 'workspace' | 'directory';
+    memoryType: import('@sf/api-domain').AgentMemoryType;
+    content: string;
+    priority?: number;
+    metadata?: Record<string, unknown>;
+    embedding: number[];
+    expiresAt?: string | null;
+  }) {
+    const { data, error } = await this.client
+      .from('agent_conversation_memories')
+      .insert({
+        user_id: input.userId,
+        thread_id: input.threadId ?? null,
+        scope: input.scope,
+        memory_type: input.memoryType,
+        content: input.content,
+        priority: input.priority ?? 0,
+        metadata: input.metadata ?? {},
+        embedding: input.embedding,
+        expires_at: input.expiresAt ?? null,
+      })
+      .select('*')
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? 'Failed to create agent memory');
+    }
+
+    return mapAgentConversationMemoryRow(data as AgentConversationMemoryRecordRow);
+  }
+
+  async matchMemories(input: {
+    userId: string;
+    queryEmbedding: number[];
+    threadId?: string | null;
+    scope?: 'workspace' | 'directory';
+    matchCount?: number;
+  }): Promise<AgentMemoryMatch[]> {
+    const { data, error } = await this.client.rpc('match_agent_memories', {
+      p_user_id: input.userId,
+      p_query_embedding: input.queryEmbedding,
+      p_thread_id: input.threadId ?? null,
+      p_scope: input.scope ?? 'workspace',
+      p_match_count: input.matchCount ?? 6,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return ((data ?? []) as AgentMemoryMatchRow[]).map((row) => ({
+      id: row.id,
+      threadId: row.thread_id,
+      memoryType: row.memory_type as AgentMemoryMatch['memoryType'],
+      content: row.content,
+      priority: row.priority,
       metadata: row.metadata ?? {},
       similarity: row.similarity,
     }));

@@ -7,6 +7,8 @@
   "types": "./src/index.d.ts",
   "dependencies": {
     "@sf/api-domain": "0.0.1",
+    "@sf/api-infra-supabase": "0.0.1",
+    "@sf/directory-agent": "0.0.1",
     "@sf/gcs": "0.0.1",
     "@sf/shared-types": "0.0.1",
     "sanitize-html": "^2.17.6",

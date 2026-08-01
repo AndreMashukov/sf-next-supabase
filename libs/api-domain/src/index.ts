@@ -179,6 +179,8 @@ export interface DocumentRepository {
 
   listByDirectoryIds(userId: string, directoryIds: string[]): Promise<Document[]>;
 
+  listForUser(userId: string): Promise<Document[]>;
+
   deleteByIds(userId: string, documentIds: string[]): Promise<number>;
 }
 
@@ -228,6 +230,10 @@ export interface RuleRepository {
 
   fetchByIds(userId: string, ruleIds: string[]): Promise<RulePromptRecord[]>;
 
+  findByIdForUser(ruleId: string, userId: string): Promise<Rule | null>;
+
+  listForUser(userId: string): Promise<Rule[]>;
+
   create(input: CreateRuleInput): Promise<Rule>;
 
   update(input: UpdateRuleInput): Promise<Rule>;
@@ -246,6 +252,8 @@ export interface QuizRepository {
   findByIdForUser(quizId: string, userId: string): Promise<Quiz | null>;
 
   listByDocumentIds(userId: string, documentIds: string[]): Promise<Quiz[]>;
+
+  listForUser(userId: string): Promise<Quiz[]>;
 
   update(input: {
     userId: string;
@@ -641,3 +649,19 @@ Please generate content that follows these rules while maintaining
 coherence and quality.
 `;
 }
+
+export type {
+  AgentConversationMemory,
+  AgentMemoryMatch,
+  AgentMemoryRepository,
+  AgentMemoryType,
+  AgentThread,
+  AgentThreadRepository,
+} from './agent-memory';
+
+export {
+  mapAgentConversationMemoryRow,
+  mapAgentThreadRow,
+  type AgentConversationMemoryRecordRow,
+  type AgentThreadRecordRow,
+} from './agent-memory';

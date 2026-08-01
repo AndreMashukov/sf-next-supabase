@@ -276,6 +276,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       const body = parseRequest(agentMessageSchema, request.body);
       const result = await context.directoryAgentUseCase.execute({
         userId,
+        scope: body.scope,
         directoryId: body.directoryId,
         message: body.message,
         threadId: body.threadId,

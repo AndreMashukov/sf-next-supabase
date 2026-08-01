@@ -7,6 +7,12 @@ export { DeleteDocumentsUseCase } from './delete-documents.use-case';
 export { DeleteQuizzesUseCase } from './delete-quizzes.use-case';
 export { DeleteRuleUseCase } from './delete-rule.use-case';
 export { DirectoryAgentUseCase } from './directory-agent.use-case';
+export {
+  AgentMemoryService,
+  AgentThreadService,
+  extractMemoriesFromTurn,
+  type CapturedAgentMemory,
+} from './agent-memory.service';
 export { GenerateQuizUseCase } from './generate-quiz.use-case';
 export { KnowledgeIndexerService, chunkText, hashContent, stripHtmlToText } from './knowledge-indexer.service';
 export { MoveDirectoryUseCase } from './move-directory.use-case';

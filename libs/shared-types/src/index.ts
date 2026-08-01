@@ -69,6 +69,7 @@ export type {
   AgentMessageRequest,
   AgentMessageResponse,
   AgentProposedDelete,
+  AgentScope,
 } from './agent';
 
 export {
@@ -78,6 +79,7 @@ export {
   agentMessageResponseSchema,
   agentMessageSchema,
   agentProposedDeleteSchema,
+  agentScopeSchema,
 } from './agent';
 
 export type {

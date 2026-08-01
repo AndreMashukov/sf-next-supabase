@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       '@sf/shared-types': path.resolve(__dirname, '../shared-types/src/index.ts'),
       '@sf/api-domain': path.resolve(__dirname, '../api-domain/src/index.ts'),
+      '@sf/directory-agent': path.resolve(__dirname, './src/index.ts'),
       '@langchain/langgraph/prebuilt': path.resolve(
         __dirname,
         '../../node_modules/@langchain/langgraph/dist/prebuilt/index.js',

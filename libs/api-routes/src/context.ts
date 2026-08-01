@@ -1,5 +1,7 @@
 import {
   AttachRuleToDirectoryUseCase,
+  AgentMemoryService,
+  AgentThreadService,
   CreateDirectoryUseCase,
   CreateDocumentUseCase,
   CreateRuleUseCase,
@@ -35,6 +37,10 @@ import {
 } from '@sf/api-infra-storage';
 import {
   createServiceClient,
+  createAgentMemoryDatabaseConfigFromEnv,
+  getAgentCheckpointer,
+  SupabaseAgentMemoryRepository,
+  SupabaseAgentThreadRepository,
   SupabaseAuthService,
   SupabaseDirectoryRepository,
   SupabaseDocumentRepository,
@@ -141,10 +147,13 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
     documentRepository,
     knowledgeIndexer,
   );
-  const directoryAgentUseCase = new DirectoryAgentUseCase(directoryRepository, {
+
+  const memoryDbConfig = createAgentMemoryDatabaseConfigFromEnv(env);
+  const agentDeps = {
     directoryRepository,
     documentRepository,
     quizRepository,
+    ruleRepository,
     vectorIndexRepository,
     embeddingService,
     createDirectoryUseCase: new CreateDirectoryUseCase(directoryRepository, knowledgeIndexer),
@@ -155,7 +164,28 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
     moveDocumentUseCase: new MoveDocumentUseCase(documentRepository, directoryRepository, knowledgeIndexer),
     generateQuizUseCase,
     updateQuizUseCase,
-  });
+    createRuleUseCase: new CreateRuleUseCase(ruleRepository),
+    updateRuleUseCase: new UpdateRuleUseCase(ruleRepository),
+    attachRuleToDirectoryUseCase: new AttachRuleToDirectoryUseCase(directoryRepository, ruleRepository),
+    detachRuleFromDirectoryUseCase: new DetachRuleFromDirectoryUseCase(directoryRepository),
+  };
+
+  const memoryDeps = memoryDbConfig
+    ? {
+        threadService: new AgentThreadService(new SupabaseAgentThreadRepository(serviceClient)),
+        memoryService: new AgentMemoryService(
+          new SupabaseAgentMemoryRepository(serviceClient),
+          embeddingService,
+        ),
+        getCheckpointer: () => getAgentCheckpointer(memoryDbConfig),
+      }
+    : undefined;
+
+  const directoryAgentUseCase = new DirectoryAgentUseCase(
+    directoryRepository,
+    agentDeps,
+    memoryDeps,
+  );
 
   return {
     authService,

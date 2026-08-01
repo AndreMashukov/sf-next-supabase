@@ -1,13 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, Loader2, Maximize2, Minimize2, Send, Trash2 } from 'lucide-react';
-import type { AgentActionResult, AgentMessageResponse, AgentProposedDelete } from '@sf/shared-types';
+import { Bot, Loader2, Maximize2, Minimize2, Send, Trash2, X } from 'lucide-react';
+import type {
+  AgentActionResult,
+  AgentMessageResponse,
+  AgentProposedDelete,
+  AgentScope,
+} from '@sf/shared-types';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import {
   deleteDirectory,
   deleteDocument,
   deleteQuiz,
+  deleteRule,
   sendAgentMessage,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -44,8 +50,10 @@ function DeleteProposalCard({
         await deleteDirectory(proposal.targetId);
       } else if (proposal.targetType === 'document') {
         await deleteDocument(proposal.targetId);
-      } else {
+      } else if (proposal.targetType === 'quiz') {
         await deleteQuiz(proposal.targetId);
+      } else {
+        await deleteRule(proposal.targetId);
       }
       onConfirmed();
     } catch (confirmError) {
@@ -72,26 +80,88 @@ function DeleteProposalCard({
   );
 }
 
+const EMPTY_STATE_PROMPTS: Record<AgentScope, string[]> = {
+  workspace: [
+    'List all my directories and unfiled documents',
+    'Create a rule for concise summaries and attach it to my Research folder',
+    'Generate a quiz from my latest document',
+  ],
+  directory: [
+    'Summarize the sources in this folder',
+    'Create a subfolder called Research',
+    'Generate a quiz from the latest document',
+  ],
+};
+
+const GLOBAL_AGENT_THREAD_STORAGE_KEY = 'sf-global-agent-thread-id';
+
+function readStoredThreadId(scope: AgentScope): string | undefined {
+  if (scope !== 'workspace' || typeof window === 'undefined') {
+    return undefined;
+  }
+
+  try {
+    const stored = window.sessionStorage.getItem(GLOBAL_AGENT_THREAD_STORAGE_KEY);
+    return stored && stored.trim().length > 0 ? stored : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeStoredThreadId(scope: AgentScope, threadId: string | undefined): void {
+  if (scope !== 'workspace' || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    if (threadId) {
+      window.sessionStorage.setItem(GLOBAL_AGENT_THREAD_STORAGE_KEY, threadId);
+    } else {
+      window.sessionStorage.removeItem(GLOBAL_AGENT_THREAD_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage failures in restricted browser contexts.
+  }
+}
+
 export function AgentPanel({
+  scope = 'workspace',
   directoryId,
   onMutated,
+  defaultExpanded = false,
+  onClose,
+  variant = 'embedded',
 }: {
-  directoryId: string;
+  scope?: AgentScope;
+  directoryId?: string;
   onMutated?: () => void;
+  defaultExpanded?: boolean;
+  onClose?: () => void;
+  variant?: 'embedded' | 'overlay';
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [threadId, setThreadId] = useState<string | undefined>();
+  const [threadId, setThreadId] = useState<string | undefined>(() => readStoredThreadId(scope));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded || variant === 'overlay');
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
+  const isOverlay = variant === 'overlay' || isExpanded;
+  const subtitle =
+    scope === 'workspace'
+      ? 'Search, create, update, and organize content across your workspace.'
+      : 'Search, create, update, and organize content in this folder.';
+
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages.length, loading]);
+
+  useEffect(() => {
+    writeStoredThreadId(scope, threadId);
+  }, [scope, threadId]);
 
   useEffect(() => {
     const syncLayout = () => {
@@ -120,22 +190,26 @@ export function AgentPanel({
   }, []);
 
   useEffect(() => {
-    if (!isExpanded) {
+    if (!isOverlay) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsExpanded(false);
+        if (variant === 'overlay') {
+          onClose?.();
+        } else {
+          setIsExpanded(false);
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isExpanded]);
+  }, [isOverlay, onClose, variant]);
 
   const expandedStyle = useMemo(() => {
-    if (!isExpanded) {
+    if (!isOverlay) {
       return undefined;
     }
 
@@ -149,7 +223,7 @@ export function AgentPanel({
       right: `${PAGE_WIDE_GAP_PX}px`,
       bottom: `${PAGE_WIDE_GAP_PX}px`,
     } as const;
-  }, [isExpanded, isMobile, sidebarCollapsed]);
+  }, [isOverlay, isMobile, sidebarCollapsed]);
 
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
@@ -170,6 +244,7 @@ export function AgentPanel({
 
     try {
       const response: AgentMessageResponse = await sendAgentMessage({
+        scope,
         directoryId,
         message: trimmed,
         threadId,
@@ -187,7 +262,7 @@ export function AgentPanel({
         },
       ]);
 
-      if (response.executedActions.length > 0) {
+      if (response.executedActions.length > 0 || response.proposedDeletes.length > 0) {
         onMutated?.();
       }
     } catch (sendError) {
@@ -195,40 +270,61 @@ export function AgentPanel({
     } finally {
       setLoading(false);
     }
-  }, [directoryId, input, loading, onMutated, threadId]);
+  }, [directoryId, input, loading, onMutated, scope, threadId]);
+
+  const handleClose = () => {
+    if (variant === 'overlay') {
+      onClose?.();
+      return;
+    }
+    setIsExpanded(false);
+  };
 
   return (
     <>
-      {isExpanded ? (
+      {isOverlay ? (
         <div
           className="agent-panel-backdrop"
           role="presentation"
-          onClick={() => setIsExpanded(false)}
+          onClick={handleClose}
         />
       ) : null}
 
       <section
-        className={cn('agent-panel', isExpanded && 'is-expanded')}
+        className={cn('agent-panel', isOverlay && 'is-expanded')}
         style={expandedStyle}
-        aria-label="Directory agent"
+        aria-label={scope === 'workspace' ? 'Workspace agent' : 'Directory agent'}
       >
         <div className="agent-panel-toolbar">
           <div className="agent-panel-title">
             <Bot size={18} className="agent-panel-icon" />
             <div>
               <h2>Agent</h2>
-              <p className="muted">Search, create, update, and organize content in this folder.</p>
+              <p className="muted">{subtitle}</p>
             </div>
           </div>
-          <button
-            type="button"
-            className="agent-expand-button"
-            onClick={() => setIsExpanded((current) => !current)}
-            aria-label={isExpanded ? 'Exit expanded agent chat' : 'Expand agent chat'}
-            aria-expanded={isExpanded}
-          >
-            {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-          </button>
+          <div className="agent-panel-toolbar-actions">
+            {variant === 'embedded' ? (
+              <button
+                type="button"
+                className="agent-expand-button"
+                onClick={() => setIsExpanded((current) => !current)}
+                aria-label={isExpanded ? 'Exit expanded agent chat' : 'Expand agent chat'}
+                aria-expanded={isExpanded}
+              >
+                {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="agent-expand-button"
+                onClick={handleClose}
+                aria-label="Close agent chat"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="agent-chat-scroll">
@@ -236,9 +332,9 @@ export function AgentPanel({
             <div className="agent-empty-state">
               <p className="muted">Try prompts like:</p>
               <ul>
-                <li>Summarize the sources in this folder</li>
-                <li>Create a subfolder called Research</li>
-                <li>Generate a quiz from the latest document</li>
+                {EMPTY_STATE_PROMPTS[scope].map((prompt) => (
+                  <li key={prompt}>{prompt}</li>
+                ))}
               </ul>
             </div>
           ) : null}

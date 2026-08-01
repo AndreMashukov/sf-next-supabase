@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { GlobalAgentLauncher } from '@/components/agent/GlobalAgentLauncher';
 import { Sidebar } from './Sidebar';
 import { TopAppBar } from './TopAppBar';
 
@@ -52,6 +53,7 @@ export function AppShellClient({
           <div className="app-content-inner">{children}</div>
         </div>
       </div>
+      <GlobalAgentLauncher />
     </div>
   );
 }

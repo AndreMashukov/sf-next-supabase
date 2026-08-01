@@ -251,7 +251,12 @@ export type QuizResponsePayload = z.output<typeof quizResponseSchema>;
 
 export function formatValidationError(error: ZodError): string {
   const firstIssue = error.issues[0];
-  return firstIssue?.message ?? 'Invalid request body';
+  if (!firstIssue) {
+    return 'Invalid request body';
+  }
+
+  const path = firstIssue.path.length > 0 ? `${firstIssue.path.join('.')}: ` : '';
+  return `${path}${firstIssue.message}`;
 }
 
 export function parseRequest<T>(schema: ZodType<T>, body: unknown): T {

@@ -209,11 +209,28 @@ export async function detachRuleFromDirectory(directoryId: string, ruleId: strin
 }
 
 export async function sendAgentMessage(input: {
-  directoryId: string;
+  scope?: 'workspace' | 'directory';
+  directoryId?: string;
   message: string;
   threadId?: string;
 }) {
-  const body = parseRequest(agentMessageSchema, input);
+  const payload: Record<string, string> = {
+    message: input.message,
+  };
+
+  if (input.scope) {
+    payload.scope = input.scope;
+  }
+
+  if (input.directoryId) {
+    payload.directoryId = input.directoryId;
+  }
+
+  if (input.threadId) {
+    payload.threadId = input.threadId;
+  }
+
+  const body = parseRequest(agentMessageSchema, payload);
   return postJson<AgentMessageApiResponse>('agent-message', body);
 }
 

@@ -5,8 +5,16 @@ import {
   assertDirectoryInScope,
   assertDocumentInScope,
   assertQuizInScope,
+  assertRuleInScope,
+  isDirectoryInScope,
+  resolveDefaultDirectoryId,
+  resolveDefaultParentId,
   type DirectoryAgentRuntimeContext,
 } from './context';
+
+function scopeLabel(context: DirectoryAgentRuntimeContext): string {
+  return context.scope === 'workspace' ? 'workspace' : 'folder subtree';
+}
 
 export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext): StructuredToolInterface[] {
   return [
@@ -26,7 +34,7 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
         });
 
         if (matches.length === 0) {
-          return 'No relevant knowledge found in this folder subtree.';
+          return `No relevant knowledge found in this ${scopeLabel(context)}.`;
         }
 
         return matches
@@ -38,7 +46,8 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
       },
       {
         name: 'search_knowledge',
-        description: 'Search indexed folder knowledge using semantic retrieval over documents, quizzes, and directories.',
+        description:
+          'Search indexed workspace knowledge using semantic retrieval over documents, quizzes, directories, and rules.',
         schema: z.object({
           query: z.string().describe('Natural language search query'),
         }),
@@ -47,7 +56,10 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
     tool(
       async () => {
         const directories = await context.directoryRepository.listForUser(context.userId);
-        const scoped = directories.filter((directory) => context.directoryIds.includes(directory.id));
+        const scoped =
+          context.scope === 'workspace'
+            ? directories
+            : directories.filter((directory) => context.directoryIds.includes(directory.id));
         return JSON.stringify(
           scoped.map((directory) => ({
             id: directory.id,
@@ -60,16 +72,16 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
       },
       {
         name: 'list_directories',
-        description: 'List directories in the current folder subtree.',
+        description: 'List directories in the current scope.',
         schema: z.object({}),
       },
     ),
     tool(
       async () => {
-        const documents = await context.documentRepository.listByDirectoryIds(
-          context.userId,
-          context.directoryIds,
-        );
+        const documents =
+          context.scope === 'workspace'
+            ? await context.documentRepository.listForUser(context.userId)
+            : await context.documentRepository.listByDirectoryIds(context.userId, context.directoryIds);
         return JSON.stringify(
           documents.map((document) => ({
             id: document.id,
@@ -81,20 +93,21 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
       },
       {
         name: 'list_documents',
-        description: 'List documents in the current folder subtree.',
+        description: 'List documents in the current scope, including unfiled documents in workspace mode.',
         schema: z.object({}),
       },
     ),
     tool(
       async () => {
-        const documents = await context.documentRepository.listByDirectoryIds(
-          context.userId,
-          context.directoryIds,
-        );
-        const quizzes = await context.quizRepository.listByDocumentIds(
-          context.userId,
-          documents.map((document) => document.id),
-        );
+        const quizzes =
+          context.scope === 'workspace'
+            ? await context.quizRepository.listForUser(context.userId)
+            : await context.quizRepository.listByDocumentIds(
+                context.userId,
+                (
+                  await context.documentRepository.listByDirectoryIds(context.userId, context.directoryIds)
+                ).map((document) => document.id),
+              );
         return JSON.stringify(
           quizzes.map((quiz) => ({
             id: quiz.id,
@@ -106,16 +119,34 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
       },
       {
         name: 'list_quizzes',
-        description: 'List quizzes for documents in the current folder subtree.',
+        description: 'List quizzes in the current scope.',
+        schema: z.object({}),
+      },
+    ),
+    tool(
+      async () => {
+        const rules = await context.ruleRepository.listForUser(context.userId);
+        return JSON.stringify(
+          rules.map((rule) => ({
+            id: rule.id,
+            name: rule.name,
+            description: rule.description,
+            isDefault: rule.isDefault,
+          })),
+        );
+      },
+      {
+        name: 'list_rules',
+        description: 'List all rules in the workspace.',
         schema: z.object({}),
       },
     ),
     tool(
       async ({ name, parentId, description }) => {
-        const resolvedParentId =
-          parentId && context.directoryIds.includes(parentId)
-            ? parentId
-            : context.directoryId;
+        const resolvedParentId = resolveDefaultParentId(context, parentId);
+        if (resolvedParentId) {
+          assertDirectoryInScope(context, resolvedParentId);
+        }
         const directory = await context.createDirectoryUseCase.execute({
           userId: context.userId,
           name,
@@ -134,7 +165,7 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
       },
       {
         name: 'create_directory',
-        description: 'Create a subdirectory inside the current folder scope.',
+        description: 'Create a directory in the current scope. Omit parentId to create a root directory.',
         schema: z.object({
           name: z.string().min(1).max(100),
           parentId: z.string().uuid().optional(),
@@ -153,10 +184,10 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
         parentId,
         ruleIds,
       }) => {
-        const resolvedParentId =
-          parentId && context.directoryIds.includes(parentId)
-            ? parentId
-            : context.directoryId;
+        const resolvedParentId = resolveDefaultParentId(context, parentId);
+        if (resolvedParentId) {
+          assertDirectoryInScope(context, resolvedParentId);
+        }
         const directory = await context.createDirectoryUseCase.execute({
           userId: context.userId,
           name: folderName,
@@ -215,7 +246,7 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
       {
         name: 'create_folder_with_content',
         description:
-          'Create a subfolder, start async document generation inside it, and optionally queue quiz generation after the document completes.',
+          'Create a folder, start async document generation inside it, and optionally queue quiz generation after the document completes.',
         schema: z.object({
           folderName: z.string().min(1).max(100),
           folderDescription: z.string().optional(),
@@ -283,8 +314,10 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
     ),
     tool(
       async ({ title, text, directoryId, ruleIds, quizTitle, questionCount }) => {
-        const targetDirectoryId = directoryId ?? context.directoryId;
-        assertDirectoryInScope(context, targetDirectoryId);
+        const targetDirectoryId = resolveDefaultDirectoryId(context, directoryId);
+        if (targetDirectoryId) {
+          assertDirectoryInScope(context, targetDirectoryId);
+        }
         const followUpQuiz =
           quizTitle || questionCount
             ? {
@@ -323,7 +356,7 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
       {
         name: 'create_document',
         description:
-          'Start async AI document generation in a folder within scope. Optionally queue quiz generation after the document completes.',
+          'Start async AI document generation. Optionally queue quiz generation after the document completes. Omit directoryId to create an unfiled document.',
         schema: z.object({
           title: z.string().min(1).max(200),
           text: z.string().min(1).max(100_000),
@@ -382,7 +415,7 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
       },
       {
         name: 'move_document',
-        description: 'Move a document to another folder within scope.',
+        description: 'Move a document to another folder within scope. Omit directoryId to unfile the document.',
         schema: z.object({
           documentId: z.string().uuid(),
           directoryId: z.string().uuid().optional(),
@@ -418,7 +451,7 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
     ),
     tool(
       async ({ quizId, title, questions }) => {
-        const quiz = await assertQuizInScope(context, quizId);
+        await assertQuizInScope(context, quizId);
         const updatedQuiz = await context.updateQuizUseCase.execute({
           userId: context.userId,
           quizId,
@@ -454,9 +487,120 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
       },
     ),
     tool(
+      async ({ name, description, content, isDefault }) => {
+        const rule = await context.createRuleUseCase.execute({
+          userId: context.userId,
+          name,
+          description: description ?? '',
+          content,
+          isDefault: isDefault ?? false,
+        });
+        context.executedActions.push({
+          kind: 'create_rule',
+          summary: `Created rule "${rule.name}"`,
+          entityType: 'rule',
+          entityId: rule.id,
+        });
+        return JSON.stringify(rule);
+      },
+      {
+        name: 'create_rule',
+        description: 'Create a new rule in the workspace.',
+        schema: z.object({
+          name: z.string().min(1).max(100),
+          description: z.string().optional(),
+          content: z.string().min(1),
+          isDefault: z.boolean().optional(),
+        }),
+      },
+    ),
+    tool(
+      async ({ ruleId, name, description, content, isDefault }) => {
+        await assertRuleInScope(context, ruleId);
+        const rule = await context.updateRuleUseCase.execute({
+          userId: context.userId,
+          ruleId,
+          name,
+          description,
+          content,
+          isDefault,
+        });
+        context.executedActions.push({
+          kind: 'update_rule',
+          summary: `Updated rule "${rule.name}"`,
+          entityType: 'rule',
+          entityId: rule.id,
+        });
+        return JSON.stringify(rule);
+      },
+      {
+        name: 'update_rule',
+        description: 'Update an existing rule in the workspace.',
+        schema: z.object({
+          ruleId: z.string().uuid(),
+          name: z.string().min(1).max(100).optional(),
+          description: z.string().optional(),
+          content: z.string().min(1).optional(),
+          isDefault: z.boolean().optional(),
+        }),
+      },
+    ),
+    tool(
+      async ({ directoryId, ruleId }) => {
+        await assertDirectoryInScope(context, directoryId);
+        await assertRuleInScope(context, ruleId);
+        await context.attachRuleToDirectoryUseCase.execute({
+          userId: context.userId,
+          directoryId,
+          ruleId,
+        });
+        context.executedActions.push({
+          kind: 'attach_rule',
+          summary: `Attached rule to directory`,
+          entityType: 'rule',
+          entityId: ruleId,
+        });
+        return 'Rule attached to directory successfully.';
+      },
+      {
+        name: 'attach_rule_to_directory',
+        description: 'Attach a rule to a directory so it applies to content in that folder.',
+        schema: z.object({
+          directoryId: z.string().uuid(),
+          ruleId: z.string().uuid(),
+        }),
+      },
+    ),
+    tool(
+      async ({ directoryId, ruleId }) => {
+        await assertDirectoryInScope(context, directoryId);
+        await assertRuleInScope(context, ruleId);
+        await context.detachRuleFromDirectoryUseCase.execute({
+          userId: context.userId,
+          directoryId,
+          ruleId,
+        });
+        context.executedActions.push({
+          kind: 'detach_rule',
+          summary: `Detached rule from directory`,
+          entityType: 'rule',
+          entityId: ruleId,
+        });
+        return 'Rule detached from directory successfully.';
+      },
+      {
+        name: 'detach_rule_from_directory',
+        description: 'Detach a rule from a directory.',
+        schema: z.object({
+          directoryId: z.string().uuid(),
+          ruleId: z.string().uuid(),
+        }),
+      },
+    ),
+    tool(
       async ({ directoryId, reason }) => {
         const directory = await context.directoryRepository.findByIdForUser(directoryId, context.userId);
-        if (!directory || !context.directoryIds.includes(directory.id)) {
+        if (!directory || !isDirectoryInScope(context, directory.id)) {
           throw new Error('Directory not found in scope');
         }
         context.proposedDeletes.push({
@@ -516,6 +660,29 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
         description: 'Propose deleting one or more quizzes. Does not delete until the user confirms.',
         schema: z.object({
           quizIds: z.array(z.string().uuid()).min(1),
+          reason: z.string().optional(),
+        }),
+      },
+    ),
+    tool(
+      async ({ ruleIds, reason }) => {
+        for (const ruleId of ruleIds) {
+          const rule = await assertRuleInScope(context, ruleId);
+          context.proposedDeletes.push({
+            targetType: 'rule',
+            targetId: rule.id,
+            label: rule.name,
+            reason,
+          });
+        }
+        return `Delete proposal created for ${ruleIds.length} rule(s). The user must confirm before deletion. Rules attached to directories must be detached first.`;
+      },
+      {
+        name: 'propose_delete_rules',
+        description:
+          'Propose deleting one or more rules. Does not delete until the user confirms. Rules attached to directories must be detached first.',
+        schema: z.object({
+          ruleIds: z.array(z.string().uuid()).min(1),
           reason: z.string().optional(),
         }),
       },
