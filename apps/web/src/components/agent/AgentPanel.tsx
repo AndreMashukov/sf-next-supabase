@@ -94,28 +94,56 @@ const EMPTY_STATE_PROMPTS: Record<AgentScope, string[]> = {
 };
 
 const GLOBAL_AGENT_THREAD_STORAGE_KEY = 'sf-global-agent-thread-id';
+const GLOBAL_AGENT_SESSION_STORAGE_KEY = 'sf-global-agent-session';
 
-function readStoredThreadId(scope: AgentScope): string | undefined {
+type StoredAgentSession = {
+  threadId?: string;
+  messages: ChatMessage[];
+};
+
+function readStoredSession(scope: AgentScope): StoredAgentSession {
   if (scope !== 'workspace' || typeof window === 'undefined') {
-    return undefined;
+    return { messages: [] };
   }
 
   try {
-    const stored = window.sessionStorage.getItem(GLOBAL_AGENT_THREAD_STORAGE_KEY);
-    return stored && stored.trim().length > 0 ? stored : undefined;
+    const storedSession = window.sessionStorage.getItem(GLOBAL_AGENT_SESSION_STORAGE_KEY);
+    if (storedSession) {
+      const parsed = JSON.parse(storedSession) as StoredAgentSession;
+      if (Array.isArray(parsed.messages)) {
+        return {
+          threadId: parsed.threadId,
+          messages: parsed.messages.filter(
+            (message) =>
+              typeof message === 'object' &&
+              message !== null &&
+              typeof message.id === 'string' &&
+              (message.role === 'user' || message.role === 'assistant') &&
+              typeof message.content === 'string',
+          ),
+        };
+      }
+    }
+
+    const legacyThreadId = window.sessionStorage.getItem(GLOBAL_AGENT_THREAD_STORAGE_KEY);
+    return {
+      threadId: legacyThreadId && legacyThreadId.trim().length > 0 ? legacyThreadId : undefined,
+      messages: [],
+    };
   } catch {
-    return undefined;
+    return { messages: [] };
   }
 }
 
-function writeStoredThreadId(scope: AgentScope, threadId: string | undefined): void {
+function writeStoredSession(scope: AgentScope, session: StoredAgentSession): void {
   if (scope !== 'workspace' || typeof window === 'undefined') {
     return;
   }
 
   try {
-    if (threadId) {
-      window.sessionStorage.setItem(GLOBAL_AGENT_THREAD_STORAGE_KEY, threadId);
+    window.sessionStorage.setItem(GLOBAL_AGENT_SESSION_STORAGE_KEY, JSON.stringify(session));
+    if (session.threadId) {
+      window.sessionStorage.setItem(GLOBAL_AGENT_THREAD_STORAGE_KEY, session.threadId);
     } else {
       window.sessionStorage.removeItem(GLOBAL_AGENT_THREAD_STORAGE_KEY);
     }
@@ -139,9 +167,10 @@ export function AgentPanel({
   onClose?: () => void;
   variant?: 'embedded' | 'overlay';
 }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const storedSession = useMemo(() => readStoredSession(scope), [scope]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => storedSession.messages);
   const [input, setInput] = useState('');
-  const [threadId, setThreadId] = useState<string | undefined>(() => readStoredThreadId(scope));
+  const [threadId, setThreadId] = useState<string | undefined>(() => storedSession.threadId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(defaultExpanded || variant === 'overlay');
@@ -160,8 +189,8 @@ export function AgentPanel({
   }, [messages.length, loading]);
 
   useEffect(() => {
-    writeStoredThreadId(scope, threadId);
-  }, [scope, threadId]);
+    writeStoredSession(scope, { threadId, messages });
+  }, [scope, threadId, messages]);
 
   useEffect(() => {
     const syncLayout = () => {

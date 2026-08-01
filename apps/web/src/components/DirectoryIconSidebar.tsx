@@ -2,7 +2,6 @@
 
 import {
   Box,
-  Bot,
   Brain,
   FileText,
   Layers,
@@ -23,7 +22,6 @@ export type DirectoryPanelType =
   | 'sequence'
   | 'worlds'
   | 'chat'
-  | 'agent'
   | 'rules';
 
 const CONTENT_ITEMS: Array<{ panel: DirectoryPanelType; label: string; icon: LucideIcon }> = [
@@ -35,7 +33,6 @@ const CONTENT_ITEMS: Array<{ panel: DirectoryPanelType; label: string; icon: Luc
   { panel: 'sequence', label: 'Sequence', icon: ListOrdered },
   { panel: 'worlds', label: 'Worlds', icon: Box },
   { panel: 'chat', label: 'Chat', icon: MessageSquare },
-  { panel: 'agent', label: 'Agent', icon: Bot },
 ];
 
 const SETTINGS_ITEMS: Array<{ panel: DirectoryPanelType; label: string; icon: LucideIcon }> = [

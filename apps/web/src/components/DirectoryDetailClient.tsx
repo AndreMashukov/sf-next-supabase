@@ -23,7 +23,6 @@ import { DeleteDirectoryDialog } from '@/components/DeleteDirectoryDialog';
 import { DirectoryPickerDialog } from '@/components/DirectoryPickerDialog';
 import { DropdownMenu } from '@/components/DropdownMenu';
 import { QuizzesPanel } from '@/components/quiz/QuizzesPanel';
-import { AgentPanel } from '@/components/agent/AgentPanel';
 import { DirectoryRuleManager } from '@/app/documents/DocumentsPageClient';
 import type { QuizWithDocumentTitle } from '@/lib/data/quizzes';
 import { resolveDirectoryColor, resolveDirectoryIcon } from '@/lib/folder-constants';
@@ -40,7 +39,6 @@ const VALID_PANELS = new Set<string>([
   'sequence',
   'worlds',
   'chat',
-  'agent',
   'rules',
 ]);
 
@@ -473,13 +471,6 @@ export function DirectoryDetailClient({
           {activePanel === 'sequence' ? <PlaceholderPanel title="Sequence" /> : null}
           {activePanel === 'worlds' ? <PlaceholderPanel title="Worlds" /> : null}
           {activePanel === 'chat' ? <PlaceholderPanel title="Chat" /> : null}
-          {activePanel === 'agent' ? (
-            <AgentPanel
-              scope="directory"
-              directoryId={currentDirectory.id}
-              onMutated={() => router.refresh()}
-            />
-          ) : null}
         </div>
       </div>
 
