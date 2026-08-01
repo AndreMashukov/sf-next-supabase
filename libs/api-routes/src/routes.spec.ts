@@ -74,6 +74,19 @@ function createMockContext(overrides: Partial<ApiContext> = {}): ApiContext {
         executedActions: [],
         proposedDeletes: [],
       }),
+      stream: vi.fn().mockImplementation(async function* mockAgentStream() {
+        yield { type: 'thread', threadId: 'thread-1' };
+        yield { type: 'delta', text: 'Done' };
+        yield {
+          type: 'done',
+          response: {
+            reply: 'Done',
+            threadId: 'thread-1',
+            executedActions: [],
+            proposedDeletes: [],
+          },
+        };
+      }),
     },
     knowledgeIndexer: {
       indexDirectory: vi.fn(),
@@ -385,7 +398,39 @@ describe('createApiServer', () => {
     });
     expect(context.directoryAgentUseCase.execute).toHaveBeenCalledWith({
       userId: 'user-1',
+      scope: 'workspace',
       directoryId: '11111111-1111-4111-8111-111111111111',
+      message: 'Summarize this folder',
+      threadId: undefined,
+    });
+    await app.close();
+  });
+
+  it('streams agent messages over SSE for authenticated requests', async () => {
+    const context = createMockContext();
+    const app = await createApiServer(context);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/functions/v1/agent-message-stream',
+      headers: {
+        authorization: 'Bearer test-token',
+        'content-type': 'application/json',
+        accept: 'text/event-stream',
+      },
+      payload: {
+        message: 'Summarize this folder',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['content-type']).toContain('text/event-stream');
+    expect(response.body).toContain('event: thread');
+    expect(response.body).toContain('event: delta');
+    expect(response.body).toContain('event: done');
+    expect(context.directoryAgentUseCase.stream).toHaveBeenCalledWith({
+      userId: 'user-1',
+      scope: 'workspace',
+      directoryId: undefined,
       message: 'Summarize this folder',
       threadId: undefined,
     });

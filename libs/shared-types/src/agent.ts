@@ -57,3 +57,36 @@ export type AgentDeleteTarget = z.output<typeof agentDeleteTargetSchema>;
 export type AgentActionResult = z.output<typeof agentActionResultSchema>;
 export type AgentProposedDelete = z.output<typeof agentProposedDeleteSchema>;
 export type AgentMessageResponse = z.output<typeof agentMessageResponseSchema>;
+
+export const agentMessageStreamEventSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('thread'),
+    threadId: z.string().uuid(),
+  }),
+  z.object({
+    type: z.literal('status'),
+    message: z.string(),
+  }),
+  z.object({
+    type: z.literal('delta'),
+    text: z.string(),
+  }),
+  z.object({
+    type: z.literal('action'),
+    action: agentActionResultSchema,
+  }),
+  z.object({
+    type: z.literal('delete_proposal'),
+    proposal: agentProposedDeleteSchema,
+  }),
+  z.object({
+    type: z.literal('done'),
+    response: agentMessageResponseSchema,
+  }),
+  z.object({
+    type: z.literal('error'),
+    message: z.string(),
+  }),
+]);
+
+export type AgentMessageStreamEvent = z.output<typeof agentMessageStreamEventSchema>;

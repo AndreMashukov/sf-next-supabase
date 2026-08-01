@@ -1,4 +1,5 @@
 import cors from '@fastify/cors';
+import fastifySse from '@fastify/sse';
 import type { FastifyInstance } from 'fastify';
 import {
   attachRuleToDirectorySchema,
@@ -61,6 +62,8 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
     preflight: false,
   });
 
+  await app.register(fastifySse);
+
   await app.register(errorHandlerPlugin);
 
   app.get('/health', async () => ({ status: 'ok' }));
@@ -81,6 +84,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
     '/functions/v1/attach-rule-to-directory',
     '/functions/v1/detach-rule-from-directory',
     '/functions/v1/agent-message',
+    '/functions/v1/agent-message-stream',
     '/functions/v1/update-document',
     '/functions/v1/update-quiz',
   ] as const;
@@ -283,6 +287,45 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       });
 
       return reply.send(result);
+    });
+
+    protectedApp.post('/functions/v1/agent-message-stream', { sse: 'manual' }, async (request, reply) => {
+      const userId = requireUserId(request);
+      const body = parseRequest(agentMessageSchema, request.body);
+
+      if (!reply.sse) {
+        return sendError(reply, 'Streaming is unavailable', 500);
+      }
+
+      try {
+        for await (const event of context.directoryAgentUseCase.stream({
+          userId,
+          scope: body.scope,
+          directoryId: body.directoryId,
+          message: body.message,
+          threadId: body.threadId,
+        })) {
+          if (!reply.sse.isConnected) {
+            break;
+          }
+
+          await reply.sse.send({
+            event: event.type,
+            data: event,
+          });
+        }
+      } catch (error) {
+        if (reply.sse.isConnected) {
+          await reply.sse.send({
+            event: 'error',
+            data: {
+              type: 'error',
+              message: error instanceof Error ? error.message : 'Agent stream failed',
+            },
+          });
+        }
+        throw error;
+      }
     });
 
     protectedApp.post('/functions/v1/update-document', async (request, reply) => {

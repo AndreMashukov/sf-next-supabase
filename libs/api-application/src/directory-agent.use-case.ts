@@ -1,9 +1,16 @@
 import { AppError, NotFoundError, type DirectoryRepository } from '@sf/api-domain';
-import type { AgentMessageInput, AgentMessageResponse } from '@sf/shared-types';
+import type {
+  AgentMessageInput,
+  AgentMessageResponse,
+  AgentMessageStreamEvent,
+  AgentScope,
+} from '@sf/shared-types';
 import {
   runDirectoryAgent,
+  runDirectoryAgentStream,
   type DirectoryAgentDependencies,
   type DirectoryAgentMemoryRuntime,
+  type RunDirectoryAgentInput,
 } from '@sf/directory-agent';
 import { AgentMemoryService, AgentThreadService } from './agent-memory.service';
 
@@ -18,7 +25,7 @@ export class DirectoryAgentUseCase {
     },
   ) {}
 
-  async execute(input: AgentMessageInput & { userId: string }): Promise<AgentMessageResponse> {
+  private async validateScope(input: AgentMessageInput & { userId: string }): Promise<AgentScope> {
     const scope = input.scope ?? 'workspace';
 
     if (scope === 'directory') {
@@ -36,6 +43,13 @@ export class DirectoryAgentUseCase {
       }
     }
 
+    return scope;
+  }
+
+  private async buildRunInput(
+    input: AgentMessageInput & { userId: string },
+  ): Promise<RunDirectoryAgentInput> {
+    const scope = await this.validateScope(input);
     const memoryEnabled = scope === 'workspace' && Boolean(this.memory);
     let threadId = input.threadId;
     let memorySnippets: string[] = [];
@@ -59,30 +73,49 @@ export class DirectoryAgentUseCase {
     const checkpointer =
       memoryEnabled && this.memory ? await this.memory.getCheckpointer() : undefined;
 
-    return runDirectoryAgent({
+    return {
       userId: input.userId,
       scope,
       directoryId: input.directoryId,
       message: input.message,
       threadId,
       deps: this.deps,
-      memory: memoryEnabled && this.memory && checkpointer
-        ? {
-            enabled: true,
-            threadId,
-            checkpointer,
-            memorySnippets,
-            onTurnComplete: async ({ userMessage, assistantReply, threadId: completedThreadId, scope: completedScope }) => {
-              await this.memory!.memoryService.captureTurnMemories({
-                userId: input.userId,
-                threadId: completedThreadId,
-                scope: completedScope,
+      memory:
+        memoryEnabled && this.memory && checkpointer
+          ? {
+              enabled: true,
+              threadId,
+              checkpointer,
+              memorySnippets,
+              onTurnComplete: async ({
                 userMessage,
                 assistantReply,
-              });
-            },
-          }
-        : undefined,
-    });
+                threadId: completedThreadId,
+                scope: completedScope,
+              }) => {
+                await this.memory!.memoryService.captureTurnMemories({
+                  userId: input.userId,
+                  threadId: completedThreadId,
+                  scope: completedScope,
+                  userMessage,
+                  assistantReply,
+                });
+              },
+            }
+          : undefined,
+    };
+  }
+
+  async execute(input: AgentMessageInput & { userId: string }): Promise<AgentMessageResponse> {
+    return runDirectoryAgent(await this.buildRunInput(input));
+  }
+
+  stream(input: AgentMessageInput & { userId: string }): AsyncGenerator<AgentMessageStreamEvent> {
+    const runInputPromise = this.buildRunInput(input);
+
+    return (async function* streamDirectoryAgent() {
+      const runInput = await runInputPromise;
+      yield* runDirectoryAgentStream(runInput);
+    })();
   }
 }

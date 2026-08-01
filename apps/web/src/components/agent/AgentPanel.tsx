@@ -14,7 +14,7 @@ import {
   deleteDocument,
   deleteQuiz,
   deleteRule,
-  sendAgentMessage,
+  streamAgentMessage,
 } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +24,8 @@ type ChatMessage = {
   content: string;
   executedActions?: AgentActionResult[];
   proposedDeletes?: AgentProposedDelete[];
+  isStreaming?: boolean;
+  statusMessage?: string;
 };
 
 const PAGE_WIDE_GAP_PX = 16;
@@ -177,6 +179,7 @@ export function AgentPanel({
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const isOverlay = variant === 'overlay' || isExpanded;
   const subtitle =
@@ -186,7 +189,7 @@ export function AgentPanel({
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages.length, loading]);
+  }, [messages, loading]);
 
   useEffect(() => {
     writeStoredSession(scope, { threadId, messages });
@@ -260,43 +263,146 @@ export function AgentPanel({
       return;
     }
 
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     const userMessage: ChatMessage = {
       id: createMessageId(),
       role: 'user',
       content: trimmed,
     };
+    const assistantMessageId = createMessageId();
 
-    setMessages((current) => [...current, userMessage]);
+    setMessages((current) => [
+      ...current,
+      userMessage,
+      {
+        id: assistantMessageId,
+        role: 'assistant',
+        content: '',
+        isStreaming: true,
+        statusMessage: 'Thinking...',
+        executedActions: [],
+        proposedDeletes: [],
+      },
+    ]);
     setInput('');
     setLoading(true);
     setError(null);
 
+    let finalResponse: AgentMessageResponse | null = null;
+
     try {
-      const response: AgentMessageResponse = await sendAgentMessage({
-        scope,
-        directoryId,
-        message: trimmed,
-        threadId,
-      });
-
-      setThreadId(response.threadId);
-      setMessages((current) => [
-        ...current,
+      await streamAgentMessage(
         {
-          id: createMessageId(),
-          role: 'assistant',
-          content: response.reply,
-          executedActions: response.executedActions,
-          proposedDeletes: response.proposedDeletes,
+          scope,
+          directoryId,
+          message: trimmed,
+          threadId,
         },
-      ]);
+        {
+          signal: controller.signal,
+          onEvent: (event) => {
+            if (event.type === 'thread') {
+              setThreadId(event.threadId);
+              return;
+            }
 
-      if (response.executedActions.length > 0 || response.proposedDeletes.length > 0) {
+            if (event.type === 'status') {
+              setMessages((current) =>
+                current.map((message) =>
+                  message.id === assistantMessageId
+                    ? { ...message, statusMessage: event.message }
+                    : message,
+                ),
+              );
+              return;
+            }
+
+            if (event.type === 'delta') {
+              setMessages((current) =>
+                current.map((message) =>
+                  message.id === assistantMessageId
+                    ? {
+                        ...message,
+                        content: `${message.content}${event.text}`,
+                        statusMessage: undefined,
+                      }
+                    : message,
+                ),
+              );
+              return;
+            }
+
+            if (event.type === 'action') {
+              setMessages((current) =>
+                current.map((message) =>
+                  message.id === assistantMessageId
+                    ? {
+                        ...message,
+                        executedActions: [...(message.executedActions ?? []), event.action],
+                      }
+                    : message,
+                ),
+              );
+              return;
+            }
+
+            if (event.type === 'delete_proposal') {
+              setMessages((current) =>
+                current.map((message) =>
+                  message.id === assistantMessageId
+                    ? {
+                        ...message,
+                        proposedDeletes: [...(message.proposedDeletes ?? []), event.proposal],
+                      }
+                    : message,
+                ),
+              );
+              return;
+            }
+
+            if (event.type === 'done') {
+              finalResponse = event.response;
+              setThreadId(event.response.threadId);
+              setMessages((current) =>
+                current.map((message) =>
+                  message.id === assistantMessageId
+                    ? {
+                        ...message,
+                        content: event.response.reply,
+                        executedActions: event.response.executedActions,
+                        proposedDeletes: event.response.proposedDeletes,
+                        isStreaming: false,
+                        statusMessage: undefined,
+                      }
+                    : message,
+                ),
+              );
+            }
+          },
+        },
+      );
+
+      if (
+        finalResponse &&
+        (finalResponse.executedActions.length > 0 || finalResponse.proposedDeletes.length > 0)
+      ) {
         onMutated?.();
       }
     } catch (sendError) {
+      if (controller.signal.aborted) {
+        setMessages((current) => current.filter((message) => message.id !== assistantMessageId));
+        return;
+      }
+
+      setMessages((current) => current.filter((message) => message.id !== assistantMessageId));
       setError(sendError instanceof Error ? sendError.message : 'Agent request failed');
     } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
       setLoading(false);
     }
   }, [directoryId, input, loading, onMutated, scope, threadId]);
@@ -376,10 +482,28 @@ export function AgentPanel({
               >
                 <div className={`agent-chat-bubble ${message.role}`}>
                   {message.role === 'assistant' ? (
-                    <MarkdownRenderer content={message.content} />
+                    message.isStreaming ? (
+                      message.content ? (
+                        <p className="agent-chat-user-text">{message.content}</p>
+                      ) : (
+                        <div className="agent-chat-loading">
+                          <Loader2 size={14} className="spin" />
+                          <span>{message.statusMessage ?? 'Thinking...'}</span>
+                        </div>
+                      )
+                    ) : (
+                      <MarkdownRenderer content={message.content} />
+                    )
                   ) : (
                     <p className="agent-chat-user-text">{message.content}</p>
                   )}
+
+                  {message.isStreaming && message.content ? (
+                    <div className="agent-chat-stream-meta">
+                      <Loader2 size={12} className="spin" />
+                      <span>{message.statusMessage ?? 'Streaming...'}</span>
+                    </div>
+                  ) : null}
 
                   {message.executedActions && message.executedActions.length > 0 ? (
                     <div className="agent-action-chips">
@@ -401,15 +525,6 @@ export function AgentPanel({
                 </div>
               </div>
             ))}
-
-            {loading ? (
-              <div className="agent-chat-row assistant">
-                <div className="agent-chat-bubble assistant loading">
-                  <Loader2 size={14} className="spin" />
-                  <span>Thinking...</span>
-                </div>
-              </div>
-            ) : null}
 
             <div ref={scrollRef} />
           </div>

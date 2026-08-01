@@ -16,6 +16,7 @@ export function createTogetherChatModel(temperature = 0.4): ChatOpenAI {
     apiKey: getTogetherApiKey(),
     model: TOGETHER_MODEL,
     temperature,
+    streaming: true,
     configuration: {
       baseURL: TOGETHER_BASE_URL,
     },

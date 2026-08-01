@@ -30,7 +30,12 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
 
         context.executedActions.push({
           kind: 'search_knowledge',
-          summary: `Retrieved ${matches.length} knowledge chunks`,
+          summary:
+            matches.length === 0
+              ? `Searched your ${scopeLabel(context)}`
+              : matches.length === 1
+                ? `Found related content in your ${scopeLabel(context)}`
+                : `Found ${matches.length} related items in your ${scopeLabel(context)}`,
         });
 
         if (matches.length === 0) {
