@@ -94,6 +94,7 @@ export const SEALED_OUTPUT_CONTRACT_LINES = [
   '  <pre><code class="language-plotly">{"data":[{"type":"scatter","mode":"lines","x":[0,1],"y":[0,1]}],"layout":{"title":"Example"}}</code></pre>',
   `- Allowed Plotly trace types: ${PLOTLY_ALLOWED_TRACE_TYPES.join(', ')}.`,
   '- Plotly JSON must be a single object with a non-empty data array; layout/config are optional.',
+  '- Omit paper_bgcolor, plot_bgcolor, and font/axis theme colors in Plotly layout - the viewer always applies the app dark theme.',
   '- Prefer compact numeric arrays (do not dump thousands of points). For circles/curves sample ~32–64 points.',
   '- Do NOT include Plotly CDN scripts or stylesheets — the viewer renders graphs.',
 ] as const;

@@ -2,8 +2,9 @@
 
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
-import type { Config, Data, Layout } from 'plotly.js';
+import type { Config, Data } from 'plotly.js';
 import { parsePlotlySpec } from '@/lib/plotly-spec';
+import { mergePlotlyDarkLayout } from '@/lib/plotly-theme';
 import { cn } from '@/lib/utils';
 
 const Plot = dynamic(() => import('react-plotly.js'), {
@@ -13,79 +14,12 @@ const Plot = dynamic(() => import('react-plotly.js'), {
   ),
 });
 
-const DARK_LAYOUT: Partial<Layout> = {
-  paper_bgcolor: 'rgba(18, 18, 18, 0)',
-  plot_bgcolor: 'rgba(18, 18, 18, 0)',
-  font: {
-    color: '#e8e4ef',
-    family: 'Inter, ui-sans-serif, system-ui, sans-serif',
-    size: 12,
-  },
-  margin: { l: 48, r: 24, t: 48, b: 48 },
-  colorway: ['#d2bbff', '#7dd3fc', '#f9a8d4', '#86efac', '#fcd34d'],
-  xaxis: {
-    gridcolor: 'rgba(255,255,255,0.08)',
-    zerolinecolor: 'rgba(255,255,255,0.2)',
-    linecolor: 'rgba(255,255,255,0.2)',
-  },
-  yaxis: {
-    gridcolor: 'rgba(255,255,255,0.08)',
-    zerolinecolor: 'rgba(255,255,255,0.2)',
-    linecolor: 'rgba(255,255,255,0.2)',
-  },
-  scene: {
-    xaxis: {
-      gridcolor: 'rgba(255,255,255,0.08)',
-      zerolinecolor: 'rgba(255,255,255,0.2)',
-      backgroundcolor: 'rgba(18,18,18,0)',
-    },
-    yaxis: {
-      gridcolor: 'rgba(255,255,255,0.08)',
-      zerolinecolor: 'rgba(255,255,255,0.2)',
-      backgroundcolor: 'rgba(18,18,18,0)',
-    },
-    zaxis: {
-      gridcolor: 'rgba(255,255,255,0.08)',
-      zerolinecolor: 'rgba(255,255,255,0.2)',
-      backgroundcolor: 'rgba(18,18,18,0)',
-    },
-  },
-};
-
 const DEFAULT_CONFIG: Partial<Config> = {
   displayModeBar: true,
   displaylogo: false,
   responsive: true,
   modeBarButtonsToRemove: ['sendDataToCloud', 'lasso2d', 'select2d'],
 };
-
-function mergeLayout(layout?: Record<string, unknown>): Partial<Layout> {
-  const user = (layout ?? {}) as Partial<Layout>;
-  return {
-    ...DARK_LAYOUT,
-    ...user,
-    font: { ...DARK_LAYOUT.font, ...(user.font ?? {}) },
-    margin: { ...DARK_LAYOUT.margin, ...(user.margin ?? {}) },
-    xaxis: { ...DARK_LAYOUT.xaxis, ...(user.xaxis ?? {}) },
-    yaxis: { ...DARK_LAYOUT.yaxis, ...(user.yaxis ?? {}) },
-    scene: {
-      ...DARK_LAYOUT.scene,
-      ...(user.scene ?? {}),
-      xaxis: {
-        ...(DARK_LAYOUT.scene as Layout['scene'] | undefined)?.xaxis,
-        ...(user.scene as Layout['scene'] | undefined)?.xaxis,
-      },
-      yaxis: {
-        ...(DARK_LAYOUT.scene as Layout['scene'] | undefined)?.yaxis,
-        ...(user.scene as Layout['scene'] | undefined)?.yaxis,
-      },
-      zaxis: {
-        ...(DARK_LAYOUT.scene as Layout['scene'] | undefined)?.zaxis,
-        ...(user.scene as Layout['scene'] | undefined)?.zaxis,
-      },
-    },
-  };
-}
 
 export function PlotlyGraph({
   code,
@@ -121,7 +55,7 @@ export function PlotlyGraph({
         <Plot
           data={data as Data[]}
           layout={{
-            ...mergeLayout(layout),
+            ...mergePlotlyDarkLayout(layout),
             autosize: true,
             height: has3d ? 420 : 360,
           }}
