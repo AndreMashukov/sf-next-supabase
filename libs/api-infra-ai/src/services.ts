@@ -1,31 +1,22 @@
-import {
-  formatRulesForPrompt,
-  type DocumentGeneratorService,
-  type QuizGeneratorService,
-  type RulePromptRecord,
-} from '@sf/api-domain';
+import type { DocumentGeneratorService, QuizGeneratorService, RulePromptRecord } from '@sf/api-domain';
 import type { Quiz } from '@sf/shared-types';
-import { DocumentAgentClient } from './document-agent.client';
+import { InProcessDocumentAgentService } from './document-agent.service';
 import { TogetherAiClient } from './together-ai.client';
 
-export class CompositeDocumentGeneratorService implements DocumentGeneratorService {
-  constructor(
-    private readonly togetherAi: TogetherAiClient,
-    private readonly documentAgent: DocumentAgentClient | null,
-  ) {}
+export class LangGraphDocumentGeneratorService implements DocumentGeneratorService {
+  constructor(private readonly documentAgent = new InProcessDocumentAgentService()) {}
 
   isAgentEnabled(): boolean {
-    return this.documentAgent !== null;
+    return true;
   }
 
   async generate(title: string, text: string, rules: RulePromptRecord[]): Promise<string> {
-    if (this.documentAgent) {
-      return this.documentAgent.generateDocument(title, text, rules);
-    }
-
-    return this.togetherAi.generateDocumentFromPrompt(text, formatRulesForPrompt(rules));
+    return this.documentAgent.generateDocument(title, text, rules);
   }
 }
+
+/** @deprecated Use LangGraphDocumentGeneratorService. Kept as alias for existing imports. */
+export const CompositeDocumentGeneratorService = LangGraphDocumentGeneratorService;
 
 export class TogetherQuizGeneratorService implements QuizGeneratorService {
   constructor(private readonly togetherAi: TogetherAiClient) {}

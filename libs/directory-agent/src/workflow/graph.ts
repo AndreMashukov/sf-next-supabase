@@ -18,10 +18,9 @@ function buildSystemPrompt(
       ? 'You have access to the entire user workspace: all directories, unfiled documents, rules, quizzes, and indexed artifacts.'
       : `You are scoped to directory ${context.directoryId} and its descendant folders.`;
 
-  const contextHint =
-    context.scope === 'directory' && context.directoryId
-      ? `\nCurrent folder context: ${context.directoryId}.`
-      : '';
+  const contextHint = context.directoryId
+    ? `\nCurrent folder context: ${context.directoryId}. Prefer creating documents and subfolders here unless the user asks for a different folder or an unfiled document.`
+    : '';
 
   const memorySection =
     memorySnippets.length > 0
@@ -48,6 +47,8 @@ Multi-step content creation:
 - Document and quiz generation are async background jobs. After starting them, reply immediately with the job IDs and what was queued.
 - Do NOT poll list_documents, list_quizzes, or retry generate_quiz waiting for completion in the same turn.
 - To queue a quiz after a new document, pass quizTitle and questionCount to create_document or create_folder_with_content instead of calling generate_quiz separately.
+- When the user names a folder, resolve its directoryId (list_directories if needed) and pass that directoryId to create_document. Never claim a document is in a folder unless create_document returned that directoryId.
+- Folder rules apply only when the document is created inside that folder via directoryId. Passing ruleIds alone does not place the document in the folder.
 - Rules attached to directories cannot be deleted until detached. Detach first if the user wants to delete an attached rule.
 - After completing the planned tool calls for the request, respond to the user without making additional tool calls.`;
 }

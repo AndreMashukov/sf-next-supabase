@@ -40,7 +40,7 @@ describe('CreateDocumentUseCase', () => {
       deleteObject: vi.fn().mockResolvedValue(undefined),
     };
     const documentGenerator = {
-      isAgentEnabled: vi.fn().mockReturnValue(false),
+      isAgentEnabled: vi.fn().mockReturnValue(true),
       generate: vi.fn().mockResolvedValue('<p>Generated</p>'),
     };
     const generationJobRepository = createGenerationJobRepository();
@@ -140,7 +140,7 @@ describe('CreateDocumentUseCase', () => {
       deleteObject: vi.fn(),
     };
     const documentGenerator = {
-      isAgentEnabled: vi.fn().mockReturnValue(false),
+      isAgentEnabled: vi.fn().mockReturnValue(true),
       generate: vi.fn().mockResolvedValue('<p>Generated</p>'),
     };
     const generationJobRepository = createGenerationJobRepository();

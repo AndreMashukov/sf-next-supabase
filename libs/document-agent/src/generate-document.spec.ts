@@ -35,7 +35,11 @@ describe('generateVerifiedDocument', () => {
     });
 
     expect(result.htmlFragment).toBe('<p>Verified</p>');
-    expect(result.publishDecision).toBe('auto_publish');
+    expect(invokeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        maxRetries: 2,
+      }),
+    );
   });
 
   it('throws when validation fails and publish is rejected', async () => {

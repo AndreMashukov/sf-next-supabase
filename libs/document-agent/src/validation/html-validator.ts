@@ -7,6 +7,9 @@ const htmlValidator = new HtmlValidate({
     'no-inline-style': 'error',
     'script-type': 'error',
     'void-style': 'off',
+    // Educational fragments often include LaTeX matrices (`a & b`); we normalize
+    // bare ampersands before validation/publish, so keep this as a warning only.
+    'no-raw-characters': 'warn',
   },
 });
 

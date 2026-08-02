@@ -3,6 +3,7 @@ import type {
   DocumentGenerationResult,
   DocumentRule,
 } from './validation/types';
+import { DOCUMENT_AGENT_MAX_REPAIR_RETRIES } from '@sf/shared-types';
 import { documentAgentGraph } from './workflow/graph';
 
 export interface GenerateDocumentOptions {
@@ -13,6 +14,13 @@ export async function generateVerifiedDocument(
   input: DocumentGenerationInput,
   options: GenerateDocumentOptions = {},
 ): Promise<DocumentGenerationResult> {
+  const maxRetries = options.maxRetries ?? DOCUMENT_AGENT_MAX_REPAIR_RETRIES;
+  console.info('[document-agent] LangGraph invoke', {
+    title: input.title,
+    ruleCount: input.rules.length,
+    maxRetries,
+  });
+
   const finalState = await documentAgentGraph.invoke({
     title: input.title,
     text: input.text,
@@ -20,7 +28,14 @@ export async function generateVerifiedDocument(
     rulesText: '',
     htmlFragment: '',
     retryCount: 0,
-    maxRetries: options.maxRetries,
+    maxRetries,
+  });
+
+  console.info('[document-agent] LangGraph complete', {
+    title: input.title,
+    publishDecision: finalState.publishDecision,
+    retryCount: finalState.retryCount,
+    passed: finalState.validationReport?.passed ?? false,
   });
 
   if (finalState.publishDecision === 'reject' || !finalState.validationReport?.passed) {

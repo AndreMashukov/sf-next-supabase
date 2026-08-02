@@ -3,6 +3,7 @@ import {
   assertDirectoryInScope,
   createAgentRuntimeContext,
   isDirectoryInScope,
+  resolveDefaultDirectoryId,
   resolveDefaultParentId,
 } from './context';
 
@@ -81,5 +82,17 @@ describe('directory agent scope helpers', () => {
       'Target directory is outside the current scope',
     );
     expect(resolveDefaultParentId(context)).toBe('dir-root');
+  });
+
+  it('defaults create targets to the preferred folder in workspace mode', () => {
+    const context = createContext({
+      scope: 'workspace',
+      directoryId: 'dir-linear-algebra',
+      directoryIds: ['dir-a', 'dir-linear-algebra'],
+    });
+
+    expect(resolveDefaultDirectoryId(context)).toBe('dir-linear-algebra');
+    expect(resolveDefaultDirectoryId(context, 'dir-a')).toBe('dir-a');
+    expect(resolveDefaultDirectoryId(context, null)).toBeUndefined();
   });
 });

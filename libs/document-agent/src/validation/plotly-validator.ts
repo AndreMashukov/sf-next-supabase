@@ -59,7 +59,7 @@ export function validatePlotlyBlocks(htmlFragment: string): ValidationFinding[] 
     }
 
     const figure = parsed as Record<string, unknown>;
-    if (!Array.isArray(figure.data) || figure.data.length === 0) {
+    if (!Array.isArray(figure['data']) || figure['data'].length === 0) {
       findings.push({
         severity: 'error',
         code: 'PLOTLY_EMPTY_DATA',
@@ -71,7 +71,7 @@ export function validatePlotlyBlocks(htmlFragment: string): ValidationFinding[] 
       continue;
     }
 
-    for (const [traceIndex, trace] of figure.data.entries()) {
+    for (const [traceIndex, trace] of figure['data'].entries()) {
       if (!trace || typeof trace !== 'object' || Array.isArray(trace)) {
         findings.push({
           severity: 'error',
@@ -83,7 +83,7 @@ export function validatePlotlyBlocks(htmlFragment: string): ValidationFinding[] 
         continue;
       }
 
-      const type = (trace as Record<string, unknown>).type;
+      const type = (trace as Record<string, unknown>)['type'];
       if (typeof type !== 'string' || !ALLOWED_TYPE_SET.has(type)) {
         findings.push({
           severity: 'error',

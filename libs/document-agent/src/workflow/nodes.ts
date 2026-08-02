@@ -9,6 +9,7 @@ import {
   mergeValidationReports,
   validateDocumentHtml,
 } from '../validation';
+import { normalizeGeneratedHtmlFragment } from '../validation/normalize-html';
 import { classifyRuleRisk } from '../validation/risk';
 import type { PublishDecision, ValidationReport } from '../validation/types';
 import { formatRulesForPrompt, type DocumentAgentStateType } from './state';
@@ -31,7 +32,9 @@ export async function planDocumentNode(
 export async function draftHtmlNode(
   state: DocumentAgentStateType,
 ): Promise<Partial<DocumentAgentStateType>> {
-  const htmlFragment = await draftDocumentHtml(state.text, state.rulesText, state.plan);
+  const htmlFragment = normalizeGeneratedHtmlFragment(
+    await draftDocumentHtml(state.text, state.rulesText, state.plan),
+  );
   return { htmlFragment };
 }
 
@@ -78,7 +81,7 @@ export async function repairHtmlNode(
   );
 
   return {
-    htmlFragment: repairedHtml,
+    htmlFragment: normalizeGeneratedHtmlFragment(repairedHtml),
     retryCount: state.retryCount + 1,
   };
 }

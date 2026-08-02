@@ -22,11 +22,9 @@ import {
 } from '@sf/api-application';
 import type { AuthService } from '@sf/api-domain';
 import {
-  CompositeDocumentGeneratorService,
-  createDocumentAgentConfigFromEnv,
+  LangGraphDocumentGeneratorService,
   createTogetherAiConfigFromEnv,
   createTogetherEmbeddingConfigFromEnv,
-  DocumentAgentClient,
   TogetherAiClient,
   TogetherEmbeddingService,
   TogetherQuizGeneratorService,
@@ -111,12 +109,7 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
     vectorIndexRepository,
     storageService,
   );
-  const documentAgentConfig = createDocumentAgentConfigFromEnv(env);
-  const documentAgent = documentAgentConfig
-    ? new DocumentAgentClient(documentAgentConfig)
-    : null;
-
-  const documentGenerator = new CompositeDocumentGeneratorService(togetherAi, documentAgent);
+  const documentGenerator = new LangGraphDocumentGeneratorService();
   const quizGenerator = new TogetherQuizGeneratorService(togetherAi);
 
   const generateQuizUseCase = new GenerateQuizUseCase(

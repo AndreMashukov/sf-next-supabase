@@ -355,17 +355,18 @@ export function createDirectoryAgentTools(context: DirectoryAgentRuntimeContext)
         return JSON.stringify({
           jobId: job.id,
           status: job.status,
+          directoryId: targetDirectoryId ?? null,
           quizQueued: Boolean(followUpQuiz),
         });
       },
       {
         name: 'create_document',
         description:
-          'Start async AI document generation. Optionally queue quiz generation after the document completes. Omit directoryId to create an unfiled document.',
+          'Start async AI document generation in a folder. When a current folder context is set, omit directoryId to create there. Pass directoryId explicitly when the user names a folder. Pass directoryId null only for an unfiled document. Optionally queue quiz generation after the document completes.',
         schema: z.object({
           title: z.string().min(1).max(200),
           text: z.string().min(1).max(100_000),
-          directoryId: z.string().uuid().optional(),
+          directoryId: z.string().uuid().nullable().optional(),
           ruleIds: z.array(z.string().uuid()).optional(),
           quizTitle: z.string().min(1).max(200).optional(),
           questionCount: z.number().int().min(1).max(10).optional(),

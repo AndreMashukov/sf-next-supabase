@@ -5,12 +5,15 @@ import type { DocumentPlan, DocumentRule } from './validation/types';
 
 const TOGETHER_BASE_URL = 'https://api.together.ai/v1';
 const TOGETHER_MODEL = 'MiniMaxAI/MiniMax-M3';
+const TOGETHER_MAX_TOKENS = 16_384;
+const EMPTY_RESPONSE_RETRIES = 2;
 
 function stripRedactedThinking(content: string): string {
   return content
     .replace(/<think>[\s\S]*?<\/redacted_thinking>/gi, '')
     .replace(/<think>[\s\S]*?<\/think>/gi, '')
     .replace(/<mm:think>[\s\S]*?<\/mm:think>/gi, '')
+    .replace(/<think>[\s\S]*$/gi, '')
     .trim();
 }
 
@@ -19,6 +22,29 @@ function stripCodeFences(text: string): string {
     .replace(/^```(?:html|markdown|json)?\s*/i, '')
     .replace(/\s*```$/i, '')
     .trim();
+}
+
+function extractMessageContent(content: unknown): string {
+  if (typeof content === 'string') {
+    return content;
+  }
+
+  if (!Array.isArray(content)) {
+    return '';
+  }
+
+  return content
+    .map((part) => {
+      if (typeof part === 'string') {
+        return part;
+      }
+      if (typeof part === 'object' && part !== null && 'text' in part) {
+        const text = (part as { text?: unknown }).text;
+        return typeof text === 'string' ? text : '';
+      }
+      return '';
+    })
+    .join('');
 }
 
 function getTogetherApiKey(): string {
@@ -34,6 +60,11 @@ export function createTogetherModel(temperature = 0.7): ChatOpenAI {
     apiKey: getTogetherApiKey(),
     model: TOGETHER_MODEL,
     temperature,
+    maxTokens: TOGETHER_MAX_TOKENS,
+    // MiniMax reasoning can consume the entire completion budget and leave content empty.
+    modelKwargs: {
+      reasoning: { enabled: false },
+    },
     configuration: {
       baseURL: TOGETHER_BASE_URL,
     },
@@ -42,20 +73,23 @@ export function createTogetherModel(temperature = 0.7): ChatOpenAI {
 
 export async function callTogetherChat(prompt: string, temperature = 0.7): Promise<string> {
   const model = createTogetherModel(temperature);
-  const response = await model.invoke([{ role: 'user', content: prompt }]);
-  const raw =
-    typeof response.content === 'string'
-      ? response.content
-      : response.content
-          .map((part) => (typeof part === 'string' ? part : 'text' in part ? part.text : ''))
-          .join('');
+  let lastError: Error | undefined;
 
-  const text = stripCodeFences(stripRedactedThinking(raw));
-  if (!text) {
-    throw new Error('Together returned an empty response');
+  for (let attempt = 0; attempt <= EMPTY_RESPONSE_RETRIES; attempt += 1) {
+    const response = await model.invoke([{ role: 'user', content: prompt }]);
+    const raw = extractMessageContent(response.content);
+    const text = stripCodeFences(stripRedactedThinking(raw));
+
+    if (text) {
+      return text;
+    }
+
+    lastError = new Error(
+      `Together returned an empty response (attempt ${attempt + 1}/${EMPTY_RESPONSE_RETRIES + 1})`,
+    );
   }
 
-  return text;
+  throw lastError ?? new Error('Together returned an empty response');
 }
 
 export async function planDocument(

@@ -179,12 +179,17 @@ export function resolveDefaultParentId(context: DirectoryAgentRuntimeContext, pa
 
 export function resolveDefaultDirectoryId(
   context: DirectoryAgentRuntimeContext,
-  directoryId?: string,
+  directoryId?: string | null,
 ): string | undefined {
+  // Explicit null means unfiled, even when a preferred folder context exists.
+  if (directoryId === null) {
+    return undefined;
+  }
   if (directoryId) {
     return directoryId;
   }
-  if (context.scope === 'directory' && context.directoryId) {
+  // Prefer the caller's current folder for both directory and workspace scope.
+  if (context.directoryId) {
     return context.directoryId;
   }
   return undefined;

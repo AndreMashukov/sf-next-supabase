@@ -16,6 +16,7 @@ import {
   deleteRule,
   streamAgentMessage,
 } from '@/lib/api';
+import { emitGenerationJobStarted } from '@/lib/generation-job-events';
 import { cn } from '@/lib/utils';
 
 type ChatMessage = {
@@ -336,6 +337,9 @@ export function AgentPanel({
             }
 
             if (event.type === 'action') {
+              if (event.action.jobId) {
+                emitGenerationJobStarted(event.action.jobId);
+              }
               setMessages((current) =>
                 current.map((message) =>
                   message.id === assistantMessageId
@@ -385,11 +389,16 @@ export function AgentPanel({
         },
       );
 
-      if (
-        finalResponse &&
-        (finalResponse.executedActions.length > 0 || finalResponse.proposedDeletes.length > 0)
-      ) {
-        onMutated?.();
+      if (finalResponse) {
+        for (const action of finalResponse.executedActions) {
+          if (action.jobId) {
+            emitGenerationJobStarted(action.jobId);
+          }
+        }
+
+        if (finalResponse.executedActions.length > 0 || finalResponse.proposedDeletes.length > 0) {
+          onMutated?.();
+        }
       }
     } catch (sendError) {
       if (controller.signal.aborted) {

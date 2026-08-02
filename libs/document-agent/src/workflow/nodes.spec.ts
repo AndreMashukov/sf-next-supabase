@@ -35,6 +35,23 @@ describe('workflow routing', () => {
     expect(routeAfterValidation(state)).toBe('critique');
   });
 
+  it('routes deterministic fail to reject when maxRetries is unset', () => {
+    const state = createState({
+      validationReport: createValidationReport([
+        {
+          severity: 'error',
+          code: 'SECURITY_DISALLOWED_TAG',
+          category: 'security',
+          message: 'Disallowed tag',
+        },
+      ]),
+      retryCount: 0,
+      maxRetries: undefined as unknown as number,
+    });
+
+    expect(routeAfterValidation(state)).toBe('reject');
+  });
+
   it('routes deterministic fail to repair while retries remain', () => {
     const state = createState({
       validationReport: createValidationReport([

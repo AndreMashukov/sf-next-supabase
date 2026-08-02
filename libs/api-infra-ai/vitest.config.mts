@@ -7,6 +7,7 @@ export default defineConfig({
     alias: {
       '@sf/shared-types': path.resolve(__dirname, '../shared-types/src/index.ts'),
       '@sf/api-domain': path.resolve(__dirname, '../api-domain/src/index.ts'),
+      '@sf/document-agent': path.resolve(__dirname, '../document-agent/src/index.ts'),
       '@sf/api-infra-ai': path.resolve(__dirname, './src/index.ts'),
     },
   },

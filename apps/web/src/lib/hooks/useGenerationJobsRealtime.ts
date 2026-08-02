@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { GenerationJob } from '@sf/shared-types';
 import { createClient } from '@/lib/supabase/client';
+import { subscribeGenerationJobStarted } from '@/lib/generation-job-events';
 import {
   jobMatchesDirectory,
   jobMatchesDocument,
@@ -137,10 +138,32 @@ export function useGenerationJobsRealtime(options: UseGenerationJobsRealtimeOpti
         .subscribe();
     }
 
+    async function loadJobById(jobId: string) {
+      const { data, error } = await supabase
+        .from('generation_jobs')
+        .select('*')
+        .eq('id', jobId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Failed to load generation job', jobId, error);
+        return;
+      }
+
+      if (!cancelled && data) {
+        mergeJob(mapGenerationJobRow(data));
+      }
+    }
+
+    const unsubscribeJobStarted = subscribeGenerationJobStarted((jobId) => {
+      void loadJobById(jobId);
+    });
+
     void bootstrap();
 
     return () => {
       cancelled = true;
+      unsubscribeJobStarted();
       if (channel) {
         void supabase.removeChannel(channel);
       }

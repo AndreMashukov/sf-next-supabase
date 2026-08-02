@@ -1,10 +1,7 @@
-export {
-  createDocumentAgentConfigFromEnv,
-  DocumentAgentClient,
-  type DocumentAgentConfig,
-} from './document-agent.client';
+export { InProcessDocumentAgentService } from './document-agent.service';
 export {
   CompositeDocumentGeneratorService,
+  LangGraphDocumentGeneratorService,
   TogetherQuizGeneratorService,
 } from './services';
 export {

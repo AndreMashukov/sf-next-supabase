@@ -50,6 +50,47 @@ describe('rules critic', () => {
     });
   });
 
+  it('downgrades soft Doc HTML filler nits to warnings', () => {
+    const findings = criticResponseToFindings({
+      passed: false,
+      findings: [
+        {
+          ruleName: 'Doc HTML Format',
+          satisfied: false,
+          severity: 'error',
+          message: 'Contains conversational filler and meta-commentary',
+        },
+      ],
+    });
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.severity).toBe('warning');
+  });
+
+  it('downgrades Doc HTML table quotas when a learning format rule is present', () => {
+    const findings = criticResponseToFindings(
+      {
+        passed: false,
+        findings: [
+          {
+            ruleName: 'Doc HTML Format',
+            satisfied: false,
+            severity: 'error',
+            message: 'Requires exactly 1 to 2 tables but found 0',
+          },
+        ],
+      },
+      [
+        {
+          name: 'Linear Algebra Learning Document Format',
+          content: 'Use intuition-first sections',
+        },
+      ],
+    );
+
+    expect(findings[0]?.severity).toBe('warning');
+  });
+
   it('returns semantic violations from a valid critic response', async () => {
     callTogetherChatMock.mockResolvedValue(
       JSON.stringify({
@@ -77,7 +118,8 @@ describe('rules critic', () => {
     expect(findings[0]?.code).toBe('RULE_SEMANTIC_VIOLATION');
   });
 
-  it('returns a critic error finding for invalid JSON', async () => {
+  it('retries and warns instead of failing when critic JSON is invalid', async () => {
+    callTogetherChatMock.mockReset();
     callTogetherChatMock.mockResolvedValue('not json');
 
     const findings = await critiqueRulesAdherence(
@@ -86,7 +128,9 @@ describe('rules critic', () => {
       '<p>Intro</p>',
     );
 
+    expect(callTogetherChatMock).toHaveBeenCalledTimes(2);
     expect(findings[0]?.code).toBe('RULE_CRITIC_INVALID_JSON');
+    expect(findings[0]?.severity).toBe('warning');
   });
 
   it('merges deterministic and critic findings into one report', () => {

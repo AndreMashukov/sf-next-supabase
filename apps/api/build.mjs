@@ -28,6 +28,7 @@ await esbuild.build({
     '@sf/api-infra-storage': path.join(workspaceRoot, 'libs/api-infra-storage/src/index.ts'),
     '@sf/api-infra-supabase': path.join(workspaceRoot, 'libs/api-infra-supabase/src/index.ts'),
     '@sf/api-routes': path.join(workspaceRoot, 'libs/api-routes/src/index.ts'),
+    '@sf/document-agent': path.join(workspaceRoot, 'libs/document-agent/src/index.ts'),
     '@sf/directory-agent': path.join(workspaceRoot, 'libs/directory-agent/src/index.ts'),
     '@sf/gcs': path.join(workspaceRoot, 'libs/gcs/src/index.ts'),
     '@sf/shared-types': path.join(workspaceRoot, 'libs/shared-types/src/index.ts'),
