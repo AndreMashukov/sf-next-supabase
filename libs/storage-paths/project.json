@@ -1,0 +1,19 @@
+{
+  "name": "storage-paths",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/storage-paths/src",
+  "projectType": "library",
+  "tags": ["scope:shared"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/storage-paths",
+        "main": "libs/storage-paths/src/index.ts",
+        "tsConfig": "libs/storage-paths/tsconfig.lib.json",
+        "assets": ["libs/storage-paths/*.md"]
+      }
+    }
+  }
+}

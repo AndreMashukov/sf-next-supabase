@@ -10,7 +10,7 @@ export default defineConfig({
       '@sf/api-infra-supabase': path.resolve(__dirname, '../api-infra-supabase/src/index.ts'),
       '@sf/api-application': path.resolve(__dirname, './src/index.ts'),
       '@sf/directory-agent': path.resolve(__dirname, '../directory-agent/src/index.ts'),
-      '@sf/gcs': path.resolve(__dirname, '../gcs/src/index.ts'),
+      '@sf/storage-paths': path.resolve(__dirname, '../storage-paths/src/index.ts'),
     },
   },
   test: {

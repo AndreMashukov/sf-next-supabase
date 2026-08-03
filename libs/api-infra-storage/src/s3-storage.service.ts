@@ -5,7 +5,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import type { StorageService } from '@sf/api-domain';
-import type { StorageConfig } from '@sf/gcs';
+import type { StorageConfig } from '@sf/storage-paths';
 
 function createS3Client(config: StorageConfig): S3Client {
   return new S3Client({

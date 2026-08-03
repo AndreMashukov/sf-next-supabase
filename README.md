@@ -7,7 +7,7 @@ Nx monorepo for organizing study content in directories, generating documents an
 - `supabase/` — Supabase CLI project (migrations, RLS, Realtime, local stack)
 - `libs/shared-types` — shared TypeScript contracts and Zod schemas
 - `libs/validation` — Zod re-exports and text-to-HTML helpers
-- `libs/gcs` — Supabase Storage path helpers
+- `libs/storage-paths` — Supabase Storage path helpers
 - `libs/document-agent` — LangGraph document generation agent
 - `libs/directory-agent` — LangGraph directory agent (CRUD tools + RAG)
 - `libs/api-*` — layered Fastify backend libraries (domain, application, infra, routes)

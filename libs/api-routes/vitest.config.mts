@@ -15,7 +15,7 @@ export default defineConfig({
       '@sf/api-infra-storage': path.resolve(configDir, '../api-infra-storage/src/index.ts'),
       '@sf/api-infra-ai': path.resolve(configDir, '../api-infra-ai/src/index.ts'),
       '@sf/api-routes': path.resolve(configDir, './src/index.ts'),
-      '@sf/gcs': path.resolve(configDir, '../gcs/src/index.ts'),
+      '@sf/storage-paths': path.resolve(configDir, '../storage-paths/src/index.ts'),
     },
   },
   test: {

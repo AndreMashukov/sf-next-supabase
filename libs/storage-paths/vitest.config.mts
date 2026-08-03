@@ -4,17 +4,17 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
 export default defineConfig(() => ({
   root: __dirname,
-  cacheDir: '../../node_modules/.vite/libs/gcs',
+  cacheDir: '../../node_modules/.vite/libs/storage-paths',
   plugins: [nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   test: {
-    name: 'gcs',
+    name: 'storage-paths',
     watch: false,
     globals: true,
     environment: 'node',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
-      reportsDirectory: '../../coverage/libs/gcs',
+      reportsDirectory: '../../coverage/libs/storage-paths',
       provider: 'v8' as const,
     },
   },

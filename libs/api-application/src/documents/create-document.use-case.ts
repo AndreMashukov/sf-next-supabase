@@ -9,7 +9,7 @@ import {
   type StorageService,
 } from '@sf/api-domain';
 import type { GenerationJob, GenerationJobResult } from '@sf/shared-types';
-import { buildDocumentStoragePath } from '@sf/gcs';
+import { buildDocumentStoragePath } from '@sf/storage-paths';
 import { countWords } from '@sf/shared-types';
 import { getDirectoryOrThrow } from '../directories/directory.helpers';
 import { normalizeGeneratedHtml, wrapHtmlDocument } from '../shared/html';
