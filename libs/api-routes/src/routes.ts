@@ -68,28 +68,28 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
 
   app.get('/health', async () => ({ status: 'ok' }));
 
-  const compatibilityPaths = [
-    '/functions/v1/create-document',
-    '/functions/v1/generate-quiz',
-    '/functions/v1/create-rule',
-    '/functions/v1/update-rule',
-    '/functions/v1/delete-rule',
-    '/functions/v1/create-directory',
-    '/functions/v1/update-directory',
-    '/functions/v1/move-directory',
-    '/functions/v1/delete-directory',
-    '/functions/v1/delete-documents',
-    '/functions/v1/delete-quizzes',
-    '/functions/v1/move-document',
-    '/functions/v1/attach-rule-to-directory',
-    '/functions/v1/detach-rule-from-directory',
-    '/functions/v1/agent-message',
-    '/functions/v1/agent-message-stream',
-    '/functions/v1/update-document',
-    '/functions/v1/update-quiz',
+  const apiPaths = [
+    '/api/v1/create-document',
+    '/api/v1/generate-quiz',
+    '/api/v1/create-rule',
+    '/api/v1/update-rule',
+    '/api/v1/delete-rule',
+    '/api/v1/create-directory',
+    '/api/v1/update-directory',
+    '/api/v1/move-directory',
+    '/api/v1/delete-directory',
+    '/api/v1/delete-documents',
+    '/api/v1/delete-quizzes',
+    '/api/v1/move-document',
+    '/api/v1/attach-rule-to-directory',
+    '/api/v1/detach-rule-from-directory',
+    '/api/v1/agent-message',
+    '/api/v1/agent-message-stream',
+    '/api/v1/update-document',
+    '/api/v1/update-quiz',
   ] as const;
 
-  for (const path of compatibilityPaths) {
+  for (const path of apiPaths) {
     registerOptions(app, path);
     registerMethodNotAllowed(app, path);
   }
@@ -97,7 +97,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
   await app.register(async (protectedApp) => {
     await protectedApp.register(authPlugin, context);
 
-    protectedApp.post('/functions/v1/create-document', async (request, reply) => {
+    protectedApp.post('/api/v1/create-document', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(createDocumentSchema, request.body);
       const job = await context.createDocumentUseCase.start({
@@ -111,7 +111,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.status(202).send({ job });
     });
 
-    protectedApp.post('/functions/v1/generate-quiz', async (request, reply) => {
+    protectedApp.post('/api/v1/generate-quiz', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(generateQuizSchema, request.body);
       const job = await context.generateQuizUseCase.start({
@@ -124,7 +124,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.status(202).send({ job });
     });
 
-    protectedApp.post('/functions/v1/create-rule', async (request, reply) => {
+    protectedApp.post('/api/v1/create-rule', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(createRuleSchema, request.body);
       const rule = await context.createRuleUseCase.execute({
@@ -138,7 +138,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.status(201).send({ rule });
     });
 
-    protectedApp.post('/functions/v1/update-rule', async (request, reply) => {
+    protectedApp.post('/api/v1/update-rule', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(updateRuleSchema, request.body);
       const rule = await context.updateRuleUseCase.execute({
@@ -153,7 +153,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send({ rule });
     });
 
-    protectedApp.post('/functions/v1/delete-rule', async (request, reply) => {
+    protectedApp.post('/api/v1/delete-rule', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(deleteRuleSchema, request.body);
       const result = await context.deleteRuleUseCase.execute({
@@ -164,7 +164,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send(result);
     });
 
-    protectedApp.post('/functions/v1/create-directory', async (request, reply) => {
+    protectedApp.post('/api/v1/create-directory', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(createDirectorySchema, request.body);
       const directory = await context.createDirectoryUseCase.execute({
@@ -179,7 +179,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.status(201).send({ directory });
     });
 
-    protectedApp.post('/functions/v1/update-directory', async (request, reply) => {
+    protectedApp.post('/api/v1/update-directory', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(updateDirectorySchema, request.body);
       const directory = await context.updateDirectoryUseCase.execute({
@@ -194,7 +194,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send({ directory });
     });
 
-    protectedApp.post('/functions/v1/move-directory', async (request, reply) => {
+    protectedApp.post('/api/v1/move-directory', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(moveDirectorySchema, request.body);
       const directory = await context.moveDirectoryUseCase.execute({
@@ -206,7 +206,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send({ directory });
     });
 
-    protectedApp.post('/functions/v1/delete-directory', async (request, reply) => {
+    protectedApp.post('/api/v1/delete-directory', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(deleteDirectorySchema, request.body);
       const result = await context.deleteDirectoryUseCase.execute({
@@ -217,7 +217,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send(result);
     });
 
-    protectedApp.post('/functions/v1/delete-documents', async (request, reply) => {
+    protectedApp.post('/api/v1/delete-documents', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(deleteDocumentsSchema, request.body);
       const result = await context.deleteDocumentsUseCase.execute({
@@ -228,7 +228,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send(result);
     });
 
-    protectedApp.post('/functions/v1/delete-quizzes', async (request, reply) => {
+    protectedApp.post('/api/v1/delete-quizzes', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(deleteQuizzesSchema, request.body);
       const result = await context.deleteQuizzesUseCase.execute({
@@ -239,7 +239,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send(result);
     });
 
-    protectedApp.post('/functions/v1/move-document', async (request, reply) => {
+    protectedApp.post('/api/v1/move-document', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(moveDocumentSchema, request.body);
       const document = await context.moveDocumentUseCase.execute({
@@ -251,7 +251,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send({ document });
     });
 
-    protectedApp.post('/functions/v1/attach-rule-to-directory', async (request, reply) => {
+    protectedApp.post('/api/v1/attach-rule-to-directory', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(attachRuleToDirectorySchema, request.body);
       const result = await context.attachRuleToDirectoryUseCase.execute({
@@ -263,7 +263,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send(result);
     });
 
-    protectedApp.post('/functions/v1/detach-rule-from-directory', async (request, reply) => {
+    protectedApp.post('/api/v1/detach-rule-from-directory', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(detachRuleFromDirectorySchema, request.body);
       const result = await context.detachRuleFromDirectoryUseCase.execute({
@@ -275,7 +275,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send(result);
     });
 
-    protectedApp.post('/functions/v1/agent-message', async (request, reply) => {
+    protectedApp.post('/api/v1/agent-message', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(agentMessageSchema, request.body);
       const result = await context.directoryAgentUseCase.execute({
@@ -289,7 +289,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send(result);
     });
 
-    protectedApp.post('/functions/v1/agent-message-stream', { sse: 'manual' }, async (request, reply) => {
+    protectedApp.post('/api/v1/agent-message-stream', { sse: 'manual' }, async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(agentMessageSchema, request.body);
 
@@ -328,7 +328,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       }
     });
 
-    protectedApp.post('/functions/v1/update-document', async (request, reply) => {
+    protectedApp.post('/api/v1/update-document', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(updateDocumentSchema, request.body);
       const document = await context.updateDocumentUseCase.execute({
@@ -342,7 +342,7 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.send({ document });
     });
 
-    protectedApp.post('/functions/v1/update-quiz', async (request, reply) => {
+    protectedApp.post('/api/v1/update-quiz', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(updateQuizSchema, request.body);
       const quiz = await context.updateQuizUseCase.execute({

@@ -96,7 +96,7 @@ yarn build                       # Build all projects
 - **Supabase Storage** — document HTML (S3-compatible API)
 - **Supabase Auth + RLS** — users only access their own records
 - **Supabase Realtime** — generation job row changes pushed to the web client
-- **Fastify API** — authenticated mutations at `/functions/v1/*` (create, generate, agent-message, CRUD)
+- **Fastify API** — authenticated mutations at `/api/v1/*` (create, generate, agent-message, CRUD)
 - **Together AI** — chat/completions for generation and agent reasoning; embeddings for RAG
 - **LangGraph agents** — `document-agent` for document HTML; `directory-agent` for folder-scoped tool use and retrieval
 
@@ -109,7 +109,7 @@ flowchart TB
   end
 
   subgraph API["apps/api / Fastify"]
-    Route["POST /functions/v1/agent-message"]
+    Route["POST /api/v1/agent-message"]
     UseCase["DirectoryAgentUseCase"]
   end
 
@@ -158,7 +158,7 @@ flowchart TB
 
 See [`.env.example`](.env.example) for the full list.
 
-The web client uses `NEXT_PUBLIC_API_URL` (default `http://127.0.0.1:3001`) and calls `${NEXT_PUBLIC_API_URL}/functions/v1/*` for mutations.
+The web client uses `NEXT_PUBLIC_API_URL` (default `http://127.0.0.1:3001`) and calls `${NEXT_PUBLIC_API_URL}/api/v1/*` for mutations.
 
 Optional agent tuning:
 

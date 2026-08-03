@@ -46,7 +46,7 @@ WRITE (Client Component)
   *Client.tsx
     → lib/api.ts
       → lib/supabase/client.ts  (access token)
-      → Fastify API (`/functions/v1/create-document` | `/functions/v1/generate-quiz`)
+      → Fastify API (`/api/v1/create-document` | `/api/v1/generate-quiz`)
         → service role + Storage + Together AI (server-side)
 
 AUTH GATE (every matched request)
@@ -102,8 +102,8 @@ Marked `'use client'`. Used from Client Components such as `DocumentsPageClient`
 
 | Export | Backend |
 |--------|---------|
-| `createDocument(title, text)` | `POST …/functions/v1/create-document` |
-| `generateQuiz(documentId, title?, questionCount?)` | `POST …/functions/v1/generate-quiz` |
+| `createDocument(title, text)` | `POST …/api/v1/create-document` |
+| `generateQuiz(documentId, title?, questionCount?)` | `POST …/api/v1/generate-quiz` |
 | `signOut()` | Supabase Auth browser client |
 
 Each mutation helper:

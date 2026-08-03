@@ -110,7 +110,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(createMockContext());
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/create-document',
+      url: '/api/v1/create-document',
       payload: { title: 'Title', text: 'Prompt' },
     });
 
@@ -119,11 +119,11 @@ describe('createApiServer', () => {
     await app.close();
   });
 
-  it('handles OPTIONS preflight for compatibility routes', async () => {
+  it('handles OPTIONS preflight for API routes', async () => {
     const app = await createApiServer(createMockContext());
     const response = await app.inject({
       method: 'OPTIONS',
-      url: '/functions/v1/create-document',
+      url: '/api/v1/create-document',
     });
 
     expect(response.statusCode).toBe(204);
@@ -137,7 +137,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(createMockContext());
     const response = await app.inject({
       method: 'GET',
-      url: '/functions/v1/create-document',
+      url: '/api/v1/create-document',
     });
 
     expect(response.statusCode).toBe(405);
@@ -150,7 +150,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(context);
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/create-document',
+      url: '/api/v1/create-document',
       headers: {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',
@@ -180,7 +180,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(context);
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/create-directory',
+      url: '/api/v1/create-directory',
       headers: {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',
@@ -206,7 +206,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(context);
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/delete-directory',
+      url: '/api/v1/delete-directory',
       headers: {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',
@@ -227,7 +227,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(createMockContext());
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/create-document',
+      url: '/api/v1/create-document',
       headers: {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',
@@ -259,7 +259,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(context);
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/move-directory',
+      url: '/api/v1/move-directory',
       headers: {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',
@@ -299,7 +299,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(context);
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/move-document',
+      url: '/api/v1/move-document',
       headers: {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',
@@ -324,7 +324,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(context);
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/delete-documents',
+      url: '/api/v1/delete-documents',
       headers: {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',
@@ -351,7 +351,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(context);
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/delete-quizzes',
+      url: '/api/v1/delete-quizzes',
       headers: {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',
@@ -378,7 +378,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(context);
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/agent-message',
+      url: '/api/v1/agent-message',
       headers: {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',
@@ -411,7 +411,7 @@ describe('createApiServer', () => {
     const app = await createApiServer(context);
     const response = await app.inject({
       method: 'POST',
-      url: '/functions/v1/agent-message-stream',
+      url: '/api/v1/agent-message-stream',
       headers: {
         authorization: 'Bearer test-token',
         'content-type': 'application/json',

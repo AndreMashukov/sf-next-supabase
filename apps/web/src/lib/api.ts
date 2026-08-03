@@ -51,14 +51,14 @@ async function getAccessToken(): Promise<string> {
   return session.access_token;
 }
 
-function getFunctionsBaseUrl(): string {
+function getApiBaseUrl(): string {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (apiUrl) {
-    return `${apiUrl.replace(/\/$/, '')}/functions/v1`;
+    return `${apiUrl.replace(/\/$/, '')}/api/v1`;
   }
 
   if (process.env.NODE_ENV !== 'production') {
-    return 'http://127.0.0.1:3001/functions/v1';
+    return 'http://127.0.0.1:3001/api/v1';
   }
 
   throw new Error('Missing NEXT_PUBLIC_API_URL environment variable');
@@ -66,7 +66,7 @@ function getFunctionsBaseUrl(): string {
 
 async function postJson<TResponse>(path: string, body: unknown): Promise<TResponse> {
   const token = await getAccessToken();
-  const response = await fetch(`${getFunctionsBaseUrl()}/${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}/${path}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -266,7 +266,7 @@ export async function streamAgentMessage(
 
   const body = parseRequest(agentMessageSchema, payload);
   const token = await getAccessToken();
-  const response = await fetch(`${getFunctionsBaseUrl()}/agent-message-stream`, {
+  const response = await fetch(`${getApiBaseUrl()}/agent-message-stream`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
