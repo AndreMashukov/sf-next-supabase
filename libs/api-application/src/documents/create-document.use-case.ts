@@ -11,10 +11,10 @@ import {
 import type { GenerationJob, GenerationJobResult } from '@sf/shared-types';
 import { buildDocumentStoragePath } from '@sf/gcs';
 import { countWords } from '@sf/shared-types';
-import { getDirectoryOrThrow } from './directory.helpers';
-import { normalizeGeneratedHtml, wrapHtmlDocument } from './html';
-import type { KnowledgeIndexerService } from './knowledge-indexer.service';
-import type { GenerateQuizUseCase } from './generate-quiz.use-case';
+import { getDirectoryOrThrow } from '../directories/directory.helpers';
+import { normalizeGeneratedHtml, wrapHtmlDocument } from '../shared/html';
+import type { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service';
+import type { GenerateQuizUseCase } from '../quizzes/generate-quiz.use-case';
 
 export interface CreateDocumentFollowUpQuiz {
   title?: string;

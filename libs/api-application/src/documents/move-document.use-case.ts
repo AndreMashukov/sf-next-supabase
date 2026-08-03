@@ -1,6 +1,6 @@
 import { NotFoundError, type DirectoryRepository, type DocumentRepository, type MoveDocumentInput } from '@sf/api-domain';
-import { getDirectoryOrThrow } from './directory.helpers';
-import type { KnowledgeIndexerService } from './knowledge-indexer.service';
+import { getDirectoryOrThrow } from '../directories/directory.helpers';
+import type { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service';
 
 export class MoveDocumentUseCase {
   constructor(

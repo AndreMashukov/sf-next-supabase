@@ -12,7 +12,7 @@ import {
   type DirectoryAgentMemoryRuntime,
   type RunDirectoryAgentInput,
 } from '@sf/directory-agent';
-import { AgentMemoryService, AgentThreadService } from './agent-memory.service';
+import { AgentMemoryService, AgentThreadService } from '../knowledge/agent-memory.service';
 
 export class DirectoryAgentUseCase {
   constructor(

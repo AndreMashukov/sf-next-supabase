@@ -4,7 +4,7 @@ import {
   getDirectoryOrThrow,
   updateDirectorySubtreePaths,
 } from './directory.helpers';
-import type { KnowledgeIndexerService } from './knowledge-indexer.service';
+import type { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service';
 
 export class UpdateDirectoryUseCase {
   constructor(

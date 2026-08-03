@@ -5,8 +5,8 @@ import {
   type UpdateDocumentInput,
 } from '@sf/api-domain';
 import { countWords } from '@sf/shared-types';
-import { KnowledgeIndexerService } from './knowledge-indexer.service';
-import { normalizeGeneratedHtml, wrapHtmlDocument } from './html';
+import { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service';
+import { normalizeGeneratedHtml, wrapHtmlDocument } from '../shared/html';
 
 export class UpdateDocumentUseCase {
   constructor(

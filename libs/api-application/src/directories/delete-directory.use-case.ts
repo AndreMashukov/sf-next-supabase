@@ -6,7 +6,7 @@ import {
   type StorageService,
 } from '@sf/api-domain';
 import { getDirectoryOrThrow } from './directory.helpers';
-import type { KnowledgeIndexerService } from './knowledge-indexer.service';
+import type { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service';
 
 export class DeleteDirectoryUseCase {
   constructor(

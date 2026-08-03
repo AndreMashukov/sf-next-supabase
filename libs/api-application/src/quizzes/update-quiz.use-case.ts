@@ -4,7 +4,7 @@ import {
   type QuizRepository,
   type UpdateQuizInput,
 } from '@sf/api-domain';
-import { KnowledgeIndexerService } from './knowledge-indexer.service';
+import { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service';
 
 export class UpdateQuizUseCase {
   constructor(

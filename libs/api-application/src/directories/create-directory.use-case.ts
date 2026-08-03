@@ -8,7 +8,7 @@ import {
   assertSiblingNameAvailable,
   getParentDirectory,
 } from './directory.helpers';
-import type { KnowledgeIndexerService } from './knowledge-indexer.service';
+import type { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service';
 
 export class CreateDirectoryUseCase {
   constructor(

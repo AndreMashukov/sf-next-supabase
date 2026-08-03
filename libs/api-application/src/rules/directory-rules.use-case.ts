@@ -1,5 +1,5 @@
 import { NotFoundError, type AttachRuleToDirectoryInput, type DirectoryRepository, type RuleRepository } from '@sf/api-domain';
-import { getDirectoryOrThrow } from './directory.helpers';
+import { getDirectoryOrThrow } from '../directories/directory.helpers';
 
 export class AttachRuleToDirectoryUseCase {
   constructor(

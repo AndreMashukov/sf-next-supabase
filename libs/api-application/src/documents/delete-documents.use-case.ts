@@ -4,7 +4,7 @@ import {
   type DocumentRepository,
   type StorageService,
 } from '@sf/api-domain';
-import type { KnowledgeIndexerService } from './knowledge-indexer.service';
+import type { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service';
 
 export class DeleteDocumentsUseCase {
   constructor(

@@ -7,7 +7,7 @@ import type {
   StorageService,
 } from '@sf/api-domain';
 import type { GenerationJob, GenerationJobResult } from '@sf/shared-types';
-import type { KnowledgeIndexerService } from './knowledge-indexer.service';
+import type { KnowledgeIndexerService } from '../knowledge/knowledge-indexer.service';
 
 export class GenerateQuizUseCase {
   constructor(
