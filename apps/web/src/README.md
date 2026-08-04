@@ -7,6 +7,8 @@ src/
 ├── app/                 # App Router only
 ├── components/          # Reusable UI by domain
 ├── hooks/               # Client React hooks
+├── providers/           # Client providers (Zustand store context)
+├── stores/              # Zustand store factory + slices (client UI state)
 ├── data/                # Server-only DAL (import 'server-only')
 ├── mutations/           # Browser → Fastify API helpers
 ├── supabase/            # Clients per runtime (browser / RSC / middleware)
@@ -27,7 +29,8 @@ src/
 | Creates a Supabase client | `supabase/` |
 | Is pure UI formatting | `utils/` |
 | Parses HTML / math / Plotly | `content/` |
-| Tracks generation jobs | `jobs/` |
+| Tracks generation jobs (helpers) | `jobs/` |
+| Shared client UI state (shell, agent, job badges) | `stores/` + `providers/` |
 | Encodes domain rules with no I/O | `domain/<name>/` |
 | Is React UI | `components/<domain>/` |
 | Is a route-only client | `app/(app)/…/_components/` |
@@ -35,8 +38,10 @@ src/
 ## Dependency direction
 
 ```text
-app → components / hooks → mutations | domain | content | utils | jobs
+app → components / hooks / providers → stores | mutations | domain | content | utils | jobs
 app → data → supabase | data/storage
 ```
 
 Do not import `data/` from Client Components. Do not import `mutations/` from Server Components unless you intentionally add a server path.
+
+Zustand stores are client-only. Create them with `createUiStore()` inside `UiStoreProvider` (per-request factory). React Server Components must not read or write the store.
