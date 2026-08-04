@@ -1,8 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useShallow } from 'zustand/react/shallow';
 import type { GenerationJob } from '@sf/shared-types';
+import { useUiStore, useUiStoreApi } from '@/providers/ui-store-provider';
 import { createClient } from '@/supabase/client';
 import { subscribeGenerationJobStarted } from '@/jobs/generation-job-events';
 import {
@@ -22,42 +24,51 @@ interface UseGenerationJobsRealtimeOptions {
   onFailed?: JobChangeHandler;
 }
 
-function upsertJob(jobs: GenerationJob[], nextJob: GenerationJob): GenerationJob[] {
-  const existingIndex = jobs.findIndex((job) => job.id === nextJob.id);
-  if (existingIndex === -1) {
-    return [...jobs, nextJob];
-  }
+function selectScopedPendingJobs(
+  jobs: GenerationJob[],
+  options: Pick<UseGenerationJobsRealtimeOptions, 'directoryId' | 'documentId' | 'documentIds'>,
+): GenerationJob[] {
+  const pendingJobs = jobs.filter((job) => Boolean(job?.id) && job.status === 'pending');
+  const { directoryId, documentId, documentIds } = options;
 
-  const updated = [...jobs];
-  updated[existingIndex] = nextJob;
-  return updated;
-}
+  return pendingJobs.filter((job) => {
+    if (directoryId && jobMatchesDirectory(job, directoryId)) {
+      return true;
+    }
 
-function areJobListsEqual(left: GenerationJob[], right: GenerationJob[]): boolean {
-  if (left.length !== right.length) {
+    if (documentId && jobMatchesDocument(job, documentId)) {
+      return true;
+    }
+
+    if (documentIds?.length && jobMatchesDocumentsInDirectory(job, documentIds)) {
+      return true;
+    }
+
+    if (!directoryId && !documentId && !documentIds?.length) {
+      return true;
+    }
+
     return false;
-  }
-
-  return left.every((job, index) => {
-    const other = right[index];
-    return (
-      job.id === other.id &&
-      job.status === other.status &&
-      job.updatedAt === other.updatedAt &&
-      job.errorMessage === other.errorMessage
-    );
   });
 }
 
 export function useGenerationJobsRealtime(options: UseGenerationJobsRealtimeOptions = {}) {
   const router = useRouter();
-  const [jobs, setJobs] = useState<GenerationJob[]>([]);
+  const store = useUiStoreApi();
   const { directoryId, documentId, documentIds, onCompleted, onFailed } = options;
 
   const onCompletedRef = useRef(onCompleted);
   const onFailedRef = useRef(onFailed);
-  onCompletedRef.current = onCompleted;
-  onFailedRef.current = onFailed;
+
+  // Keep callback refs in sync after commit so discarded concurrent renders
+  // cannot overwrite them with uncommitted values.
+  useEffect(() => {
+    onCompletedRef.current = onCompleted;
+    onFailedRef.current = onFailed;
+  }, [onCompleted, onFailed]);
+
+  const jobs = useUiStore((state) => state.generationJobs);
+  const upsertGenerationJob = useUiStore((state) => state.upsertGenerationJob);
 
   useEffect(() => {
     const supabase = createClient();
@@ -65,15 +76,16 @@ export function useGenerationJobsRealtime(options: UseGenerationJobsRealtimeOpti
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     function mergeJob(nextJob: GenerationJob) {
-      setJobs((current) => upsertJob(current, nextJob));
+      const previous = store.getState().generationJobs.find((job) => job.id === nextJob.id);
+      store.getState().upsertGenerationJob(nextJob);
 
-      if (nextJob.status === 'completed') {
+      if (nextJob.status === 'completed' && previous?.status !== 'completed') {
         onCompletedRef.current?.(nextJob);
         router.refresh();
         return;
       }
 
-      if (nextJob.status === 'failed') {
+      if (nextJob.status === 'failed' && previous?.status !== 'failed') {
         onFailedRef.current?.(nextJob);
       }
     }
@@ -98,7 +110,8 @@ export function useGenerationJobsRealtime(options: UseGenerationJobsRealtimeOpti
         console.error('Failed to load pending generation jobs', error);
       } else if (!cancelled && data) {
         const mapped = data.map((row) => mapGenerationJobRow(row));
-        setJobs((current) => (areJobListsEqual(current, mapped) ? current : mapped));
+        // Merge so jobs registered/loaded while the query was in flight are kept.
+        store.getState().mergeGenerationJobs(mapped);
       }
 
       if (cancelled) {
@@ -168,41 +181,29 @@ export function useGenerationJobsRealtime(options: UseGenerationJobsRealtimeOpti
         void supabase.removeChannel(channel);
       }
     };
-  }, [router]);
+  }, [router, store]);
 
   const pendingJobs = useMemo(
     () => jobs.filter((job) => Boolean(job?.id) && job.status === 'pending'),
     [jobs],
   );
 
-  const scopedPendingJobs = useMemo(() => {
-    return pendingJobs.filter((job) => {
-      if (directoryId && jobMatchesDirectory(job, directoryId)) {
-        return true;
-      }
+  const scopedPendingJobs = useUiStore(
+    useShallow((state) =>
+      selectScopedPendingJobs(state.generationJobs, {
+        directoryId,
+        documentId,
+        documentIds,
+      }),
+    ),
+  );
 
-      if (documentId && jobMatchesDocument(job, documentId)) {
-        return true;
-      }
-
-      if (documentIds?.length && jobMatchesDocumentsInDirectory(job, documentIds)) {
-        return true;
-      }
-
-      if (!directoryId && !documentId && !documentIds?.length) {
-        return true;
-      }
-
-      return false;
-    });
-  }, [pendingJobs, directoryId, documentId, documentIds]);
-
-  const registerJob = useCallback((job: GenerationJob) => {
-    if (!job?.id || !job.status) {
-      return;
-    }
-    setJobs((current) => upsertJob(current, job));
-  }, []);
+  const registerJob = useCallback(
+    (job: GenerationJob) => {
+      upsertGenerationJob(job);
+    },
+    [upsertGenerationJob],
+  );
 
   return {
     jobs,

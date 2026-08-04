@@ -17,6 +17,7 @@ import {
   streamAgentMessage,
 } from '@/mutations';
 import { emitGenerationJobStarted } from '@/jobs/generation-job-events';
+import { useUiStore } from '@/providers/ui-store-provider';
 import { cn } from '@/utils';
 
 type ChatMessage = {
@@ -171,9 +172,13 @@ export function AgentPanel({
   variant?: 'embedded' | 'overlay';
 }) {
   const storedSession = useMemo(() => readStoredSession(scope), [scope]);
+  const workspaceThreadId = useUiStore((state) => state.workspaceThreadId);
+  const setWorkspaceThreadId = useUiStore((state) => state.setWorkspaceThreadId);
   const [messages, setMessages] = useState<ChatMessage[]>(() => storedSession.messages);
   const [input, setInput] = useState('');
-  const [threadId, setThreadId] = useState<string | undefined>(() => storedSession.threadId);
+  const [localThreadId, setLocalThreadId] = useState<string | undefined>(() =>
+    scope === 'workspace' ? undefined : storedSession.threadId,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(defaultExpanded || variant === 'overlay');
@@ -181,6 +186,29 @@ export function AgentPanel({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const didHydrateWorkspaceThread = useRef(false);
+
+  const threadId = scope === 'workspace' ? workspaceThreadId : localThreadId;
+  const setThreadId = useCallback(
+    (next: string | undefined) => {
+      if (scope === 'workspace') {
+        setWorkspaceThreadId(next);
+        return;
+      }
+      setLocalThreadId(next);
+    },
+    [scope, setWorkspaceThreadId],
+  );
+
+  useEffect(() => {
+    if (scope !== 'workspace' || didHydrateWorkspaceThread.current) {
+      return;
+    }
+    didHydrateWorkspaceThread.current = true;
+    if (!workspaceThreadId && storedSession.threadId) {
+      setWorkspaceThreadId(storedSession.threadId);
+    }
+  }, [scope, setWorkspaceThreadId, storedSession.threadId, workspaceThreadId]);
 
   const isOverlay = variant === 'overlay' || isExpanded;
   const subtitle =
