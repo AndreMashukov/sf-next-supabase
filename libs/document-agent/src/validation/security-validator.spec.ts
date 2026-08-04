@@ -29,6 +29,20 @@ describe('security validator', () => {
     expect(findings.some((finding) => finding.code === 'FORMAT_DISALLOWED_ATTRIBUTE')).toBe(true);
   });
 
+  it('allows escaped event-handler examples inside code samples', () => {
+    const html =
+      '<h1>Zustand</h1><pre><code>&lt;button onClick={() =&gt; inc()}&gt;+&lt;/button&gt;</code></pre>';
+    const findings = validateSecurity(html);
+    expect(findings.some((finding) => finding.code === 'SECURITY_EVENT_HANDLER')).toBe(false);
+    expect(findings.some((finding) => finding.code === 'FORMAT_DISALLOWED_ATTRIBUTE')).toBe(false);
+  });
+
+  it('still rejects real event-handler attributes inside pre/code', () => {
+    const html = '<pre><code><button onclick="alert(1)">x</button></code></pre>';
+    const findings = validateSecurity(html);
+    expect(findings.some((finding) => finding.code === 'SECURITY_EVENT_HANDLER')).toBe(true);
+  });
+
   it('rejects markdown fences', () => {
     const findings = validateSecurity('```html\n<p>Hello</p>\n```');
     expect(findings.some((finding) => finding.code === 'FORMAT_CODE_FENCE')).toBe(true);

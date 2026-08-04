@@ -160,7 +160,15 @@ export class CreateDocumentUseCase {
       });
 
       if (this.knowledgeIndexer) {
-        await this.knowledgeIndexer.indexDocument(document, html);
+        try {
+          await this.knowledgeIndexer.indexDocument(document, html);
+        } catch (indexError) {
+          // Document publish must not fail when embedding/indexing is unavailable.
+          console.warn('[create-document] Knowledge indexing failed', {
+            documentId: document.id,
+            error: indexError instanceof Error ? indexError.message : indexError,
+          });
+        }
       }
 
       return document;

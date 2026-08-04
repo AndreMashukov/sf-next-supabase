@@ -40,8 +40,10 @@ export function validateSecurity(htmlFragment: string): ValidationFinding[] {
     }
   }
 
+  // Only flag attributes on real HTML tags. Escaped samples in <pre>/<code>
+  // (e.g. "&lt;button onClick=...") must not trip these checks.
   const eventHandlerPattern = new RegExp(
-    `\\s${DISALLOWED_EVENT_HANDLER_PREFIX}[a-z]+\\s*=`,
+    `<[a-zA-Z][^>]*\\s${DISALLOWED_EVENT_HANDLER_PREFIX}[a-z]+\\s*=`,
     'gi',
   );
   if (eventHandlerPattern.test(htmlFragment)) {
@@ -55,7 +57,7 @@ export function validateSecurity(htmlFragment: string): ValidationFinding[] {
   }
 
   for (const attribute of DISALLOWED_HTML_ATTRIBUTES) {
-    const pattern = new RegExp(`\\s${attribute}\\s*=`, 'gi');
+    const pattern = new RegExp(`<[a-zA-Z][^>]*\\s${attribute}\\s*=`, 'gi');
     if (pattern.test(htmlFragment)) {
       findings.push({
         severity: 'error',

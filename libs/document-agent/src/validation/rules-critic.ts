@@ -62,6 +62,8 @@ Instructions:
 - Short pedagogical framing in learning docs is allowed (for example a one-sentence purpose statement). Only fail Doc HTML Format for clear non-document chatter such as "Sure, here is your document" or assistant meta-commentary about the generation process.
 - If a rule is satisfied, mark satisfied=true.
 - If a rule is violated, mark satisfied=false with a concrete message, evidence snippet, and repairHint.
+- If a rule exception applies and the document is acceptable, mark satisfied=true. Never set satisfied=false with wording like "this is satisfied" or "no fix needed".
+- For Doc HTML Format code-language defaults: Python is the default only when the topic does not require another language. Topics such as Next.js, React, Zustand, TypeScript, or JavaScript require language-typescript/language-javascript — mark those as satisfied=true.
 - Use severity "error" for hard requirements; "warning" only for soft preferences (including mild tone/filler nits).
 - Return ONLY valid JSON with this shape:
 {
@@ -107,6 +109,16 @@ function shouldSoftenDocHtmlFinding(
     return true;
   }
 
+  // Language default nits are soft when the critic itself acknowledges a topic exception.
+  const languageNit =
+    text.includes('python') ||
+    text.includes('language-typescript') ||
+    text.includes('language-javascript') ||
+    text.includes('code examples in');
+  if (languageNit && (text.includes('required by the topic') || text.includes('appropriate'))) {
+    return true;
+  }
+
   if (!hasSpecificFormatRule(rules)) {
     return false;
   }
@@ -122,12 +134,26 @@ function shouldSoftenDocHtmlFinding(
   );
 }
 
+function isSelfContradictoryUnsatisfiedFinding(finding: {
+  message: string;
+  repairHint?: string;
+}): boolean {
+  const text = `${finding.message} ${finding.repairHint ?? ''}`.toLowerCase();
+  return (
+    text.includes('this is satisfied') ||
+    text.includes('no fix needed') ||
+    text.includes('already satisfied') ||
+    text.includes('correctly satisfied')
+  );
+}
+
 export function criticResponseToFindings(
   response: RulesCriticResponse,
   rules: DocumentRule[] = [],
 ): ValidationFinding[] {
   return response.findings
     .filter((finding) => !finding.satisfied)
+    .filter((finding) => !isSelfContradictoryUnsatisfiedFinding(finding))
     .map((finding) => {
       const softFinding = shouldSoftenDocHtmlFinding(rules, finding.ruleName, finding.message);
       return {
@@ -216,16 +242,13 @@ export async function critiqueRulesAdherence(
     }
 
     const findings = criticResponseToFindings(result.data, rules);
+    // Trust concrete findings over the boolean. A bare passed:false with no
+    // unsatisfied findings is critic inconsistency, not a publish blocker.
     if (!result.data.passed && findings.length === 0) {
-      return [
-        {
-          severity: 'error',
-          code: 'RULE_SEMANTIC_VIOLATION',
-          category: 'rules',
-          message: 'Rules critic marked the document as failing without detailed findings',
-          repairHint: 'Revise the HTML so it clearly satisfies every selected rule.',
-        },
-      ];
+      lastInfraCode = 'RULE_CRITIC_EMPTY_FAILURE';
+      lastInfraMessage =
+        'Rules critic marked the document as failing without detailed findings';
+      continue;
     }
 
     return findings;

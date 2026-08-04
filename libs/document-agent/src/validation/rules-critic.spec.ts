@@ -67,6 +67,24 @@ describe('rules critic', () => {
     expect(findings[0]?.severity).toBe('warning');
   });
 
+  it('drops self-contradictory unsatisfied findings', () => {
+    const findings = criticResponseToFindings({
+      passed: false,
+      findings: [
+        {
+          ruleName: 'Doc HTML Format',
+          satisfied: false,
+          severity: 'error',
+          message:
+            'Uses TypeScript instead of Python, but the topic requires TypeScript. This is satisfied.',
+          repairHint: 'No fix needed — TypeScript is required by the topic.',
+        },
+      ],
+    });
+
+    expect(findings).toHaveLength(0);
+  });
+
   it('downgrades Doc HTML table quotas when a learning format rule is present', () => {
     const findings = criticResponseToFindings(
       {
@@ -130,6 +148,33 @@ describe('rules critic', () => {
 
     expect(callTogetherChatMock).toHaveBeenCalledTimes(2);
     expect(findings[0]?.code).toBe('RULE_CRITIC_INVALID_JSON');
+    expect(findings[0]?.severity).toBe('warning');
+  });
+
+  it('retries and warns when critic returns passed:false with no unsatisfied findings', async () => {
+    callTogetherChatMock.mockReset();
+    callTogetherChatMock.mockResolvedValue(
+      JSON.stringify({
+        passed: false,
+        findings: [
+          {
+            ruleName: 'Doc HTML Format',
+            satisfied: true,
+            severity: 'error',
+            message: 'Looks fine',
+          },
+        ],
+      }),
+    );
+
+    const findings = await critiqueRulesAdherence(
+      'Explain zustand',
+      [{ name: 'Doc HTML Format', content: 'Output HTML only' }],
+      '<h1>Zustand</h1><p>Use a store.</p>',
+    );
+
+    expect(callTogetherChatMock).toHaveBeenCalledTimes(2);
+    expect(findings[0]?.code).toBe('RULE_CRITIC_EMPTY_FAILURE');
     expect(findings[0]?.severity).toBe('warning');
   });
 
