@@ -4,17 +4,17 @@ import {
   getDirectoryAncestors,
   getDirectoryById,
   listDirectoryRuleIds,
-} from '@/lib/data/directories';
+} from '@/data/directories';
 import {
   getDeleteImpactsForFolders,
   getDirectoryDeleteImpact,
   listDirectorySummaries,
   listInheritedRuleIds,
-} from '@/lib/data/directory-summaries';
-import { listDocuments } from '@/lib/data/documents';
-import { listRules } from '@/lib/data/rules';
-import { listQuizzesForDocuments } from '@/lib/data/quizzes';
-import { partitionDirectAndInheritedRules } from '@/lib/directory-rules';
+} from '@/data/directory-summaries';
+import { listDocuments } from '@/data/documents';
+import { listRules } from '@/data/rules';
+import { listQuizzesForDocuments } from '@/data/quizzes';
+import { partitionDirectAndInheritedRules } from '@/domain/directories/rules';
 import { DirectoryDetailClient } from './_components/DirectoryDetailClient';
 
 export default async function DirectoryPage({

@@ -6,14 +6,14 @@ import {
   createDirectory,
   createDirectorySchema,
   formatValidationError,
-} from '@/lib/api';
+} from '@/mutations';
 import {
   DEFAULT_FOLDER_COLOR,
   DEFAULT_FOLDER_ICON,
   FOLDER_COLORS,
   FOLDER_ICONS,
-} from '@/lib/folder-constants';
-import type { DirectorySummary } from '@/lib/data/directory-summaries';
+} from '@/domain/directories/constants';
+import type { DirectorySummary } from '@/data/directory-summaries';
 
 export function CreateDirectoryDialog({
   open,

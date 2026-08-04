@@ -1,8 +1,8 @@
 import 'server-only';
 
-import { createClient } from '@/lib/supabase/server';
-import { listDirectoryTree } from '@/lib/data/directories';
-import { buildDirectorySummaries } from '@/lib/directory-utils';
+import { createClient } from '@/supabase/server';
+import { listDirectoryTree } from '@/data/directories';
+import { buildDirectorySummaries } from '@/domain/directories/utils';
 import type { DirectoryTreeNode } from '@sf/shared-types';
 
 export interface NavQuiz {

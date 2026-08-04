@@ -1,7 +1,7 @@
 import 'server-only';
 
-import { createClient } from '@/lib/supabase/server';
-import { downloadDocumentHtml, extractBodyHtml } from '@/lib/storage';
+import { createClient } from '@/supabase/server';
+import { downloadDocumentHtml, extractBodyHtml } from '@/data/storage';
 import type { Document } from '@sf/shared-types';
 
 type DocumentRow = {

@@ -8,7 +8,7 @@ import remarkMath from 'remark-math';
 import { DocumentCodeBlock } from '@/components/content/DocumentCodeBlock';
 import { MermaidDiagram } from '@/components/content/MermaidDiagram';
 import { PlotlyGraph } from '@/components/content/PlotlyGraph';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils';
 
 function isBlockCode(
   className: string | undefined,

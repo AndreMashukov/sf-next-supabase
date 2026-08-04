@@ -11,12 +11,12 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { Document, GenerationJob, Rule } from '@sf/shared-types';
-import { formatShortDate, getDocumentFallbackColor } from '@/lib/folder-constants';
-import { getPendingJobLabel } from '@/lib/generation-jobs';
+import { formatShortDate, getDocumentFallbackColor } from '@/domain/directories/constants';
+import { getPendingJobLabel } from '@/jobs/generation-jobs';
 import { DirectoryPickerDialog } from '@/components/directories/DirectoryPickerDialog';
 import { DeleteDocumentsDialog } from '@/components/documents/DeleteDocumentsDialog';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
-import type { DirectorySummary } from '@/lib/data/directory-summaries';
+import type { DirectorySummary } from '@/data/directory-summaries';
 
 function SourceRow({
   document,
@@ -159,7 +159,7 @@ function SourceRow({
           if (!targetDirectoryId) {
             throw new Error('Documents must be moved into a folder');
           }
-          const { moveDocument } = await import('@/lib/api');
+          const { moveDocument } = await import('@/mutations');
           const updated = await moveDocument(document.id, targetDirectoryId);
           onMoved?.(updated);
         }}

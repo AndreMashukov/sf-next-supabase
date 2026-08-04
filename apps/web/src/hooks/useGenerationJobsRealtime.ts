@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { GenerationJob } from '@sf/shared-types';
-import { createClient } from '@/lib/supabase/client';
-import { subscribeGenerationJobStarted } from '@/lib/generation-job-events';
+import { createClient } from '@/supabase/client';
+import { subscribeGenerationJobStarted } from '@/jobs/generation-job-events';
 import {
   jobMatchesDirectory,
   jobMatchesDocument,
   mapGenerationJobRow,
   jobMatchesDocumentsInDirectory,
-} from '@/lib/generation-jobs';
+} from '@/jobs/generation-jobs';
 
 type JobChangeHandler = (job: GenerationJob) => void;
 

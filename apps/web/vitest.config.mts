@@ -9,12 +9,18 @@ export default defineConfig({
   resolve: {
     alias: {
       '@sf/shared-types': path.resolve(configDir, '../../libs/shared-types/src/index.ts'),
-      '@/lib/api/agent-stream': path.resolve(configDir, './src/lib/api/agent-stream.ts'),
       '@': path.resolve(configDir, './src'),
     },
   },
   test: {
     environment: 'node',
-    include: ['src/lib/**/*.spec.ts', 'src/hooks/**/*.spec.ts'],
+    include: [
+      'src/data/**/*.spec.ts',
+      'src/mutations/**/*.spec.ts',
+      'src/content/**/*.spec.ts',
+      'src/jobs/**/*.spec.ts',
+      'src/domain/**/*.spec.ts',
+      'src/hooks/**/*.spec.ts',
+    ],
   },
 });

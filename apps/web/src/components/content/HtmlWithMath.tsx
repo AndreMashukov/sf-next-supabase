@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useLayoutEffect, useRef } from 'react';
-import { renderMathInHtmlElement } from '@/lib/content/render-math';
+import { renderMathInHtmlElement } from '@/content/render-math';
 
 export const HtmlWithMath = memo(function HtmlWithMath({
   html,

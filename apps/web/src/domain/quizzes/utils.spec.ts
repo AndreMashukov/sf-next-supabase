@@ -5,7 +5,7 @@ import {
   computeQuizScore,
   formatQuizDuration,
   getScoreToneClass,
-} from './quiz-utils';
+} from './utils';
 import type { QuizQuestion } from '@sf/shared-types';
 
 const sampleQuestions: QuizQuestion[] = [

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { DirectorySummary } from '@/lib/data/directory-summaries';
+import type { DirectorySummary } from '@/data/directory-summaries';
 
 const ROOT_TARGET = '__root__';
 

@@ -12,7 +12,7 @@ import {
   computeQuizProgress,
   computeQuizScore,
   type QuizAnswerRecord,
-} from '@/lib/quiz-utils';
+} from '@/domain/quizzes/utils';
 
 type QuizPhase = 'playing' | 'completed';
 

@@ -5,7 +5,7 @@ import { FolderPlus } from 'lucide-react';
 import { CreateDirectoryDialog } from '@/components/directories/CreateDirectoryDialog';
 import { FolderCardGrid } from '@/components/directories/FolderCard';
 import { UnfiledCleanupBanner } from '@/components/documents/UnfiledCleanupBanner';
-import type { DirectoryDeleteImpact, DirectorySummary } from '@/lib/data/directory-summaries';
+import type { DirectoryDeleteImpact, DirectorySummary } from '@/data/directory-summaries';
 import type { Document, Rule } from '@sf/shared-types';
 
 export function DocumentsPageClient({

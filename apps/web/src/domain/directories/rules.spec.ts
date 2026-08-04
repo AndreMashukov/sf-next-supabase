@@ -2,7 +2,7 @@ import {
   getDirectoryAncestorIds,
   partitionDirectAndInheritedRules,
   resolveInheritedRuleIds,
-} from './directory-rules';
+} from './rules';
 import { describe, expect, it } from 'vitest';
 
 const directories = [

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { deleteDocuments } from '@/lib/api';
+import { deleteDocuments } from '@/mutations';
 
 export function DeleteDocumentsDialog({
   documentIds,

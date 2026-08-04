@@ -5,7 +5,7 @@ import {
   createDocument,
   createDocumentSchema,
   formatValidationError,
-} from '@/lib/api';
+} from '@/mutations';
 import { InheritedRulesPreview } from '@/components/rules/InheritedRulesPreview';
 import { RuleSelector } from '@/components/rules/RuleSelector';
 import type { GenerationJob, Rule } from '@sf/shared-types';

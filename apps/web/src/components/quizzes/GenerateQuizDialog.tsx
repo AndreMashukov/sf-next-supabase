@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { formatValidationError, generateQuiz, generateQuizSchema } from '@/lib/api';
+import { formatValidationError, generateQuiz, generateQuizSchema } from '@/mutations';
 import type { Document, GenerationJob } from '@sf/shared-types';
 import {
   Select,

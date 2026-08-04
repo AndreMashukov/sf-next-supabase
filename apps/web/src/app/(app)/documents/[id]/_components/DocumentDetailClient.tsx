@@ -25,13 +25,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select';
-import { formatValidationError, generateQuiz, generateQuizSchema, moveDocument } from '@/lib/api';
-import { formatShortDate } from '@/lib/folder-constants';
-import { formatDate } from '@/lib/utils';
-import type { DirectorySummary } from '@/lib/data/directory-summaries';
+import { formatValidationError, generateQuiz, generateQuizSchema, moveDocument } from '@/mutations';
+import { formatShortDate } from '@/domain/directories/constants';
+import { formatDate } from '@/utils';
+import type { DirectorySummary } from '@/data/directory-summaries';
 import type { Document, Quiz } from '@sf/shared-types';
 import { useGenerationJobsRealtime } from '@/hooks/useGenerationJobsRealtime';
-import { getPendingJobLabel } from '@/lib/generation-jobs';
+import { getPendingJobLabel } from '@/jobs/generation-jobs';
 
 const QUESTION_COUNT_OPTIONS = [3, 5, 7, 10] as const;
 

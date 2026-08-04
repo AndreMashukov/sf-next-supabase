@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useMemo, useState } from 'react';
-import { createRule, createRuleSchema, deleteRule, formatValidationError, updateRule, updateRuleSchema } from '@/lib/api';
+import { createRule, createRuleSchema, deleteRule, formatValidationError, updateRule, updateRuleSchema } from '@/mutations';
 import type { Rule } from '@sf/shared-types';
 
 type RuleFormState = {

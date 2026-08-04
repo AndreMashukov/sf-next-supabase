@@ -4,9 +4,9 @@ import type { Directory } from '@sf/shared-types';
 import {
   buildDirectorySummaries as buildSummaries,
   computeDeleteImpact as computeImpact,
-} from '@/lib/directory-utils';
-import { createClient } from '@/lib/supabase/server';
-import { listDirectoryRuleIds } from '@/lib/data/directories';
+} from '@/domain/directories/utils';
+import { createClient } from '@/supabase/server';
+import { listDirectoryRuleIds } from '@/data/directories';
 
 export type DirectorySummary = Directory & {
   documentCount: number;

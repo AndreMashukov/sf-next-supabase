@@ -5,7 +5,7 @@ import {
   formatValidationError,
   updateDirectory,
   updateDirectorySchema,
-} from '@/lib/api';
+} from '@/mutations';
 import {
   DEFAULT_FOLDER_COLOR,
   DEFAULT_FOLDER_ICON,
@@ -13,7 +13,7 @@ import {
   FOLDER_ICONS,
   resolveDirectoryColor,
   resolveDirectoryIcon,
-} from '@/lib/folder-constants';
+} from '@/domain/directories/constants';
 import type { Directory } from '@sf/shared-types';
 
 export function EditDirectoryDialog({

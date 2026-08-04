@@ -15,9 +15,9 @@ import {
   deleteQuiz,
   deleteRule,
   streamAgentMessage,
-} from '@/lib/api';
-import { emitGenerationJobStarted } from '@/lib/generation-job-events';
-import { cn } from '@/lib/utils';
+} from '@/mutations';
+import { emitGenerationJobStarted } from '@/jobs/generation-job-events';
+import { cn } from '@/utils';
 
 type ChatMessage = {
   id: string;

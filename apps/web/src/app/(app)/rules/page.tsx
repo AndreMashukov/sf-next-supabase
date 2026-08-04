@@ -1,4 +1,4 @@
-import { listRules } from '@/lib/data/rules';
+import { listRules } from '@/data/rules';
 import { RulesPageClient } from './_components/RulesPageClient';
 
 export default async function RulesPage() {

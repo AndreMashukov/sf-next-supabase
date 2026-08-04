@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signOut } from '@/lib/api';
+import { signOut } from '@/mutations';
 
 export function TopAppBar({
   onToggleSidebar,

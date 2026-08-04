@@ -12,15 +12,15 @@ import {
   Move,
   Trash2,
 } from 'lucide-react';
-import type { DirectorySummary } from '@/lib/data/directory-summaries';
+import type { DirectorySummary } from '@/data/directory-summaries';
 import { DirectoryPickerDialog } from '@/components/directories/DirectoryPickerDialog';
 import { DeleteDirectoryDialog } from '@/components/directories/DeleteDirectoryDialog';
 import { EditDirectoryDialog } from '@/components/directories/EditDirectoryDialog';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
-import { moveDirectory } from '@/lib/api';
-import type { DirectoryDeleteImpact } from '@/lib/data/directory-summaries';
-import { getDescendantDirectoryIds } from '@/lib/directory-utils';
-import { resolveDirectoryColor, resolveDirectoryIcon } from '@/lib/folder-constants';
+import { moveDirectory } from '@/mutations';
+import type { DirectoryDeleteImpact } from '@/data/directory-summaries';
+import { getDescendantDirectoryIds } from '@/domain/directories/utils';
+import { resolveDirectoryColor, resolveDirectoryIcon } from '@/domain/directories/constants';
 import type { Directory } from '@sf/shared-types';
 
 export function FolderCard({

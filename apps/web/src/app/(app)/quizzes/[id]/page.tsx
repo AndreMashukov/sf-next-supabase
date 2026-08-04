@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getQuizById } from '@/lib/data/quizzes';
+import { getQuizById } from '@/data/quizzes';
 import { QuizPageClient } from './_components/QuizPageClient';
 
 export default async function QuizPage({

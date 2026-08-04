@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { attachRuleToDirectory, detachRuleFromDirectory } from '@/lib/api';
-import { partitionDirectAndInheritedRules } from '@/lib/directory-rules';
+import { attachRuleToDirectory, detachRuleFromDirectory } from '@/mutations';
+import { partitionDirectAndInheritedRules } from '@/domain/directories/rules';
 import type { Rule } from '@sf/shared-types';
 
 export function DirectoryRuleManager({

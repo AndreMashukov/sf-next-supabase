@@ -1,8 +1,8 @@
 'use client';
 
 import { Check, Clock, RotateCcw, Target, Trophy, X } from 'lucide-react';
-import type { QuizAnswerRecord } from '@/lib/quiz-utils';
-import { formatQuizDuration, getScoreToneClass } from '@/lib/quiz-utils';
+import type { QuizAnswerRecord } from '@/domain/quizzes/utils';
+import { formatQuizDuration, getScoreToneClass } from '@/domain/quizzes/utils';
 
 export function QuizScoreCard({
   title,

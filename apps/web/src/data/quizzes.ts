@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/supabase/server';
 import type { Quiz, QuizQuestion } from '@sf/shared-types';
 
 type QuizRow = {

@@ -1,6 +1,6 @@
-import { getDeleteImpactsForFolders, listDirectorySummaries } from '@/lib/data/directory-summaries';
-import { listDocuments } from '@/lib/data/documents';
-import { listRules } from '@/lib/data/rules';
+import { getDeleteImpactsForFolders, listDirectorySummaries } from '@/data/directory-summaries';
+import { listDocuments } from '@/data/documents';
+import { listRules } from '@/data/rules';
 import { DocumentsPageClient } from './_components/DocumentsPageClient';
 
 export default async function DocumentsPage() {

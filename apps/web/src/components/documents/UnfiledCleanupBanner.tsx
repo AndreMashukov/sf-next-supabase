@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import type { Document } from '@sf/shared-types';
-import type { DirectorySummary } from '@/lib/data/directory-summaries';
+import type { DirectorySummary } from '@/data/directory-summaries';
 import { DirectoryPickerDialog } from '@/components/directories/DirectoryPickerDialog';
-import { moveDocument } from '@/lib/api';
+import { moveDocument } from '@/mutations';
 
 export function UnfiledCleanupBanner({
   documents,

@@ -6,8 +6,8 @@ import { DocumentCodeBlock } from '@/components/content/DocumentCodeBlock';
 import { HtmlWithMath } from '@/components/content/HtmlWithMath';
 import { MermaidDiagram } from '@/components/content/MermaidDiagram';
 import { PlotlyGraph } from '@/components/content/PlotlyGraph';
-import { splitCollapsibleSections } from '@/lib/content/document-html-enhance';
-import { cn } from '@/lib/utils';
+import { splitCollapsibleSections } from '@/content/document-html-enhance';
+import { cn } from '@/utils';
 
 type HtmlSegment = { type: 'html'; html: string };
 type CodeSegment = { type: 'code'; code: string; language: string };

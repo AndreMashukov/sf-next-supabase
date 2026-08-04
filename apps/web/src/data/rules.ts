@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/supabase/server';
 import type { Rule } from '@sf/shared-types';
 
 type RuleRow = {

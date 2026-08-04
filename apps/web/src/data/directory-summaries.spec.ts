@@ -2,7 +2,7 @@ import {
   buildDirectorySummaries,
   computeDeleteImpact,
   getDescendantDirectoryIds,
-} from '../directory-utils';
+} from '@/domain/directories/utils';
 import { describe, expect, it } from 'vitest';
 
 const directories = [

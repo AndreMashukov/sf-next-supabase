@@ -3,9 +3,9 @@
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 import type { Config, Data } from 'plotly.js';
-import { parsePlotlySpec } from '@/lib/content/plotly-spec';
-import { mergePlotlyDarkLayout } from '@/lib/content/plotly-theme';
-import { cn } from '@/lib/utils';
+import { parsePlotlySpec } from '@/content/plotly-spec';
+import { mergePlotlyDarkLayout } from '@/content/plotly-theme';
+import { cn } from '@/utils';
 
 const Plot = dynamic(() => import('react-plotly.js'), {
   ssr: false,

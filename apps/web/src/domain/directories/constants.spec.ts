@@ -6,7 +6,7 @@ import {
   getDocumentFallbackColor,
   resolveDirectoryColor,
   resolveDirectoryIcon,
-} from './folder-constants';
+} from './constants';
 
 describe('folder-constants', () => {
   it('provides stable defaults', () => {

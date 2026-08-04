@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { deleteQuizzes } from '@/lib/api';
+import { deleteQuizzes } from '@/mutations';
 
 export function DeleteQuizzesDialog({
   quizIds,

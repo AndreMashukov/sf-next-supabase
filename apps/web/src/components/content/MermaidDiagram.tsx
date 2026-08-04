@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from 'lucide-react';
 import mermaid from 'mermaid';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils';
 
 let mermaidInitialized = false;
 let renderQueue: Promise<void> = Promise.resolve();

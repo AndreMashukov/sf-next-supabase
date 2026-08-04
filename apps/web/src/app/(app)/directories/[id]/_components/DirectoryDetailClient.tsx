@@ -13,7 +13,7 @@ import {
   FileCode,
 } from 'lucide-react';
 import type { Directory, Document, Rule } from '@sf/shared-types';
-import type { DirectoryDeleteImpact, DirectorySummary } from '@/lib/data/directory-summaries';
+import type { DirectoryDeleteImpact, DirectorySummary } from '@/data/directory-summaries';
 import { DirectoryIconSidebar, type DirectoryPanelType } from '@/components/directories/DirectoryIconSidebar';
 import { SourcesPanel } from '@/components/documents/SourcesPanel';
 import { AddSourceModal } from '@/components/documents/AddSourceModal';
@@ -24,10 +24,10 @@ import { DirectoryPickerDialog } from '@/components/directories/DirectoryPickerD
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { QuizzesPanel } from '@/components/quizzes/QuizzesPanel';
 import { DirectoryRuleManager } from '@/components/directories/DirectoryRuleManager';
-import type { QuizWithDocumentTitle } from '@/lib/data/quizzes';
-import { resolveDirectoryColor, resolveDirectoryIcon } from '@/lib/folder-constants';
-import { getDescendantDirectoryIds } from '@/lib/directory-utils';
-import { moveDirectory } from '@/lib/api';
+import type { QuizWithDocumentTitle } from '@/data/quizzes';
+import { resolveDirectoryColor, resolveDirectoryIcon } from '@/domain/directories/constants';
+import { getDescendantDirectoryIds } from '@/domain/directories/utils';
+import { moveDirectory } from '@/mutations';
 import { useGenerationJobsRealtime } from '@/hooks/useGenerationJobsRealtime';
 
 const VALID_PANELS = new Set<string>([

@@ -1,9 +1,9 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import type { DirectoryDeleteImpact } from '@/lib/data/directory-summaries';
+import type { DirectoryDeleteImpact } from '@/data/directory-summaries';
 import type { Directory } from '@sf/shared-types';
-import { deleteDirectory } from '@/lib/api';
+import { deleteDirectory } from '@/mutations';
 
 export function DeleteDirectoryDialog({
   directory,

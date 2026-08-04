@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { listDirectorySummaries } from '@/lib/data/directory-summaries';
-import { getDocumentById, getDocumentHtmlById } from '@/lib/data/documents';
-import { listQuizzesByDocumentId } from '@/lib/data/quizzes';
+import { listDirectorySummaries } from '@/data/directory-summaries';
+import { getDocumentById, getDocumentHtmlById } from '@/data/documents';
+import { listQuizzesByDocumentId } from '@/data/quizzes';
 import { DocumentDetailClient } from './_components/DocumentDetailClient';
 
 export default async function DocumentDetailPage({

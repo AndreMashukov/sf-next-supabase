@@ -1,4 +1,4 @@
-import { getAuthenticatedUserEmail } from '@/lib/data/navigation';
+import { getAuthenticatedUserEmail } from '@/data/navigation';
 import { AppShellClient } from './AppShellClient';
 
 export async function AppShell({
