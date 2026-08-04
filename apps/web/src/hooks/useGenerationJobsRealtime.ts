@@ -59,8 +59,13 @@ export function useGenerationJobsRealtime(options: UseGenerationJobsRealtimeOpti
 
   const onCompletedRef = useRef(onCompleted);
   const onFailedRef = useRef(onFailed);
-  onCompletedRef.current = onCompleted;
-  onFailedRef.current = onFailed;
+
+  // Keep callback refs in sync after commit so discarded concurrent renders
+  // cannot overwrite them with uncommitted values.
+  useEffect(() => {
+    onCompletedRef.current = onCompleted;
+    onFailedRef.current = onFailed;
+  }, [onCompleted, onFailed]);
 
   const jobs = useUiStore((state) => state.generationJobs);
   const upsertGenerationJob = useUiStore((state) => state.upsertGenerationJob);
@@ -105,7 +110,8 @@ export function useGenerationJobsRealtime(options: UseGenerationJobsRealtimeOpti
         console.error('Failed to load pending generation jobs', error);
       } else if (!cancelled && data) {
         const mapped = data.map((row) => mapGenerationJobRow(row));
-        store.getState().setGenerationJobs(mapped);
+        // Merge so jobs registered/loaded while the query was in flight are kept.
+        store.getState().mergeGenerationJobs(mapped);
       }
 
       if (cancelled) {

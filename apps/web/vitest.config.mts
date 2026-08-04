@@ -21,6 +21,7 @@ export default defineConfig({
       'src/jobs/**/*.spec.ts',
       'src/domain/**/*.spec.ts',
       'src/hooks/**/*.spec.ts',
+      'src/stores/**/*.spec.ts',
     ],
   },
 });
