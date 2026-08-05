@@ -262,3 +262,11 @@ export {
   SEALED_OUTPUT_CONTRACT_LINES,
   WRAPPER_HTML_TAGS,
 } from './document-contract';
+
+export {
+  createLlmChatConfigFromEnv,
+  DEFAULT_LLM_BASE_URL,
+  DEFAULT_LLM_CHAT_MODEL,
+  LLM_CHAT_MAX_TOKENS,
+  type LlmChatConfig,
+} from './llm-chat-config';

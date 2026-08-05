@@ -15,7 +15,7 @@ Nx monorepo for organizing study content in directories, generating documents an
 ## Features
 
 - **Directories** — nested folders for sources, quizzes, and rules inheritance
-- **AI document & quiz generation** — Together AI (`MiniMaxAI/MiniMax-M3`), run as async jobs
+- **AI document & quiz generation** — LiteLLM proxy to Together AI (`MiniMaxAI/MiniMax-M3`), run as async jobs
 - **Supabase Realtime** — live generation job status updates in the UI (pending → completed/failed)
 - **Directory Agent** — creates and manages learning content (folder-scoped chat with search, CRUD tools, and delete confirmation)
 - **RAG + vector search** — pgvector embeddings (`agent_knowledge_chunks`) via Together (`intfloat/multilingual-e5-large-instruct`, 1024d)
@@ -27,9 +27,9 @@ Nx monorepo for organizing study content in directories, generating documents an
 
 - Node.js 20+
 - Yarn 1.x
-- Docker (for local Supabase and production API image)
+- Docker (local Supabase, LiteLLM proxy, production API image)
 - Supabase CLI (`yarn supabase` or global install)
-- Together AI API key
+- Together AI API key (used by LiteLLM proxy and direct embeddings)
 
 ## Setup
 
@@ -46,7 +46,13 @@ yarn supabase:start
 
 Copy the `anon`, `service_role`, and **Storage (S3)** credentials from the CLI output into `.env.local`.
 
-Set your Together AI API key (`TOGETHER_AI_API_KEY`) in `.env.local`.
+Set your Together AI API key (`TOGETHER_AI_API_KEY`) and LiteLLM proxy credentials (`LITELLM_MASTER_KEY`, `LLM_API_KEY`) in `.env.local`.
+
+Start the LiteLLM proxy (chat completions):
+
+```bash
+yarn litellm:dev
+```
 
 Start the Fastify API:
 
@@ -75,6 +81,7 @@ There is no separate dashboard — authenticated users land on the directories/d
 ## Useful Commands
 
 ```bash
+yarn litellm:dev                 # Start LiteLLM proxy on port 4000
 yarn dev:web                     # Start Next.js app
 yarn dev:api                     # Start Fastify API on port 3001
 yarn nx run supabase:start       # Start local Supabase
@@ -97,7 +104,8 @@ yarn build                       # Build all projects
 - **Supabase Auth + RLS** — users only access their own records
 - **Supabase Realtime** — generation job row changes pushed to the web client
 - **Fastify API** — authenticated mutations at `/api/v1/*` (create, generate, agent-message, CRUD)
-- **Together AI** — chat/completions for generation and agent reasoning; embeddings for RAG
+- **LiteLLM proxy** — OpenAI-compatible chat gateway; routes `minimax-m3` to Together AI MiniMax
+- **Together AI** — upstream chat model for LiteLLM; direct embeddings for RAG
 - **LangGraph agents** — `document-agent` for document HTML; `directory-agent` for folder-scoped tool use and retrieval
 
 ### Directory agent
@@ -116,7 +124,7 @@ flowchart TB
   subgraph Agent["libs/directory-agent"]
     Run["runDirectoryAgent<br/>scope = directory + descendants"]
     Graph["LangGraph loop"]
-    Model["Together chat model<br/>MiniMaxAI/MiniMax-M3"]
+    Model["LiteLLM chat model<br/>minimax-m3 -> MiniMax-M3"]
   end
 
   subgraph ToolGroups["Tool groups"]
@@ -160,8 +168,11 @@ See [`.env.example`](.env.example) for the full list.
 
 The web client uses `NEXT_PUBLIC_API_URL` (default `http://127.0.0.1:3001`) and calls `${NEXT_PUBLIC_API_URL}/api/v1/*` for mutations.
 
-Optional agent tuning:
+Optional LLM and agent tuning:
 
+- `LLM_BASE_URL` — LiteLLM proxy base URL (default `http://127.0.0.1:4000/v1`)
+- `LLM_CHAT_MODEL` — app-facing chat model alias (default `minimax-m3`)
+- `LLM_API_KEY` — bearer token for LiteLLM (defaults to `LITELLM_MASTER_KEY`)
 - `TOGETHER_EMBEDDING_MODEL` — override embedding model (default multilingual-e5-large-instruct)
 - `DIRECTORY_AGENT_RECURSION_LIMIT` — LangGraph recursion limit (default `50`)
 - `DIRECTORY_AGENT_MAX_TOOL_ROUNDS` — max tool rounds per turn (default `15`)

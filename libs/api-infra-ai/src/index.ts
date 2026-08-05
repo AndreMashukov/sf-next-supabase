@@ -5,8 +5,10 @@ export {
   TogetherQuizGeneratorService,
 } from './services';
 export {
+  createLlmChatConfigFromEnv,
   createTogetherAiConfigFromEnv,
   TogetherAiClient,
+  type LlmChatClientConfig,
   type TogetherAiConfig,
 } from './together-ai.client';
 export {

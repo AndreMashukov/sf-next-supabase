@@ -1,13 +1,16 @@
-import { buildDocumentPrompt, parseRequest, quizResponseSchema } from '@sf/shared-types';
+import {
+  buildDocumentPrompt,
+  createLlmChatConfigFromEnv,
+  LLM_CHAT_MAX_TOKENS,
+  parseRequest,
+  quizResponseSchema,
+  type LlmChatConfig,
+} from '@sf/shared-types';
 import type { Quiz } from '@sf/shared-types';
 
-const TOGETHER_BASE_URL = 'https://api.together.ai/v1';
-const TOGETHER_MODEL = 'MiniMaxAI/MiniMax-M3';
 const REQUEST_TIMEOUT_MS = 120_000;
 
-export interface TogetherAiConfig {
-  apiKey: string;
-}
+export interface LlmChatClientConfig extends LlmChatConfig {}
 
 function stripRedactedThinking(content: string): string {
   return content
@@ -50,7 +53,7 @@ function extractMessageContent(content: unknown): string | null {
   return parts.length > 0 ? parts.join('') : null;
 }
 
-function parseTogetherChatContent(payload: unknown): string | null {
+function parseChatCompletionContent(payload: unknown): string | null {
   if (
     typeof payload !== 'object' ||
     payload === null ||
@@ -79,15 +82,18 @@ function parseTogetherChatContent(payload: unknown): string | null {
   return text.length > 0 ? text : null;
 }
 
+/** @deprecated Use LlmChatClientConfig */
+export type TogetherAiConfig = LlmChatClientConfig;
+
 export class TogetherAiClient {
-  constructor(private readonly config: TogetherAiConfig) {}
+  constructor(private readonly config: LlmChatClientConfig) {}
 
   async generateDocumentFromPrompt(userPrompt: string, rulesText = ''): Promise<string> {
     const prompt = buildDocumentPrompt(userPrompt, rulesText);
-    const content = await this.callTogetherChat(prompt);
+    const content = await this.callChat(prompt);
 
     if (!content.trim()) {
-      throw new Error('Together returned empty document content');
+      throw new Error('LLM returned empty document content');
     }
 
     return content;
@@ -124,34 +130,34 @@ Requirements:
 HTML document:
 ${html.slice(0, 100_000)}`;
 
-    const text = await this.callTogetherChat(prompt);
+    const text = await this.callChat(prompt);
 
     let parsed: unknown;
     try {
       parsed = JSON.parse(text);
     } catch {
-      throw new Error('Together returned non-JSON quiz content');
+      throw new Error('LLM returned non-JSON quiz content');
     }
 
     return parseRequest(quizResponseSchema, parsed);
   }
 
-  private async callTogetherChat(prompt: string): Promise<string> {
+  private async callChat(prompt: string): Promise<string> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     try {
-      const response = await fetch(`${TOGETHER_BASE_URL}/chat/completions`, {
+      const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.config.apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: TOGETHER_MODEL,
+          model: this.config.model,
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.7,
-          max_tokens: 16384,
+          max_tokens: LLM_CHAT_MAX_TOKENS,
           reasoning: { enabled: false },
         }),
         signal: controller.signal,
@@ -159,14 +165,14 @@ ${html.slice(0, 100_000)}`;
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Together request failed: ${response.status} ${errorText}`);
+        throw new Error(`LLM request failed: ${response.status} ${errorText}`);
       }
 
       const payload = await response.json();
-      const text = parseTogetherChatContent(payload);
+      const text = parseChatCompletionContent(payload);
 
       if (!text) {
-        throw new Error('Together returned an empty response');
+        throw new Error('LLM returned an empty response');
       }
 
       return text;
@@ -176,11 +182,9 @@ ${html.slice(0, 100_000)}`;
   }
 }
 
-export function createTogetherAiConfigFromEnv(env: NodeJS.ProcessEnv): TogetherAiConfig {
-  const apiKey = env['TOGETHER_AI_API_KEY'];
-  if (!apiKey) {
-    throw new Error('Missing TOGETHER_AI_API_KEY environment variable');
-  }
-
-  return { apiKey };
+/** @deprecated Use createLlmChatConfigFromEnv from @sf/shared-types */
+export function createTogetherAiConfigFromEnv(env: NodeJS.ProcessEnv): LlmChatClientConfig {
+  return createLlmChatConfigFromEnv(env);
 }
+
+export { createLlmChatConfigFromEnv };

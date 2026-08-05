@@ -1,5 +1,6 @@
 import type { EmbeddingService } from '@sf/api-domain';
 
+// Embeddings bypass LiteLLM and call Together directly to keep vector dimensions stable.
 const TOGETHER_BASE_URL = 'https://api.together.ai/v1';
 export const TOGETHER_EMBEDDING_MODEL = 'intfloat/multilingual-e5-large-instruct';
 export const TOGETHER_EMBEDDING_DIMENSIONS = 1024;

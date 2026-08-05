@@ -1,11 +1,13 @@
-import { buildDocumentPrompt } from '@sf/shared-types';
+import {
+  buildDocumentPrompt,
+  createLlmChatConfigFromEnv,
+  LLM_CHAT_MAX_TOKENS,
+  type LlmChatConfig,
+} from '@sf/shared-types';
 import { ChatOpenAI } from '@langchain/openai';
 import { formatValidationFindings } from './validation/types';
 import type { DocumentPlan, DocumentRule } from './validation/types';
 
-const TOGETHER_BASE_URL = 'https://api.together.ai/v1';
-const TOGETHER_MODEL = 'MiniMaxAI/MiniMax-M3';
-const TOGETHER_MAX_TOKENS = 16_384;
 const EMPTY_RESPONSE_RETRIES = 2;
 
 function stripRedactedThinking(content: string): string {
@@ -47,32 +49,34 @@ function extractMessageContent(content: unknown): string {
     .join('');
 }
 
-function getTogetherApiKey(): string {
-  const apiKey = process.env['TOGETHER_AI_API_KEY'];
-  if (!apiKey) {
-    throw new Error('Missing TOGETHER_AI_API_KEY environment variable');
-  }
-  return apiKey;
+function resolveChatConfig(config?: LlmChatConfig): LlmChatConfig {
+  return config ?? createLlmChatConfigFromEnv();
 }
 
-export function createTogetherModel(temperature = 0.7): ChatOpenAI {
+export function createTogetherModel(temperature = 0.7, config?: LlmChatConfig): ChatOpenAI {
+  const chatConfig = resolveChatConfig(config);
+
   return new ChatOpenAI({
-    apiKey: getTogetherApiKey(),
-    model: TOGETHER_MODEL,
+    apiKey: chatConfig.apiKey,
+    model: chatConfig.model,
     temperature,
-    maxTokens: TOGETHER_MAX_TOKENS,
+    maxTokens: LLM_CHAT_MAX_TOKENS,
     // MiniMax reasoning can consume the entire completion budget and leave content empty.
     modelKwargs: {
       reasoning: { enabled: false },
     },
     configuration: {
-      baseURL: TOGETHER_BASE_URL,
+      baseURL: chatConfig.baseUrl,
     },
   });
 }
 
-export async function callTogetherChat(prompt: string, temperature = 0.7): Promise<string> {
-  const model = createTogetherModel(temperature);
+export async function callTogetherChat(
+  prompt: string,
+  temperature = 0.7,
+  config?: LlmChatConfig,
+): Promise<string> {
+  const model = createTogetherModel(temperature, config);
   let lastError: Error | undefined;
 
   for (let attempt = 0; attempt <= EMPTY_RESPONSE_RETRIES; attempt += 1) {
@@ -85,11 +89,11 @@ export async function callTogetherChat(prompt: string, temperature = 0.7): Promi
     }
 
     lastError = new Error(
-      `Together returned an empty response (attempt ${attempt + 1}/${EMPTY_RESPONSE_RETRIES + 1})`,
+      `LLM returned an empty response (attempt ${attempt + 1}/${EMPTY_RESPONSE_RETRIES + 1})`,
     );
   }
 
-  throw lastError ?? new Error('Together returned an empty response');
+  throw lastError ?? new Error('LLM returned an empty response');
 }
 
 export async function planDocument(

@@ -1,0 +1,11 @@
+model_list:
+  - model_name: minimax-m3
+    litellm_params:
+      model: openai/MiniMaxAI/MiniMax-M3
+      api_base: https://api.together.ai/v1
+      api_key: os.environ/TOGETHER_AI_API_KEY
+      allowed_openai_params:
+        - reasoning
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY

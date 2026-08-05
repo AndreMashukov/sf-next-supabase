@@ -19,7 +19,8 @@
     "supabase:gen-types": "nx run supabase:gen-types",
     "test:supabase": "vitest run --config supabase/vitest.config.mts",
     "test:document-agent": "vitest run --config libs/document-agent/vitest.config.mts",
-    "backfill:knowledge": "tsx --env-file=.env.local scripts/backfill-knowledge-index.ts"
+    "backfill:knowledge": "tsx --env-file=.env.local scripts/backfill-knowledge-index.ts",
+    "litellm:dev": "docker run --rm -p 4000:4000 --env-file .env.local -v \"$(pwd)/infra/litellm/config.yaml:/app/config.yaml\" ghcr.io/berriai/litellm:main-stable --config /app/config.yaml"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
