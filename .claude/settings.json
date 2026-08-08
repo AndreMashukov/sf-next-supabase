@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn nx run web:typecheck)",
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn nx run web:lint)",
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn nx run web:build)",
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn nx run web:dev)",
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn nx run api:typecheck)",
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn nx run api:build)",
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn nx run api:serve)",
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn nx run shared-types:build)",
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn lint)",
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn test)",
+      "Bash(NX_DAEMON=false NX_ISOLATE_PLUGINS=false yarn test:*)",
+      "Bash(yarn supabase:start)",
+      "Bash(yarn supabase:stop)",
+      "Bash(yarn supabase:reset)",
+      "Bash(yarn supabase:push)",
+      "Bash(yarn supabase:gen-types)",
+      "Bash(yarn litellm:dev)",
+      "Bash(yarn dev:web)",
+      "Bash(yarn dev:api)",
+      "Bash(yarn dev)",
+      "Bash(gh secret list)",
+      "Bash(gh pr *)",
+      "Bash(git worktree *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(yarn prettier *)"
+    ],
+    "deny": [
+      "Bash(supabase db push --linked*)",
+      "Bash(yarn supabase:push-remote*)",
+      "Bash(yarn nx run supabase:push-remote*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(rm -rf / *)",
+      "Bash(rm -rf ~ *)",
+      "Bash(rm -rf $HOME *)"
+    ]
+  },
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": ["playwright"],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/block-dangerous-bash.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/block-secrets.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/format-on-write.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/remind-check-on-stop.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -152,3 +152,12 @@ vitest.config.*.timestamp*
 # Supabase local
 supabase/.temp
 supabase/.branches
+
+# Claude Code
+.claude/worktrees
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Playwright MCP debug output
+.playwright-mcp/
+test-results/
