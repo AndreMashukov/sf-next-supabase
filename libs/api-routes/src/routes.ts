@@ -2,24 +2,15 @@ import cors from '@fastify/cors';
 import fastifySse from '@fastify/sse';
 import type { FastifyInstance } from 'fastify';
 import {
-  attachRuleToDirectorySchema,
-  createDirectorySchema,
   createDocumentSchema,
-  createRuleSchema,
   deleteDirectorySchema,
   deleteDocumentsSchema,
   deleteQuizzesSchema,
-  deleteRuleSchema,
-  detachRuleFromDirectorySchema,
   generateQuizSchema,
   agentMessageSchema,
-  moveDirectorySchema,
-  moveDocumentSchema,
   parseRequest,
-  updateDirectorySchema,
   updateDocumentSchema,
   updateQuizSchema,
-  updateRuleSchema,
 } from '@sf/shared-types';
 import type { ApiContext } from './context';
 import { authPlugin, errorHandlerPlugin, requireUserId, sendError } from './plugins';
@@ -71,18 +62,9 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
   const apiPaths = [
     '/api/v1/create-document',
     '/api/v1/generate-quiz',
-    '/api/v1/create-rule',
-    '/api/v1/update-rule',
-    '/api/v1/delete-rule',
-    '/api/v1/create-directory',
-    '/api/v1/update-directory',
-    '/api/v1/move-directory',
     '/api/v1/delete-directory',
     '/api/v1/delete-documents',
     '/api/v1/delete-quizzes',
-    '/api/v1/move-document',
-    '/api/v1/attach-rule-to-directory',
-    '/api/v1/detach-rule-from-directory',
     '/api/v1/agent-message',
     '/api/v1/agent-message-stream',
     '/api/v1/update-document',
@@ -124,88 +106,6 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       return reply.status(202).send({ job });
     });
 
-    protectedApp.post('/api/v1/create-rule', async (request, reply) => {
-      const userId = requireUserId(request);
-      const body = parseRequest(createRuleSchema, request.body);
-      const rule = await context.createRuleUseCase.execute({
-        userId,
-        name: body.name,
-        description: body.description,
-        content: body.content,
-        isDefault: body.isDefault,
-      });
-
-      return reply.status(201).send({ rule });
-    });
-
-    protectedApp.post('/api/v1/update-rule', async (request, reply) => {
-      const userId = requireUserId(request);
-      const body = parseRequest(updateRuleSchema, request.body);
-      const rule = await context.updateRuleUseCase.execute({
-        userId,
-        ruleId: body.ruleId,
-        name: body.name,
-        description: body.description,
-        content: body.content,
-        isDefault: body.isDefault,
-      });
-
-      return reply.send({ rule });
-    });
-
-    protectedApp.post('/api/v1/delete-rule', async (request, reply) => {
-      const userId = requireUserId(request);
-      const body = parseRequest(deleteRuleSchema, request.body);
-      const result = await context.deleteRuleUseCase.execute({
-        userId,
-        ruleId: body.ruleId,
-      });
-
-      return reply.send(result);
-    });
-
-    protectedApp.post('/api/v1/create-directory', async (request, reply) => {
-      const userId = requireUserId(request);
-      const body = parseRequest(createDirectorySchema, request.body);
-      const directory = await context.createDirectoryUseCase.execute({
-        userId,
-        name: body.name,
-        parentId: body.parentId,
-        description: body.description,
-        color: body.color,
-        icon: body.icon,
-      });
-
-      return reply.status(201).send({ directory });
-    });
-
-    protectedApp.post('/api/v1/update-directory', async (request, reply) => {
-      const userId = requireUserId(request);
-      const body = parseRequest(updateDirectorySchema, request.body);
-      const directory = await context.updateDirectoryUseCase.execute({
-        userId,
-        directoryId: body.directoryId,
-        name: body.name,
-        description: body.description,
-        color: body.color,
-        icon: body.icon,
-      });
-
-      return reply.send({ directory });
-    });
-
-    protectedApp.post('/api/v1/move-directory', async (request, reply) => {
-      const userId = requireUserId(request);
-      const body = parseRequest(moveDirectorySchema, request.body);
-      const directory = await context.moveDirectoryUseCase.execute({
-        userId,
-        directoryId: body.directoryId,
-        parentId: body.parentId,
-      });
-
-      return reply.send({ directory });
-    });
-
     protectedApp.post('/api/v1/delete-directory', async (request, reply) => {
       const userId = requireUserId(request);
       const body = parseRequest(deleteDirectorySchema, request.body);
@@ -234,42 +134,6 @@ export async function registerRoutes(app: FastifyInstance, context: ApiContext) 
       const result = await context.deleteQuizzesUseCase.execute({
         userId,
         quizIds: body.quizIds,
-      });
-
-      return reply.send(result);
-    });
-
-    protectedApp.post('/api/v1/move-document', async (request, reply) => {
-      const userId = requireUserId(request);
-      const body = parseRequest(moveDocumentSchema, request.body);
-      const document = await context.moveDocumentUseCase.execute({
-        userId,
-        documentId: body.documentId,
-        directoryId: body.directoryId,
-      });
-
-      return reply.send({ document });
-    });
-
-    protectedApp.post('/api/v1/attach-rule-to-directory', async (request, reply) => {
-      const userId = requireUserId(request);
-      const body = parseRequest(attachRuleToDirectorySchema, request.body);
-      const result = await context.attachRuleToDirectoryUseCase.execute({
-        userId,
-        directoryId: body.directoryId,
-        ruleId: body.ruleId,
-      });
-
-      return reply.send(result);
-    });
-
-    protectedApp.post('/api/v1/detach-rule-from-directory', async (request, reply) => {
-      const userId = requireUserId(request);
-      const body = parseRequest(detachRuleFromDirectorySchema, request.body);
-      const result = await context.detachRuleFromDirectoryUseCase.execute({
-        userId,
-        directoryId: body.directoryId,
-        ruleId: body.ruleId,
       });
 
       return reply.send(result);

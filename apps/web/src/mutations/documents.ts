@@ -1,5 +1,6 @@
 'use client';
 
+import type { Database, Document } from '@sf/shared-types';
 import {
   createDocumentSchema,
   deleteDocumentsSchema,
@@ -7,9 +8,27 @@ import {
   parseRequest,
   type CreateDocumentResponse,
   type DeleteDocumentsResponse,
-  type MoveDocumentResponse,
 } from '@sf/shared-types';
 import { postJson } from './client';
+import { verifyDirectoryOwnership } from '@/domain/directories/client-operations';
+import { getBrowserSupabase, requireUserId, throwOnError } from './supabase/client';
+
+type DocumentRow = Database['public']['Tables']['documents']['Row'];
+
+function mapDocument(row: DocumentRow): Document {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    title: row.title,
+    description: row.description,
+    wordCount: row.word_count,
+    storagePath: row.storage_path,
+    directoryId: row.directory_id,
+    appliedRuleIds: row.applied_rule_ids ?? [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
 export async function createDocument(
   title: string,
@@ -37,6 +56,22 @@ export async function deleteDocuments(documentIds: string[]) {
 
 export async function moveDocument(documentId: string, directoryId?: string) {
   const body = parseRequest(moveDocumentSchema, { documentId, directoryId });
-  const payload = await postJson<MoveDocumentResponse>('move-document', body);
-  return payload.document;
+  const supabase = getBrowserSupabase();
+  const userId = await requireUserId();
+
+  if (body.directoryId) {
+    await verifyDirectoryOwnership(supabase, body.directoryId, userId);
+  }
+
+  const data = throwOnError(
+    await supabase
+      .from('documents')
+      .update({ directory_id: body.directoryId ?? null })
+      .eq('id', body.documentId)
+      .eq('user_id', userId)
+      .select('*')
+      .single(),
+  );
+
+  return mapDocument(data);
 }

@@ -23,26 +23,6 @@ function createMockContext(overrides: Partial<ApiContext> = {}): ApiContext {
       }),
     },
     generateQuizUseCase: { start: vi.fn() },
-    createRuleUseCase: { execute: vi.fn() },
-    updateRuleUseCase: { execute: vi.fn() },
-    deleteRuleUseCase: { execute: vi.fn() },
-    createDirectoryUseCase: {
-      execute: vi.fn().mockResolvedValue({
-        id: 'dir-1',
-        userId: 'user-1',
-        parentId: null,
-        name: 'Folder',
-        description: '',
-        path: '/Folder',
-        level: 0,
-        color: '#8b5cf6',
-        icon: 'Folder',
-        createdAt: '2026-01-01T00:00:00.000Z',
-        updatedAt: '2026-01-01T00:00:00.000Z',
-      }),
-    },
-    updateDirectoryUseCase: { execute: vi.fn() },
-    moveDirectoryUseCase: { execute: vi.fn() },
     deleteDirectoryUseCase: {
       execute: vi.fn().mockResolvedValue({
         success: true,
@@ -62,9 +42,6 @@ function createMockContext(overrides: Partial<ApiContext> = {}): ApiContext {
         deletedQuizzes: 1,
       }),
     },
-    moveDocumentUseCase: { execute: vi.fn() },
-    attachRuleToDirectoryUseCase: { execute: vi.fn().mockResolvedValue({ success: true }) },
-    detachRuleFromDirectoryUseCase: { execute: vi.fn().mockResolvedValue({ success: true }) },
     updateDocumentUseCase: { execute: vi.fn() },
     updateQuizUseCase: { execute: vi.fn() },
     directoryAgentUseCase: {
@@ -175,32 +152,6 @@ describe('createApiServer', () => {
     await app.close();
   });
 
-  it('creates a directory for authenticated requests', async () => {
-    const context = createMockContext();
-    const app = await createApiServer(context);
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/v1/create-directory',
-      headers: {
-        authorization: 'Bearer test-token',
-        'content-type': 'application/json',
-      },
-      payload: { name: 'Folder' },
-    });
-
-    expect(response.statusCode).toBe(201);
-    expect(response.json().directory.id).toBe('dir-1');
-    expect(context.createDirectoryUseCase.execute).toHaveBeenCalledWith({
-      userId: 'user-1',
-      name: 'Folder',
-      parentId: undefined,
-      description: '',
-      color: '#8b5cf6',
-      icon: 'Folder',
-    });
-    await app.close();
-  });
-
   it('deletes a directory for authenticated requests', async () => {
     const context = createMockContext();
     const app = await createApiServer(context);
@@ -237,85 +188,6 @@ describe('createApiServer', () => {
 
     expect(response.statusCode).toBe(400);
     expect(response.json().error).toContain('folder');
-    await app.close();
-  });
-
-  it('moves a directory for authenticated requests', async () => {
-    const context = createMockContext({
-      moveDirectoryUseCase: {
-        execute: vi.fn().mockResolvedValue({
-          id: '11111111-1111-4111-8111-111111111111',
-          userId: 'user-1',
-          parentId: '22222222-2222-4222-8222-222222222222',
-          name: 'Folder',
-          description: '',
-          path: '/Parent/Folder',
-          level: 1,
-          createdAt: '2026-01-01T00:00:00.000Z',
-          updatedAt: '2026-01-01T00:00:00.000Z',
-        }),
-      },
-    });
-    const app = await createApiServer(context);
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/v1/move-directory',
-      headers: {
-        authorization: 'Bearer test-token',
-        'content-type': 'application/json',
-      },
-      payload: {
-        directoryId: '11111111-1111-4111-8111-111111111111',
-        parentId: '22222222-2222-4222-8222-222222222222',
-      },
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(context.moveDirectoryUseCase.execute).toHaveBeenCalledWith({
-      userId: 'user-1',
-      directoryId: '11111111-1111-4111-8111-111111111111',
-      parentId: '22222222-2222-4222-8222-222222222222',
-    });
-    await app.close();
-  });
-
-  it('moves a document for authenticated requests', async () => {
-    const context = createMockContext({
-      moveDocumentUseCase: {
-        execute: vi.fn().mockResolvedValue({
-          id: 'doc-1',
-          userId: 'user-1',
-          title: 'Title',
-          description: 'Prompt',
-          wordCount: 10,
-          storagePath: 'users/user-1/documents/doc-1/content.html',
-          directoryId: '11111111-1111-4111-8111-111111111111',
-          appliedRuleIds: [],
-          createdAt: '2026-01-01T00:00:00.000Z',
-          updatedAt: '2026-01-01T00:00:00.000Z',
-        }),
-      },
-    });
-    const app = await createApiServer(context);
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/v1/move-document',
-      headers: {
-        authorization: 'Bearer test-token',
-        'content-type': 'application/json',
-      },
-      payload: {
-        documentId: '33333333-3333-4333-8333-333333333333',
-        directoryId: '11111111-1111-4111-8111-111111111111',
-      },
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(context.moveDocumentUseCase.execute).toHaveBeenCalledWith({
-      userId: 'user-1',
-      documentId: '33333333-3333-4333-8333-333333333333',
-      directoryId: '11111111-1111-4111-8111-111111111111',
-    });
     await app.close();
   });
 

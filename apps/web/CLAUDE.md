@@ -18,11 +18,11 @@ apps/web/src/
 ├── app/              # App Router routes + colocated _components
 ├── components/       # shared UI (ui/ for primitives)
 ├── data/             # server-side Supabase reads for RSC pages
-├── mutations/        # client-side API calls to Fastify /api/v1/*
+├── mutations/        # client-side Supabase CRUD + Fastify for AI/jobs
 ├── supabase/         # browser + server Supabase clients, middleware
 ├── stores/           # Zustand slices (agent, jobs, shell)
-├── hooks/            # client hooks (e.g. Realtime subscriptions)
-├── domain/           # pure domain helpers
+├── hooks/            # client hooks (Realtime subscriptions)
+├── domain/           # pure domain helpers + client directory operations
 ├── content/          # HTML/math/plotly rendering
 └── utils/            # cn(), formatDate()
 ```
@@ -30,19 +30,22 @@ apps/web/src/
 ## Conventions
 
 - **Server Components** fetch data via `apps/web/src/data/*` using `createClient()` from `@/supabase/server`
-- **Client Components** (`'use client'`) for interactivity; call mutations via `apps/web/src/mutations/*` which POST to `${NEXT_PUBLIC_API_URL}/api/v1/*`
-- **Realtime**: generation job status via `useGenerationJobsRealtime` + Supabase Realtime on `generation_jobs`
+- **Non-trivial reads** use typed RPCs (e.g. `get_navigation_tree`) where joins/trees are assembled in SQL
+- **Simple CRUD mutations** use browser Supabase client + RLS (rules, directories, attach/detach, move document)
+- **AI / side-effect mutations** POST to Fastify via `getApiBaseUrl()` (e.g. `${getApiBaseUrl()}/create-document`)
+- **Realtime**: `useGenerationJobsRealtime` on `generation_jobs`; `useNavigationRealtime` refreshes RSC on nav table changes
 - **Auth**: middleware in `apps/web/src/middleware.ts`; login/signup under `app/(auth)/`
 - **Styling**: CSS classes in `app/global.css` and parity CSS files; Lucide icons; `cn()` from `@/utils`
 - Import shared types from `@sf/shared-types`
 
 ## Never
 
-- Never call Supabase `.insert()` / `.update()` / `.delete()` from client components for domain mutations — use Fastify API mutations
-- Never hardcode API URLs — use `getApiBaseUrl()` from `@/mutations/client`
+- Never use service-role keys from the browser
+- Never route simple user-owned CRUD through Fastify when RLS already covers it
+- Never hardcode API URLs — use `getApiBaseUrl()` from `@/mutations/client` for Fastify calls
 - Never skip `'use client'` when using hooks, event handlers, or browser APIs
 
 ## Reference
 
-- Path rules: `.claude/rules/web-next.md`, `styling.md`, `form-handling.md`
+- Path rules: `.claude/rules/web-next.md`, `styling.md`, `form-handling.md`, `supabase.md`
 - Full architecture: `README.md`

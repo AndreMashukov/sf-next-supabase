@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { GlobalAgentLauncher } from '@/components/agent/GlobalAgentLauncher';
+import { useNavigationRealtime } from '@/hooks/useNavigationRealtime';
 import { UiStoreProvider, useUiStore } from '@/providers/ui-store-provider';
 import { Sidebar } from './Sidebar';
 import { TopAppBar } from './TopAppBar';
@@ -20,6 +21,8 @@ function AppShellFrame({
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const setSidebarOpen = useUiStore((state) => state.setSidebarOpen);
   const setIsMobile = useUiStore((state) => state.setIsMobile);
+
+  useNavigationRealtime();
 
   useEffect(() => {
     const checkMobile = () => {

@@ -18,8 +18,8 @@ describe.skipIf(!shouldRun)('Supabase RLS integration', () => {
     const client = createClient(supabaseUrl, anonKey);
     const { data, error } = await client.from('documents').select('*');
 
-    expect(error).toBeNull();
-    expect(data).toEqual([]);
+    expect(error?.code).toBe('42501');
+    expect(data).toBeNull();
   });
 
   it('allows service role to inspect schema-backed tables', async () => {
@@ -44,8 +44,8 @@ describe.skipIf(!shouldRun)('Supabase RLS integration', () => {
     const client = createClient(supabaseUrl, anonKey);
     const { data, error } = await client.from('directories').select('*');
 
-    expect(error).toBeNull();
-    expect(data).toEqual([]);
+    expect(error?.code).toBe('42501');
+    expect(data).toBeNull();
   });
 
   it('prevents anon clients from reading generation jobs without auth', async () => {
@@ -59,8 +59,8 @@ describe.skipIf(!shouldRun)('Supabase RLS integration', () => {
     const client = createClient(supabaseUrl, anonKey);
     const { data, error } = await client.from('generation_jobs').select('*');
 
-    expect(error).toBeNull();
-    expect(data).toEqual([]);
+    expect(error?.code).toBe('42501');
+    expect(data).toBeNull();
   });
 
   it('prevents anon clients from reading agent knowledge chunks without auth', async () => {
@@ -74,7 +74,22 @@ describe.skipIf(!shouldRun)('Supabase RLS integration', () => {
     const client = createClient(supabaseUrl, anonKey);
     const { data, error } = await client.from('agent_knowledge_chunks').select('*');
 
-    expect(error).toBeNull();
-    expect(data).toEqual([]);
+    expect(error?.code).toBe('42501');
+    expect(data).toBeNull();
+  });
+
+  it('prevents anon clients from calling get_navigation_tree', async () => {
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    expect(anonKey).toBeTruthy();
+
+    if (!supabaseUrl || !anonKey) {
+      throw new Error('Missing Supabase test configuration');
+    }
+
+    const client = createClient(supabaseUrl, anonKey);
+    const { data, error } = await client.rpc('get_navigation_tree');
+
+    expect(error).toBeTruthy();
+    expect(data).toBeNull();
   });
 });
