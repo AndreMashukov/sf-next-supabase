@@ -1,18 +1,30 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/supabase/client';
 
 const USER_OWNED_NAV_TABLES = ['documents', 'directories', 'quizzes', 'rules'] as const;
+const REFRESH_DEBOUNCE_MS = 150;
 
 export function useNavigationRealtime() {
   const router = useRouter();
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    function scheduleRefresh() {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+
+      refreshTimerRef.current = setTimeout(() => {
+        router.refresh();
+      }, REFRESH_DEBOUNCE_MS);
+    }
 
     async function subscribe() {
       const {
@@ -34,9 +46,7 @@ export function useNavigationRealtime() {
             table,
             filter: `user_id=eq.${user.id}`,
           },
-          () => {
-            router.refresh();
-          },
+          scheduleRefresh,
         );
       }
 
@@ -47,9 +57,7 @@ export function useNavigationRealtime() {
           schema: 'public',
           table: 'directory_rules',
         },
-        () => {
-          router.refresh();
-        },
+        scheduleRefresh,
       );
 
       channel = nextChannel.subscribe();
@@ -59,6 +67,9 @@ export function useNavigationRealtime() {
 
     return () => {
       cancelled = true;
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
       if (channel) {
         void supabase.removeChannel(channel);
       }

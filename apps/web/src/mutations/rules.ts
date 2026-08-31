@@ -1,6 +1,6 @@
 'use client';
 
-import type { Rule } from '@sf/shared-types';
+import type { Database, Rule } from '@sf/shared-types';
 import {
   attachRuleToDirectorySchema,
   createRuleSchema,
@@ -11,16 +11,7 @@ import {
 } from '@sf/shared-types';
 import { getBrowserSupabase, requireUserId, throwOnError } from './supabase/client';
 
-type RuleRow = {
-  id: string;
-  user_id: string;
-  name: string;
-  description: string;
-  content: string;
-  is_default: boolean;
-  created_at: string;
-  updated_at: string;
-};
+type RuleRow = Database['public']['Tables']['rules']['Row'];
 
 function mapRule(row: RuleRow): Rule {
   return {
@@ -59,7 +50,7 @@ export async function createRule(input: {
       .single(),
   );
 
-  return mapRule(data as RuleRow);
+  return mapRule(data);
 }
 
 export async function updateRule(input: {
@@ -95,7 +86,7 @@ export async function updateRule(input: {
       .single(),
   );
 
-  return mapRule(data as RuleRow);
+  return mapRule(data);
 }
 
 export async function deleteRule(ruleId: string) {

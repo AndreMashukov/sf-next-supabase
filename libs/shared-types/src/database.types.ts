@@ -449,6 +449,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      directory_path_level: { Args: { p_path: string }; Returns: number }
       get_navigation_tree: { Args: never; Returns: Json }
       match_agent_chunks: {
         Args: {
@@ -483,6 +484,14 @@ export type Database = {
           similarity: number
           thread_id: string
         }[]
+      }
+      move_directory: {
+        Args: { p_directory_id: string; p_parent_id?: string }
+        Returns: Json
+      }
+      rename_directory: {
+        Args: { p_directory_id: string; p_name: string }
+        Returns: Json
       }
     }
     Enums: {

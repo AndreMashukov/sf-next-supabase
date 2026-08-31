@@ -92,8 +92,45 @@ $$;
 REVOKE ALL ON FUNCTION public.get_navigation_tree() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_navigation_tree() TO authenticated;
 
-ALTER PUBLICATION supabase_realtime ADD TABLE public.documents;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.directories;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.quizzes;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.rules;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.directory_rules;
+ALTER TABLE public.documents REPLICA IDENTITY FULL;
+ALTER TABLE public.directories REPLICA IDENTITY FULL;
+ALTER TABLE public.quizzes REPLICA IDENTITY FULL;
+ALTER TABLE public.rules REPLICA IDENTITY FULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'documents'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.documents;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'directories'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.directories;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'quizzes'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.quizzes;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'rules'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.rules;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'directory_rules'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.directory_rules;
+  END IF;
+END $$;

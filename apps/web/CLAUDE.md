@@ -32,7 +32,7 @@ apps/web/src/
 - **Server Components** fetch data via `apps/web/src/data/*` using `createClient()` from `@/supabase/server`
 - **Non-trivial reads** use typed RPCs (e.g. `get_navigation_tree`) where joins/trees are assembled in SQL
 - **Simple CRUD mutations** use browser Supabase client + RLS (rules, directories, attach/detach, move document)
-- **AI / side-effect mutations** POST to Fastify `${NEXT_PUBLIC_API_URL}/api/v1/*` (create-document, generate-quiz, deletes with S3/embeddings, agent)
+- **AI / side-effect mutations** POST to Fastify via `getApiBaseUrl()` (e.g. `${getApiBaseUrl()}/create-document`)
 - **Realtime**: `useGenerationJobsRealtime` on `generation_jobs`; `useNavigationRealtime` refreshes RSC on nav table changes
 - **Auth**: middleware in `apps/web/src/middleware.ts`; login/signup under `app/(auth)/`
 - **Styling**: CSS classes in `app/global.css` and parity CSS files; Lucide icons; `cn()` from `@/utils`

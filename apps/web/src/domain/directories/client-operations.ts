@@ -1,20 +1,10 @@
+import type { Database } from '@sf/shared-types';
 import type { Directory } from '@sf/shared-types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { buildDirectoryPath, MAX_DIRECTORY_DEPTH } from './path';
 
-type DirectoryRow = {
-  id: string;
-  user_id: string;
-  parent_id: string | null;
-  name: string;
-  description: string;
-  path: string;
-  level: number;
-  color: string;
-  icon: string;
-  created_at: string;
-  updated_at: string;
-};
+type DirectoryRow = Database['public']['Tables']['directories']['Row'];
+type TypedSupabaseClient = SupabaseClient<Database>;
 
 function mapDirectory(row: DirectoryRow): Directory {
   return {
@@ -32,8 +22,16 @@ function mapDirectory(row: DirectoryRow): Directory {
   };
 }
 
+function parseDirectoryRpcResult(data: unknown): Directory {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Invalid directory response');
+  }
+
+  return mapDirectory(data as DirectoryRow);
+}
+
 async function listDirectoriesForUser(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   userId: string,
 ): Promise<Directory[]> {
   const { data, error } = await supabase
@@ -46,11 +44,11 @@ async function listDirectoriesForUser(
     throw new Error(error.message);
   }
 
-  return ((data ?? []) as DirectoryRow[]).map(mapDirectory);
+  return (data ?? []).map(mapDirectory);
 }
 
 async function getDirectoryOrThrow(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   directoryId: string,
   userId: string,
 ): Promise<Directory> {
@@ -69,7 +67,7 @@ async function getDirectoryOrThrow(
     throw new Error('Directory not found');
   }
 
-  return mapDirectory(data as DirectoryRow);
+  return mapDirectory(data);
 }
 
 function assertDirectoryDepth(parent: Directory | null): number {
@@ -100,90 +98,8 @@ function assertSiblingNameAvailable(
   }
 }
 
-function assertNotDescendant(
-  directories: Directory[],
-  directoryId: string,
-  targetParentId: string | undefined,
-) {
-  if (!targetParentId) {
-    return;
-  }
-
-  if (targetParentId === directoryId) {
-    throw new Error('A directory cannot be moved into itself');
-  }
-
-  const byId = new Map(directories.map((directory) => [directory.id, directory]));
-  let current = byId.get(targetParentId);
-
-  while (current) {
-    if (current.id === directoryId) {
-      throw new Error('A directory cannot be moved into its own descendant');
-    }
-
-    current = current.parentId ? byId.get(current.parentId) : undefined;
-  }
-}
-
-async function updateDirectorySubtreePaths(
-  supabase: SupabaseClient,
-  userId: string,
-  directories: Directory[],
-  directory: Directory,
-  nextName?: string,
-) {
-  const nextPath = buildDirectoryPath(
-    directory.parentId
-      ? (directories.find((item) => item.id === directory.parentId)?.path ?? null)
-      : null,
-    nextName ?? directory.name,
-  );
-
-  const { error: rootError } = await supabase
-    .from('directories')
-    .update({
-      ...(nextName ? { name: nextName } : {}),
-      path: nextPath,
-    })
-    .eq('id', directory.id)
-    .eq('user_id', userId);
-
-  if (rootError) {
-    throw new Error(rootError.message);
-  }
-
-  const descendants = directories.filter((item) => item.path.startsWith(`${directory.path}/`));
-  const pathMap = new Map<string, string>([[directory.path, nextPath]]);
-
-  for (const descendant of descendants.sort(
-    (left, right) => left.path.length - right.path.length,
-  )) {
-    const parentPath = pathMap.get(descendant.path.slice(0, descendant.path.lastIndexOf('/')));
-
-    if (!parentPath) {
-      continue;
-    }
-
-    const updatedPath = `${parentPath}/${descendant.name}`;
-    pathMap.set(descendant.path, updatedPath);
-
-    const { error } = await supabase
-      .from('directories')
-      .update({
-        path: updatedPath,
-        level: updatedPath.split('/').filter(Boolean).length - 1,
-      })
-      .eq('id', descendant.id)
-      .eq('user_id', userId);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-  }
-}
-
 export async function createDirectoryForUser(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   userId: string,
   input: {
     name: string;
@@ -219,11 +135,11 @@ export async function createDirectoryForUser(
     throw new Error(error?.message ?? 'Failed to create directory');
   }
 
-  return mapDirectory(data as DirectoryRow);
+  return mapDirectory(data);
 }
 
 export async function updateDirectoryForUser(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   userId: string,
   input: {
     directoryId: string;
@@ -233,17 +149,23 @@ export async function updateDirectoryForUser(
     icon?: string;
   },
 ): Promise<Directory> {
-  const directory = await getDirectoryOrThrow(supabase, input.directoryId, userId);
+  if (input.name) {
+    const { data, error } = await supabase.rpc('rename_directory', {
+      p_directory_id: input.directoryId,
+      p_name: input.name,
+    });
 
-  if (input.name && input.name !== directory.name) {
-    const directories = await listDirectoriesForUser(supabase, userId);
-    assertSiblingNameAvailable(
-      directories,
-      input.name,
-      directory.parentId ?? undefined,
-      directory.id,
-    );
-    await updateDirectorySubtreePaths(supabase, userId, directories, directory, input.name);
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      throw new Error('Directory not found');
+    }
+
+    if (input.description === undefined && input.color === undefined && input.icon === undefined) {
+      return parseDirectoryRpcResult(data);
+    }
   }
 
   const updates: {
@@ -272,59 +194,31 @@ export async function updateDirectoryForUser(
 }
 
 export async function moveDirectoryForUser(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   userId: string,
   input: {
     directoryId: string;
     parentId?: string;
   },
 ): Promise<Directory> {
-  const directory = await getDirectoryOrThrow(supabase, input.directoryId, userId);
-  const directories = await listDirectoriesForUser(supabase, userId);
-
-  assertNotDescendant(directories, directory.id, input.parentId);
-
-  const parent = input.parentId
-    ? await getDirectoryOrThrow(supabase, input.parentId, userId)
-    : null;
-  const nextLevel = assertDirectoryDepth(parent);
-  const subtreeDepth = Math.max(
-    0,
-    ...directories
-      .filter((item) => item.id === directory.id || item.path.startsWith(`${directory.path}/`))
-      .map((item) => item.level - directory.level),
-  );
-
-  if (nextLevel + subtreeDepth > MAX_DIRECTORY_DEPTH) {
-    throw new Error('Moving this directory would exceed the maximum depth');
-  }
-
-  assertSiblingNameAvailable(directories, directory.name, input.parentId, directory.id);
-
-  const { error: moveError } = await supabase
-    .from('directories')
-    .update({
-      parent_id: input.parentId ?? null,
-      level: nextLevel,
-    })
-    .eq('id', directory.id)
-    .eq('user_id', userId);
-
-  if (moveError) {
-    throw new Error(moveError.message);
-  }
-
-  const updatedDirectory = await getDirectoryOrThrow(supabase, directory.id, userId);
-  await updateDirectorySubtreePaths(supabase, userId, directories, {
-    ...updatedDirectory,
-    parentId: input.parentId ?? null,
+  const { data, error } = await supabase.rpc('move_directory', {
+    p_directory_id: input.directoryId,
+    p_parent_id: input.parentId,
   });
 
-  return getDirectoryOrThrow(supabase, directory.id, userId);
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error('Directory not found');
+  }
+
+  return parseDirectoryRpcResult(data);
 }
 
 export async function verifyDirectoryOwnership(
-  supabase: SupabaseClient,
+  supabase: TypedSupabaseClient,
   directoryId: string,
   userId: string,
 ): Promise<void> {

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Document } from '@sf/shared-types';
+import type { Database, Document } from '@sf/shared-types';
 import {
   createDocumentSchema,
   deleteDocumentsSchema,
@@ -13,18 +13,7 @@ import { postJson } from './client';
 import { verifyDirectoryOwnership } from '@/domain/directories/client-operations';
 import { getBrowserSupabase, requireUserId, throwOnError } from './supabase/client';
 
-type DocumentRow = {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  word_count: number;
-  storage_path: string;
-  directory_id: string | null;
-  applied_rule_ids: string[];
-  created_at: string;
-  updated_at: string;
-};
+type DocumentRow = Database['public']['Tables']['documents']['Row'];
 
 function mapDocument(row: DocumentRow): Document {
   return {
@@ -84,5 +73,5 @@ export async function moveDocument(documentId: string, directoryId?: string) {
       .single(),
   );
 
-  return mapDocument(data as DocumentRow);
+  return mapDocument(data);
 }

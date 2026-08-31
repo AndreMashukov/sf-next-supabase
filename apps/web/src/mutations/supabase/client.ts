@@ -20,7 +20,10 @@ export function getBrowserSupabase() {
   return createClient();
 }
 
-export function throwOnError<T>(result: { data: T; error: { message: string } | null }): T {
+export function throwOnError<T>(result: {
+  data: T | null;
+  error: { message: string } | null;
+}): T {
   if (result.error) {
     throw new Error(result.error.message);
   }
