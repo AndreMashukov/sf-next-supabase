@@ -2,16 +2,19 @@
 
 import {
   createDirectorySchema,
-  deleteDirectorySchema,
-  moveDirectorySchema,
   parseRequest,
   updateDirectorySchema,
-  type CreateDirectoryResponse,
-  type DeleteDirectoryResponse,
-  type MoveDirectoryResponse,
-  type UpdateDirectoryResponse,
+  moveDirectorySchema,
 } from '@sf/shared-types';
 import { postJson } from './client';
+import {
+  createDirectoryForUser,
+  moveDirectoryForUser,
+  updateDirectoryForUser,
+} from '@/domain/directories/client-operations';
+import { getBrowserSupabase, requireUserId } from './supabase/client';
+import type { DeleteDirectoryResponse } from '@sf/shared-types';
+import { deleteDirectorySchema } from '@sf/shared-types';
 
 export async function createDirectory(input: {
   name: string;
@@ -21,8 +24,16 @@ export async function createDirectory(input: {
   icon?: string;
 }) {
   const body = parseRequest(createDirectorySchema, input);
-  const payload = await postJson<CreateDirectoryResponse>('create-directory', body);
-  return payload.directory;
+  const supabase = getBrowserSupabase();
+  const userId = await requireUserId();
+
+  return createDirectoryForUser(supabase, userId, {
+    name: body.name,
+    parentId: body.parentId,
+    description: body.description,
+    color: body.color,
+    icon: body.icon,
+  });
 }
 
 export async function updateDirectory(input: {
@@ -33,14 +44,27 @@ export async function updateDirectory(input: {
   icon?: string;
 }) {
   const body = parseRequest(updateDirectorySchema, input);
-  const payload = await postJson<UpdateDirectoryResponse>('update-directory', body);
-  return payload.directory;
+  const supabase = getBrowserSupabase();
+  const userId = await requireUserId();
+
+  return updateDirectoryForUser(supabase, userId, {
+    directoryId: body.directoryId,
+    name: body.name,
+    description: body.description,
+    color: body.color,
+    icon: body.icon,
+  });
 }
 
 export async function moveDirectory(directoryId: string, parentId?: string) {
   const body = parseRequest(moveDirectorySchema, { directoryId, parentId });
-  const payload = await postJson<MoveDirectoryResponse>('move-directory', body);
-  return payload.directory;
+  const supabase = getBrowserSupabase();
+  const userId = await requireUserId();
+
+  return moveDirectoryForUser(supabase, userId, {
+    directoryId: body.directoryId,
+    parentId: body.parentId,
+  });
 }
 
 export async function deleteDirectory(directoryId: string) {

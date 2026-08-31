@@ -77,4 +77,19 @@ describe.skipIf(!shouldRun)('Supabase RLS integration', () => {
     expect(error).toBeNull();
     expect(data).toEqual([]);
   });
+
+  it('prevents anon clients from calling get_navigation_tree', async () => {
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    expect(anonKey).toBeTruthy();
+
+    if (!supabaseUrl || !anonKey) {
+      throw new Error('Missing Supabase test configuration');
+    }
+
+    const client = createClient(supabaseUrl, anonKey);
+    const { data, error } = await client.rpc('get_navigation_tree');
+
+    expect(error).toBeTruthy();
+    expect(data).toBeNull();
+  });
 });

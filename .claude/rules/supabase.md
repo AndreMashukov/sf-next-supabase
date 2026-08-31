@@ -55,6 +55,24 @@ yarn supabase:stop     # stops local stack
 
 Copy anon/service_role/S3 keys from CLI output into `.env.local`.
 
+## Read vs Write Split
+
+| Layer | Use for |
+|-------|---------|
+| **RSC + RPC** | Navigation trees, complex reads (`get_navigation_tree`) |
+| **Browser `.from()` / RPC** | Rules CRUD, directory create/update/move, attach/detach rules, move document metadata |
+| **Fastify (service role)** | AI generation jobs, agent, deletes with S3/embeddings, update document/quiz with storage/indexing |
+
+## RPC Conventions
+
+- Use `SECURITY DEFINER` + `auth.uid()` checks for cross-table reads
+- Grant `EXECUTE` to `authenticated` only (not `anon`) for new RPCs
+- Regenerate types after adding RPCs
+
+## Realtime
+
+Publish user-owned tables to `supabase_realtime`; client hooks call `router.refresh()` for RSC pages.
+
 ## Reference
 
 - [libs/shared-types/CLAUDE.md](../../libs/shared-types/CLAUDE.md)

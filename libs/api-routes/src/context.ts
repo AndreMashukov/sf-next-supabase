@@ -8,7 +8,6 @@ import {
   DeleteDirectoryUseCase,
   DeleteDocumentsUseCase,
   DeleteQuizzesUseCase,
-  DeleteRuleUseCase,
   DetachRuleFromDirectoryUseCase,
   DirectoryAgentUseCase,
   GenerateQuizUseCase,
@@ -59,18 +58,9 @@ export interface ApiContext {
   authService: AuthService;
   createDocumentUseCase: CreateDocumentUseCase;
   generateQuizUseCase: GenerateQuizUseCase;
-  createRuleUseCase: CreateRuleUseCase;
-  updateRuleUseCase: UpdateRuleUseCase;
-  deleteRuleUseCase: DeleteRuleUseCase;
-  createDirectoryUseCase: CreateDirectoryUseCase;
-  updateDirectoryUseCase: UpdateDirectoryUseCase;
-  moveDirectoryUseCase: MoveDirectoryUseCase;
   deleteDirectoryUseCase: DeleteDirectoryUseCase;
   deleteDocumentsUseCase: DeleteDocumentsUseCase;
   deleteQuizzesUseCase: DeleteQuizzesUseCase;
-  moveDocumentUseCase: MoveDocumentUseCase;
-  attachRuleToDirectoryUseCase: AttachRuleToDirectoryUseCase;
-  detachRuleFromDirectoryUseCase: DetachRuleFromDirectoryUseCase;
   updateDocumentUseCase: UpdateDocumentUseCase;
   updateQuizUseCase: UpdateQuizUseCase;
   directoryAgentUseCase: DirectoryAgentUseCase;
@@ -184,12 +174,6 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
     authService,
     createDocumentUseCase,
     generateQuizUseCase,
-    createRuleUseCase: new CreateRuleUseCase(ruleRepository),
-    updateRuleUseCase: new UpdateRuleUseCase(ruleRepository),
-    deleteRuleUseCase: new DeleteRuleUseCase(ruleRepository, directoryRepository),
-    createDirectoryUseCase: new CreateDirectoryUseCase(directoryRepository, knowledgeIndexer),
-    updateDirectoryUseCase: new UpdateDirectoryUseCase(directoryRepository, knowledgeIndexer),
-    moveDirectoryUseCase: new MoveDirectoryUseCase(directoryRepository),
     deleteDirectoryUseCase: new DeleteDirectoryUseCase(
       directoryRepository,
       documentRepository,
@@ -202,12 +186,6 @@ export function createApiContext(env: NodeJS.ProcessEnv = process.env): ApiConte
       knowledgeIndexer,
     ),
     deleteQuizzesUseCase: new DeleteQuizzesUseCase(quizRepository, knowledgeIndexer),
-    moveDocumentUseCase: new MoveDocumentUseCase(documentRepository, directoryRepository, knowledgeIndexer),
-    attachRuleToDirectoryUseCase: new AttachRuleToDirectoryUseCase(
-      directoryRepository,
-      ruleRepository,
-    ),
-    detachRuleFromDirectoryUseCase: new DetachRuleFromDirectoryUseCase(directoryRepository),
     updateDocumentUseCase,
     updateQuizUseCase,
     directoryAgentUseCase,
